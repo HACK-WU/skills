@@ -50,7 +50,6 @@ requirement-mining → interaction-design → design-craft → design-review
 | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | 121k star，面向真实工程的技能集，涵盖 TDD、调试、架构改进、需求对齐 |
 | [anthropics/courses](https://github.com/anthropics/courses) | Anthropic | Claude 官方课程和最佳实践 |
 | [obra/superpowers](https://github.com/obra/superpowers) | Jesse Vincent | Claude Code 增强技能集 |
-| [NomenAK/claude-hunter](https://github.com/NomenAK/claude-hunter) | NomenAK | Claude Code 工作流优化技能 |
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
 
