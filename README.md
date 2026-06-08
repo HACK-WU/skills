@@ -48,7 +48,7 @@ requirement-mining → interaction-design → design-craft → design-review
 | 项目 | 作者 | 简介 |
 |------|------|------|
 | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | 121k star，面向真实工程的技能集，涵盖 TDD、调试、架构改进、需求对齐 |
-| [anthropics/courses](https://github.com/anthropics/courses) | Anthropic | Claude 官方课程和最佳实践 |
+| [anthropics/skills](https://github.com/anthropics/skills) | Anthropic | Anthropic 官方 Agent Skills 示例集，含文档处理、创意设计、开发技术等技能，附带 Agent Skills 规范 |
 | [obra/superpowers](https://github.com/obra/superpowers) | Jesse Vincent | Claude Code 增强技能集 |
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
