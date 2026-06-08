@@ -362,7 +362,7 @@ REQ-03 (注册转化提升)
 用户选择存储位置后，展示即将保存的文件路径，等待确认：
 
 ```text
-即将保存到：{storage_path}/{YYYY-MM-DD}-{feature-name}.md
+即将保存到：{storage_path}/{YYYY-MM-DD}-{feature-name}/requirement.md
 
 确认保存？[是/否]
 ```
@@ -428,7 +428,7 @@ status: 已确认
 ```text
 ✅ 需求报告已保存
 
-📄 {storage_path}/{YYYY-MM-DD}-{feature-name}.md
+📄 {storage_path}/{YYYY-MM-DD}-{feature-name}/requirement.md
 
 下游 skill 可引用此文件：
 - design-craft：设计时参考需求背景和验收标准

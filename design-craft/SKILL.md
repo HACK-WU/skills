@@ -485,6 +485,15 @@ flowchart LR
 
 ## 阶段 5：落盘归档
 
+### 存储位置
+
+检查项目中是否已配置存储位置（`.requirements/config`）：
+
+- **已配置**：读取 `storage_path`，设计文档存放在 `{storage_path}/{YYYY-MM-DD}-{feature-name}/design/`
+- **未配置**：询问用户，给出默认建议 `.requirements/`
+
+配置后自动创建目录结构，后续设计文档统一存放。
+
 ### 多文档场景
 
 先落盘父文档，再按依赖拓扑序依次落盘子文档。全部写入后执行质量自检：
