@@ -10,6 +10,7 @@
 |------|------|--------|
 | **[requirement-mining](./requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单 | "我想做一个xxx"、"帮我分析需求" |
 | **[interaction-design](./interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
+| **[work-breakdown](./work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
 | **[design-craft](./design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构 | "写设计文档"、"帮我设计"、"dd" |
 | **[design-review](./design-review/SKILL.md)** | 对设计文档进行结构化评审，产出分级问题清单 | "评审设计"、"review 设计文档" |
 
@@ -33,12 +34,13 @@
 这些技能可以串联使用，形成完整的设计-开发流程：
 
 ```
-requirement-mining → interaction-design → design-craft → design-review
-      理解需求            设计交互层          技术设计         评审修正
-                                                                      ↓
-                                                              code-review
-                                                              challenger
-                                                                    代码质量
+requirement-mining → interaction-design → work-breakdown → 每个切片独立走 design-craft
+      理解需求            设计交互层           拆成独立切片         逐个设计+实现
+                                                                                        ↓
+                                                                                design-review
+                                                                                code-review
+                                                                                challenger
+                                                                                      代码质量
 ```
 
 ## 其他 Skill 项目
@@ -61,6 +63,8 @@ skills/
 │   ├── SKILL.md
 │   └── references/
 ├── interaction-design/    # 交互设计
+│   └── SKILL.md
+├── work-breakdown/        # 工作项拆分
 │   └── SKILL.md
 ├── design-craft/          # 设计文档生成
 │   ├── SKILL.md
