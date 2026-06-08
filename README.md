@@ -66,41 +66,6 @@
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
 
-## 项目结构
-
-```
-skills/
-├── requirement-mining/    # 需求挖掘
-│   ├── SKILL.md
-│   └── references/
-├── interaction-design/    # 交互设计
-│   └── SKILL.md
-├── work-breakdown/        # 工作项拆分
-│   └── SKILL.md
-├── data-flow-model/       # 数据建模与流图
-│   └── SKILL.md
-├── design-craft/          # 设计文档生成
-│   ├── SKILL.md
-│   ├── reference.md
-│   └── SUB_TEMPLATE.md
-├── design-review/         # 设计文档评审
-│   ├── SKILL.md
-│   └── reference.md
-├── code-review/           # 代码评审
-│   └── SKILL.md
-├── challenger/            # 代码质疑
-│   ├── SKILL.md
-│   ├── strategies/
-│   └── templates/
-├── expert-panel/          # 专家团评审
-│   ├── SKILL.md
-│   └── references/
-├── create-skill/          # 创建技能
-│   └── SKILL.md
-└── migrate-to-codehub/    # 迁移到 CodeHub
-    └── SKILL.md
-```
-
 ## 贡献
 
 1. Fork 本项目
