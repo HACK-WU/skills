@@ -55,7 +55,7 @@ function Install-Files {
 
 if ($Scripts) {
     Write-Host "Scripts -> $(Join-Path $TargetPath 'scripts')"
-    Install-Files "scripts" @(
+    Install-Files "scripts/requirement-mgr" @(
         "config_loader.py", "create-requirement.py", "delete-requirement.py",
         "file_lock.py", "id_generator.py", "list-requirements.py",
         "meta_store.py", "requirement_utils.py", "update-requirement.py"

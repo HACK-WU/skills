@@ -79,7 +79,7 @@ if [ "$MODE" = "scripts" ]; then
 
     count=0
     for f in "${FILES[@]}"; do
-        url="${RAW_BASE}/scripts/${f}"
+        url="${RAW_BASE}/scripts/requirement-mgr/${f}"
         dest="${DEST}/${f}"
         if download "$url" "$dest"; then
             echo "  [OK] ${f}"
