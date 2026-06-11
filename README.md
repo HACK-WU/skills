@@ -60,6 +60,8 @@ Windows 用户使用 PowerShell 版本：
 | `update-requirements.py` | 修改需求元数据（状态/标签/依赖/提交/变更记录），版本号自增 |
 | `delete-requirements.py` | 安全删除需求，反向依赖检查，级联清理引用，支持 dry-run |
 
+**详细使用指南**：[requirement-mgr-guide.md](./docs/requirement-mgr-guide.md)
+
 ## 设计流程
 
 这些技能可以串联使用，形成完整的设计-开发流程：

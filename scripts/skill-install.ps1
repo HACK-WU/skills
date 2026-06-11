@@ -6,7 +6,8 @@
 #   powershell -ExecutionPolicy Bypass -File skill-install.ps1 C:\projects\my-app -Skills
 # ============================================================
 param(
-    [Parameter(Position=0, Mandatory=$true)]
+    [Parameter(Position=0, Mandatory=$true, ParameterSetName="Scripts")]
+    [Parameter(Position=0, Mandatory=$true, ParameterSetName="Skills")]
     [string]$TargetPath,
 
     [Parameter(Mandatory=$true, ParameterSetName="Scripts")]
