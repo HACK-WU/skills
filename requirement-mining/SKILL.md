@@ -335,100 +335,153 @@ REQ-03 (注册转化提升)
 
 ### Step 8：落盘归档
 
-在 Step 7 输出报告后，**自主提示用户是否需要持久化**。
+在 Step 7 输出报告后，使用脚本将需求**注册到 meta.json** 并持久化文档。
 
-#### 8.1 检查存储配置
+#### 8.0 前提：环境检查
 
-检查项目中是否已配置存储位置（`.requirements/config`）：
+先确认项目中已有 `.requirements/scripts/` 脚本基础设施。检查 `.requirements/config` 和脚本目录是否存在：
 
-- **已配置**：读取配置，使用用户定义的路径
-- **未配置**：询问用户，给出默认建议
+- **已存在**：直接使用
+- **不存在**：提示用户"需求管理脚本尚未部署，请先执行 `mkdir -p .requirements/scripts` 并部署 CRUD 脚本"，无法进入 Step 8
+
+#### 8.1 判断是新建还是修改
+
+在持久化前，先查询 `meta.json` 判断该需求是否已存在：
+
+```
+uv run python .requirements/scripts/list-requirements.py --json
+```
+
+从 JSON 输出中搜索与当前需求匹配的条目（通过 feature 名称或 ID）。
+
+| 情况 | 判断依据 | 处理方式 |
+|------|----------|----------|
+| **新建** | 该需求在 meta.json 中不存在 | 进入 Step 8.2（创建） |
+| **修改** | 该需求已存在（ID 已知或特征匹配） | 进入 Step 8.3（更新） |
+
+#### 8.2 新建需求
+
+##### 8.2.1 提示确认
 
 ```text
-📁 需求报告持久化
+📁 需求持久化（新建）
 ━━━━━━━━━━━━━━━━
 
-需求分析已完成。是否将报告持久化到文件？
+需求分析已完成，将注册到 meta.json 并保存文档。
 
-存储位置未配置，请选择：
-1. 使用默认位置：.requirements/
-2. 自定义位置：[请输入路径]
+功能名称：{feature}
+标签：{tags}
+依赖：{depends_on}（如有）
+状态：已确认
 
-请选择后，我将保存报告。
+确认创建？[是/否]
 ```
 
-#### 8.2 确认持久化
+##### 8.2.2 注册到 meta.json
 
-用户选择存储位置后，展示即将保存的文件路径，等待确认：
+用户确认后，执行 `create-requirement.py` 创建目录并注册元数据：
+
+```
+uv run python .requirements/scripts/create-requirement.py \
+  --feature "{功能名称}" \
+  --tags "{逗号分隔标签}" \
+  [--depends-on "{REQ-001,REQ-002}"] \
+  --status 已确认
+```
+
+脚本会自动完成：目录创建、ID 自增、原子写入 `meta.json`。
+
+##### 8.2.3 写入需求文档
+
+脚本创建目录后，将 Step 7 的报告**提炼为结论性摘要**写入 `requirement.md`。文档顶部使用标准化 YAML frontmatter：
+
+```yaml
+---
+id: {脚本返回的 ID}
+feature: {功能名称}
+status: 已确认
+created: {YYYY-MM-DD}
+updated: {YYYY-MM-DD}
+version: 1
+tags: [{标签}]
+depends_on: [{依赖 ID}]
+author: AI
+document_type: requirement
+---
+```
+
+##### 8.2.4 验证
+
+创建完成后，使用 `list-requirements.py` 检查注册结果：
+
+```
+uv run python .requirements/scripts/list-requirements.py --id {REQ-NNN}
+```
+
+确认 ID、状态、标签、目录均正确。
+
+#### 8.3 修改已有需求
+
+##### 8.3.1 确认变更内容
 
 ```text
-即将保存到：{storage_path}/{YYYY-MM-DD}-{feature-name}/requirement.md
+📝 需求元数据更新
+━━━━━━━━━━━━━━━━
 
-确认保存？[是/否]
+需求 {REQ-NNN}（{功能名称}）已存在，将更新以下字段：
+
+- 状态：{旧状态} → {新状态}
+- 依赖：{变更说明}
+- 变更记录：{本次修改说明}
+
+确认更新？[是/否]
 ```
 
-**仅在用户确认后才执行写入。**
+##### 8.3.2 执行更新
 
-#### 8.3 写入文件
+根据实际变更内容，调用 `update-requirement.py`：
 
-将 Step 7 的报告**提炼为结论性摘要**后写入文件，添加元数据头。
+```
+# 状态变更
+uv run python .requirements/scripts/update-requirement.py {REQ-NNN} \
+  --status {新状态} \
+  --changelog "{变更说明}"
 
-持久化的是结论，不是过程。下游 skill 需要快速引用关键信息，而非阅读完整分析过程。
+# 依赖变更
+uv run python .requirements/scripts/update-requirement.py {REQ-NNN} \
+  --depends-on add {REQ-XXX}
 
-```markdown
----
-feature: {功能名称}
-created: {YYYY-MM-DD}
-status: 已确认
----
-
-# 需求摘要：{功能名称}
-
-## 核心诉求
-（一句话：这个功能要解决什么问题）
-
-## 需求形态
-（真实需求 / 还原后的需求）
-
-## 核心场景
-- 场景 1：[角色] 在 [条件] 下 [做什么]，[期望结果]
-- 场景 2：...
-
-## 根本性分析结论
-- 核心问题：...
-- 方案评估：情况 A/B/C + 关键理由
-- 建议：短期/长期
-
-## 需求清单
-| 优先级 | 需求 ID | 需求描述 | 验收标准 |
-|--------|--------|----------|----------|
-| P0     | REQ-01 | ...      | ...      |
-
-## 关键假设
-| 假设 | 验证状态 |
-|------|----------|
-| ... | 已验证/待验证 |
-
-## 非功能性约束
-- ...
-
-## 潜在风险
-- ...
+# 关联提交
+uv run python .requirements/scripts/update-requirement.py {REQ-NNN} \
+  --commit {git hash}
 ```
 
-**提炼规则**：
+然后更新需求文档 `requirement.md` 的内容和 frontmatter（同步 `updated`、`version`、`status` 字段）。
+
+##### 8.3.3 验证
+
+```
+uv run python .requirements/scripts/list-requirements.py --id {REQ-NNN}
+```
+
+#### 8.4 提炼规则（写入文档的内容）
+
+将 Step 7 的报告**提炼为结论性摘要**后写入 `requirement.md`：
+
 - 核心诉求：从"功能本质 + 深层动机"中提炼一句话
 - 核心场景：只保留已确认的场景，省略讨论过程
 - 根本性分析结论：只保留结论和理由，省略评估维度细节
-- 需求清单：只保留已确认的需求，省略远期需求
+- 需求清单：只保留已确认的需求
 - 关键假设：只保留未验证或高风险的假设
 
-#### 8.4 输出结果
+#### 8.5 输出结果
 
 ```text
-✅ 需求报告已保存
+✅ 需求已{创建/更新}
 
-📄 {storage_path}/{YYYY-MM-DD}-{feature-name}/requirement.md
+ID: {REQ-NNN}
+目录: {storage_path}/{date}-{feature}/
+文档: {storage_path}/{date}-{feature}/requirement.md
 
 下游 skill 可引用此文件：
 - design-craft：设计时参考需求背景和验收标准
@@ -436,17 +489,13 @@ status: 已确认
 - challenger：质疑时参考原始需求
 ```
 
-#### 8.5 存储配置持久化
+#### 8.6 存储配置首次初始化
 
-首次配置后，将存储位置写入 `.requirements/config`：
+首次使用时，如果 `.requirements/config` 不存在，创建之：
 
-```markdown
-# Requirements Config
-
-storage_path: {用户选择的路径}
 ```
-
-后续使用时自动读取，不再询问。
+storage_path=.requirements
+```
 
 ## 报告模板
 
@@ -525,6 +574,26 @@ storage_path: {用户选择的路径}
 ### 6.3 长期演进建议
 - [基于根因分析，建议的长期系统演进方向]
 ```
+
+> **持久化时的文档结构**：实际写入 `requirement.md` 时的格式为精简摘要（见 Step 8.4），而非上述完整报告模板。
+
+## 参考
+
+完整示例见 [references/example.md](references/example.md)
+
+## 行为边界
+
+- **效果导向**：只关注需求实现后的具体效果和用户体验，不关心代码实现、技术栈、架构设计
+- **不做价值判断，但做方案判断**：不评价"这个需求值不值得做"，但必须评价"这个方案能不能从根本上解决问题"
+- **不替代需求评审**：输出的是分析报告，不是最终方案。需要人工评审确认
+- **不编造不存在的信息**：推理必须基于用户原描述，不得凭空添加需求细节
+- **方案质疑要有逻辑链**：当指出方案治标不治本时，必须给出清晰的因果逻辑，不能凭感觉否定
+- **最终决定权归用户**：即使判定为"情况 C（治标不治本）"，用户仍可选择坚持原方案。遵从用户决策进行后续转译
+- **处理多需求混合**：如果用户一次性提出多个不相关的功能需求，先请用户挑一个最优先的深入挖掘，不要混在一起处理
+- **探索性需求引导**：当用户提出探索性需求时，必须先引导用户聚焦方向，再进行深入分析
+- **迭代限制**：假设验证迭代不超过 3 次，超过后建议用户重新描述需求
+- **元数据管理**：需求文档的 frontmatter 和 meta.json 必须通过脚本操作（`create-requirement.py` / `update-requirement.py`），禁止手动拼接路径写入。脚本保证原子性与并发安全
+- **持久化后验证**：任何创建或更新操作后，必须用 `list-requirements.py --id {REQ-NNN}` 验证结果
 
 ## 参考
 
