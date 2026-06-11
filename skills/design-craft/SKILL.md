@@ -489,14 +489,16 @@ flowchart LR
 
 检查项目中是否已配置存储位置（`.requirements/config`）：
 
-- **已配置**：读取 `storage_path`，设计文档存放在 `{storage_path}/{YYYY-MM-DD}-{feature-name}/design/`
+- **已配置**：读取 `storage_path`，设计文档存放在 `{storage_path}/{YYYY-MM-DD}-{功能名称}/design/`
 - **未配置**：询问用户，给出默认建议 `.requirements/`
 
 配置后自动创建目录结构，后续设计文档统一存放。
 
+**存储规范**：加载 `requirement-doc-store` skill 获取完整目录结构和文件命名规范。
+
 ### 多文档场景
 
-先落盘父文档，再按依赖拓扑序依次落盘子文档。全部写入后执行质量自检：
+先落盘父文档，再按依赖拓扑序依次落盘子文档。父文档存入 `design/DESIGN.md`，子文档存入 `design/` 目录。
 
 ```text
 ✅ 设计文档已生成

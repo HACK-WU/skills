@@ -18,6 +18,50 @@
       "commits": [],
       "data_flow": "data-flow.md",
       "report": ""
+    },
+    "2026-06-11-Skill 需求管理集成": {
+      "id": "REQ-002",
+      "feature": "Skill 需求管理集成",
+      "created": "2026-06-11",
+      "updated": "2026-06-11",
+      "status": "已确认",
+      "tags": [
+        "feat",
+        "tool",
+        "integration"
+      ],
+      "version": 1,
+      "depends_on": [
+        "REQ-001"
+      ],
+      "changelog": [
+        "初始创建"
+      ],
+      "commits": [],
+      "data_flow": "",
+      "report": ""
+    },
+    "2026-06-11-需求文档存储规范": {
+      "id": "REQ-003",
+      "feature": "需求文档存储规范",
+      "created": "2026-06-11",
+      "updated": "2026-06-11",
+      "status": "已确认",
+      "tags": [
+        "feat",
+        "tool",
+        "integration"
+      ],
+      "version": 1,
+      "depends_on": [
+        "REQ-001"
+      ],
+      "changelog": [
+        "初始创建"
+      ],
+      "commits": [],
+      "data_flow": "",
+      "report": ""
     }
   }
 }
