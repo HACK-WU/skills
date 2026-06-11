@@ -102,6 +102,38 @@ mkdir -p .requirements
 echo "storage_path=.requirements" > .requirements/config
 ```
 
+**配置文件模板**：
+
+创建 `.requirements/config` 文件，使用以下模板：
+
+```ini
+storage_path=.requirements
+
+# 需求功能分类配置
+# 多个分类用逗号分隔，例如：告警,监控,日志,权限
+# 默认值为空，表示不进行功能分类
+feature_categories=
+
+# 需求标签配置
+# tags 字段的可选值必须从此配置中选取，不能凭空创造
+# 多个标签用逗号分隔
+requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infra,bugfix,optimization,documentation
+```
+
+**配置说明**：
+
+| 配置项 | 说明 | 示例值 |
+|--------|------|--------|
+| `storage_path` | 需求文档存储路径 | `.requirements` |
+| `feature_categories` | 功能分类配置，多个分类用逗号分隔 | `告警,监控,日志,权限,安全,性能,用户体验,集成` |
+| `requirement_tags` | 需求标签配置，tags 字段必须从此配置中选取 | `feat,fix,refactor,tool,integration,security,performance,ux,infra` |
+
+**约束规则**：
+
+1. **标签来源约束**：tags 字段的值必须从 `requirement_tags` 配置中选取，不能凭空创造
+2. **功能分类约束**：必须包含一个功能分类标签，该标签必须从 `feature_categories` 配置中选取
+3. **配置优先级**：配置文件中的值优先于默认值
+
 **方式三：Windows PowerShell**
 ```powershell
 # 使用 PowerShell 安装脚本

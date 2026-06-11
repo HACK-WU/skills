@@ -1,1 +1,11 @@
 storage_path=.requirements
+
+# 需求功能分类配置
+# 多个分类用逗号分隔，例如：告警,监控,日志,权限
+# 默认值为空，表示不进行功能分类
+feature_categories=
+
+# 需求标签配置
+# tags 字段的可选值必须从此配置中选取，不能凭空创造
+# 多个标签用逗号分隔
+requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infra,bugfix,optimization,documentation
