@@ -4,10 +4,13 @@
 
 ## 快速安装
 
+###  安装 AI Skill 定义
 ```bash
-# 安装 AI Skill 定义
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | bash -s -- /path/to/your-project --skills
+```
 
+### 安装 CRUD 脚本（需求管理工具）
+```bash
 # 安装 CRUD 脚本（需求管理工具）
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | bash -s -- /path/to/your-project --scripts
 ```
