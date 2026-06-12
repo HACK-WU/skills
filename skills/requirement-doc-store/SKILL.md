@@ -93,9 +93,34 @@ description: >-
 
 ### Step 4：更新元数据（如需要）
 
-- 设计文档落盘后，更新 meta.json 的 `docs` 字段（添加文档路径和类型）
-- 实现报告落盘后，更新 meta.json 的 `docs` 字段（添加文档路径和类型）
-- 变更记录追加到 `changelog.md`
+文档落盘后，使用 `update-requirement.py` 更新 meta.json 的 `docs` 字段，**不要直接编辑 meta.json**：
+
+```bash
+# 添加关联文档
+uv run python scripts/requirement-mgr/update-requirement.py <REQ-ID> --docs add <path>,<type>
+
+# 示例：设计文档落盘后
+uv run python scripts/requirement-mgr/update-requirement.py REQ-001 --docs add design/DESIGN.md,design
+
+# 示例：实现报告落盘后
+uv run python scripts/requirement-mgr/update-requirement.py REQ-001 --docs add report.md,report
+```
+
+| 文档类型 | `--docs add` 参数 |
+|----------|--------------------|
+| 需求分析 | `requirement.md,requirement` |
+| 技术设计 | `design/DESIGN.md,design` |
+| 数据流/模型 | `design/data-flow.md,data_flow` |
+| 交互设计 | `design/interaction-design.md,design` |
+| 设计评审 | `design/design-review.md,design` |
+| Demo 验证 | `demo/verify-report.md,demo` |
+| 测试计划 | `test/test-plan.md,test` |
+| 测试报告 | `test/test-report.md,test` |
+| 代码审查 | `review/code-review.md,review` |
+| 质疑审查 | `review/challenge-report.md,review` |
+| 实现报告 | `report.md,report` |
+
+变更记录追加到 `changelog.md`（通过 `--changelog` 参数）。
 
 ## 行为边界
 
