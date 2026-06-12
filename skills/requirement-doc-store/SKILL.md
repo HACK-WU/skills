@@ -71,7 +71,7 @@ uv run python scripts/requirement-mgr/create-requirement.py \
 | 参数 | 必填 | 说明 | 示例 |
 |------|:---:|------|------|
 | `--feature` | ✅ | 功能名称（中文） | `"用户认证模块"` |
-| `--tags` | — | 标签，逗号分隔（默认 `feat`） | `feat,backend,security` |
+| `--tags` | — | 标签，逗号分隔（默认 `feat`） | `feat,security` |
 | `--depends-on` | — | 依赖的需求 ID | `REQ-001,REQ-002` |
 | `--status` | — | 初始状态（默认 `草案`） | `已确认` |
 
@@ -230,6 +230,8 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag set 
 - 标签必须从 `.requirements/config` 的 `requirement_tags` 配置中选取
 - 不能删除最后一个标签
 - 必须包含一个功能分类标签（从 `feature_categories` 配置中选取）
+- 功能分类标签唯一性：`feature_categories` 中的标签只能有一个，不能添加第二个
+- 功能分类标签变更限制：功能分类标签创建后不能删除或更改，如需更改分类必须删除并重新创建需求
 
 ### Step U5.2：更新功能名称
 
