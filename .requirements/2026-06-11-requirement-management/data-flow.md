@@ -30,9 +30,6 @@ document_type: data_flow
 erDiagram
     Config ||--|| Meta : "定义存储根路径"
     Meta ||--o{ Requirement : "包含多个需求的元数据"
-    Requirement ||--o| Design : "可有设计文档"
-    Requirement ||--o| DataFlow : "可有数据流图"
-    Requirement ||--o| Report : "可有实现报告"
     Requirement }o--o{ Requirement : "depends_on 引用 ID"
 
     Config {
@@ -54,8 +51,7 @@ erDiagram
         array depends_on "依赖列表"
         array changelog "变更记录"
         array commits "关联提交"
-        string data_flow "数据流图路径"
-        string report "实现报告路径"
+        array docs "关联文档列表"
     }
 ```
 
@@ -100,8 +96,7 @@ erDiagram
 
 | 字段 | 类型 | 约束 | 生成/维护 | 说明 |
 |------|------|------|-----------|------|
-| `data_flow` | string | 可选 | AI / 用户 | 数据流图文档路径，初始 = `""` |
-| `report` | string | 可选 | AI / 用户 | 实现报告路径，初始 = `""` |
+| `docs` | array | 可选 | AI / 用户 | 关联文档列表，每项包含 `path`（文档路径）和 `type`（文档类型），初始 = `[]` |
 
 #### 状态枚举
 
@@ -177,8 +172,9 @@ flowchart LR
         "2026-06-11 v3: 新增并发安全设计"
       ],
       "commits": [],
-      "data_flow": "data-flow.md",
-      "report": ""
+      "docs": [
+        {"path": "data-flow.md", "type": "data_flow"}
+      ]
     }
   }
 }
@@ -198,8 +194,7 @@ flowchart LR
 | `depends_on` | `--depends-on` | 展示 / `--deps` | `add` / `remove` / `set` | 清理引用 | 校验存在性 + 无循环 |
 | `changelog` | 自动 `["初始创建"]` | 展示 | `--changelog` 追加 | — | 格式：`日期 v{N}: 内容` |
 | `commits` | 自动 = `[]` | 展示 | `--commit` 追加 | — | 仅追加，不删除 |
-| `data_flow` | 自动 = `""` | 展示 | `--data-flow` | — | 数据流文档路径 |
-| `report` | 自动 = `""` | 展示 | `--report` | — | 实现报告路径 |
+| `docs` | 自动 = `[]` | 展示 | `--docs add/remove/set` | — | 关联文档列表，支持增删改 |
 
 ## 5. 脚本清单与功能规格
 
@@ -207,7 +202,7 @@ flowchart LR
 |------|----------|-------------|
 | `list-requirements.py` | 查询列表 + 指定需求详情 + 依赖展开 + 反向依赖 | `--id` / `--status` / `--tag` / `--deps` / `--rev-deps` / `--deps-depth` / `--columns` / `--json` |
 | `create-requirement.py` | 新建需求 + ID 自增 + 依赖校验 | `--feature` / `--tags` / `--depends-on` / `--status` / `--dir-name` |
-| `update-requirement.py` | 修改字段 + 版号自增 + 循环依赖检测 + 标签管理 | `<REQ-ID>` / `--status` / `--tag add/remove/set` / `--depends-on add/remove/set` / `--commit` / `--changelog` |
+| `update-requirement.py` | 修改字段 + 版号自增 + 循环依赖检测 + 标签管理 | `<REQ-ID>` / `--status` / `--tag add/remove/set` / `--depends-on add/remove/set` / `--commit` / `--docs add/remove/set` / `--changelog` |
 | `delete-requirement.py` | 安全删除 + 反向依赖检查 + 级联清理引用 + 预演模式 | `<REQ-ID>` / `--force` / `--dry-run` |
 
 ### 各脚本详细功能
@@ -256,7 +251,7 @@ flowchart LR
 自动行为：
   ① 读取 meta.json，计算 id = "REQ-" + (最大编号 + 1)，首条为 REQ-001
   ② 创建目录 {date}-{feature}/（确保不冲突）
-  ③ 写入 meta.json（加锁 + 原子写）
+  ③ 写入 meta.json（加锁 + 原子写），docs 字段初始化为 `[]`
   ④ 输出：ID、目录名、meta.json 路径
 ```
 
@@ -278,8 +273,9 @@ flowchart LR
   --depends-on remove REQ-003  移除依赖（不存在时幂等）
   --depends-on set REQ-001,002 覆盖依赖列表
   --commit abc1234             追加 commit hash（去重，已存在则不重复添加）
-  --data-flow data-flow.md     设置数据流图路径
-  --report report.md           设置实现报告路径
+  --docs add path,type         添加关联文档（路径和类型，逗号分隔）
+  --docs remove path           移除关联文档（按路径匹配）
+  --docs set path1,type1;path2,type2  覆盖整个文档列表
   --changelog "增加了xxx"      追加变更记录
 
 自动行为：

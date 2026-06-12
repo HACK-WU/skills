@@ -16,8 +16,9 @@
         "初始创建"
       ],
       "commits": [],
-      "data_flow": "data-flow.md",
-      "report": ""
+      "docs": [
+        {"path": "data-flow.md", "type": "data_flow"}
+      ]
     },
     "2026-06-11-Skill 需求管理集成": {
       "id": "REQ-002",
@@ -38,8 +39,7 @@
         "初始创建"
       ],
       "commits": [],
-      "data_flow": "",
-      "report": ""
+      "docs": []
     },
     "2026-06-11-需求文档存储规范": {
       "id": "REQ-003",
@@ -60,8 +60,7 @@
         "初始创建"
       ],
       "commits": [],
-      "data_flow": "",
-      "report": ""
+      "docs": []
     }
   }
 }

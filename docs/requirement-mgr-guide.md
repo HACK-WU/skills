@@ -204,9 +204,6 @@ graph TB
 erDiagram
     Config ||--|| Meta : "定义存储路径"
     Meta ||--o{ Requirement : "包含多个需求"
-    Requirement ||--o| Design : "设计文档"
-    Requirement ||--o| DataFlow : "数据流图"
-    Requirement ||--o| Report : "实现报告"
     Requirement }o--o{ Requirement : "依赖关系"
     
     Config {
@@ -226,8 +223,7 @@ erDiagram
         array depends_on "依赖的 REQ-ID"
         array changelog "变更记录"
         array commits "关联提交"
-        string data_flow "数据流文档路径"
-        string report "报告路径"
+        array docs "关联文档列表"
     }
 ```
 
@@ -665,8 +661,9 @@ flowchart TB
         "2026-06-11 v3: 新增并发安全设计"
       ],
       "commits": [],
-      "data_flow": "data-flow.md",
-      "report": ""
+      "docs": [
+        {"path": "data-flow.md", "type": "data_flow"}
+      ]
     }
   }
 }
@@ -685,8 +682,7 @@ flowchart TB
 | `depends_on` | 可选 | 展示/展开+反向 | 增/删/改+循环检测 | 清理引用 |
 | `changelog` | ["初始创建"] | 展示 | 追加 | — |
 | `commits` | [] | 展示 | 追加+去重 | — |
-| `data_flow` | "" | 展示 | 设置 | — |
-| `report` | "" | 展示 | 设置 | — |
+| `docs` | [] | 展示 | 增/删/改 | — |
 
 ---
 

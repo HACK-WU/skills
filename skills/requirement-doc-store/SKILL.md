@@ -93,8 +93,8 @@ description: >-
 
 ### Step 4：更新元数据（如需要）
 
-- 设计文档落盘后，更新 meta.json 的 `data_flow` 字段
-- 实现报告落盘后，更新 meta.json 的 `report` 字段
+- 设计文档落盘后，更新 meta.json 的 `docs` 字段（添加文档路径和类型）
+- 实现报告落盘后，更新 meta.json 的 `docs` 字段（添加文档路径和类型）
 - 变更记录追加到 `changelog.md`
 
 ## 行为边界
