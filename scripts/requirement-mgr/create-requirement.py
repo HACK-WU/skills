@@ -122,8 +122,7 @@ def main():
                 "depends_on": depends_on,
                 "changelog": ["初始创建"],
                 "commits": [],
-                "data_flow": "",
-                "report": "",
+                "docs": [],
             }
             requirements[dir_name] = entry
             ms.save(data)

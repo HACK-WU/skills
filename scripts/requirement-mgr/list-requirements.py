@@ -22,7 +22,7 @@ from requirement_utils import find_req, find_rev_deps
 DEFAULT_COLUMNS = ["id", "feature", "status", "tags", "version", "updated"]
 ALL_COLUMNS = [
     "id", "feature", "status", "tags", "version",
-    "created", "updated", "depends_on",
+    "created", "updated", "depends_on", "docs", "commits",
 ]
 
 
@@ -52,7 +52,10 @@ def _build_table(rows: list[dict], columns: list[str]) -> str:
         for i, col in enumerate(columns):
             val = row.get(col)
             if isinstance(val, list):
-                val = ", ".join(val)
+                if val and isinstance(val[0], dict):
+                    val = ", ".join(f"{d.get('path','?')}({d.get('type','?')})" for d in val)
+                else:
+                    val = ", ".join(val)
             elif val is None:
                 val = ""
             else:
@@ -72,7 +75,10 @@ def _build_table(rows: list[dict], columns: list[str]) -> str:
         for col in columns:
             val = row.get(col)
             if isinstance(val, list):
-                val = ", ".join(val)
+                if val and isinstance(val[0], dict):
+                    val = ", ".join(f"{d.get('path','?')}({d.get('type','?')})" for d in val)
+                else:
+                    val = ", ".join(val)
             elif val is None:
                 val = ""
             else:
@@ -123,6 +129,17 @@ def _format_detail(req: dict, requirements: dict, args) -> str:
         lines.append(f"│ {_widen(label, 12)} │ {_widen(value, 42)} │")
 
     lines.append(f"├{'─' * 30}┴{'─' * 29}┤")
+
+    # 关联文档
+    docs = req.get("docs", [])
+    if docs:
+        title = f"关联文档（{len(docs)} 项）："
+        title_w = sum(2 if ord(c) > 127 else 1 for c in title)
+        lines.append(f"│ {title}{' ' * (56 - title_w)} │")
+        for d in docs:
+            dt = d.get("type", "?")
+            dp = d.get("path", "")
+            lines.append(f"│   [{_widen(dt, 12)}] {_widen(dp[:40], 40)} │")
 
     # 变更记录
     changelog = req.get("changelog", [])

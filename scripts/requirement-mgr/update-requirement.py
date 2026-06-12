@@ -31,8 +31,9 @@ def main():
     parser.add_argument("--depends-on", nargs=2, action="append", dest="depends_on_ops",
                         help="依赖操作: add/remove/set IDS（逗号分隔）")
     parser.add_argument("--commit", help="追加 git commit hash")
-    parser.add_argument("--data-flow", help="设置数据流图路径")
-    parser.add_argument("--report", help="设置实现报告路径")
+    parser.add_argument("--docs", nargs=2, action="append", dest="docs_ops",
+                        metavar=("OP", "VALUE"),
+                        help="文档操作: add PATH,TYPE / remove PATH / set PATH1,TYPE1;PATH2,TYPE2")
     parser.add_argument("--changelog", help="追加变更记录")
     args = parser.parse_args()
 
@@ -70,6 +71,29 @@ def main():
         for op, value in args.tag:
             if op == "remove" and len(current_tags) <= 1:
                 print("错误: 不能删除最后一个标签", file=sys.stderr)
+                sys.exit(1)
+
+    # docs 操作校验
+    if args.docs_ops:
+        for op, value in args.docs_ops:
+            if op == "add":
+                parts = value.split(",")
+                if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
+                    print("错误: --docs add 格式: PATH,TYPE（两者均不可为空）", file=sys.stderr)
+                    sys.exit(1)
+            elif op == "remove":
+                if not value.strip():
+                    print("错误: --docs remove 需要指定路径", file=sys.stderr)
+                    sys.exit(1)
+            elif op == "set":
+                docs_specs = [s.strip() for s in value.split(";") if s.strip()]
+                for spec in docs_specs:
+                    parts = spec.split(",")
+                    if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
+                        print(f"错误: --docs set 格式错误: {spec}（应为 PATH,TYPE，两者不可为空）", file=sys.stderr)
+                        sys.exit(1)
+            else:
+                print(f"错误: 未知的 docs 操作 '{op}'，支持 add/remove/set", file=sys.stderr)
                 sys.exit(1)
 
     # depends_on 校验
@@ -154,13 +178,32 @@ def main():
                     req["commits"].append(args.commit)
                     changes += 1
 
-            # data-flow / report
-            if args.data_flow is not None:
-                req["data_flow"] = args.data_flow
-                changes += 1
-            if args.report is not None:
-                req["report"] = args.report
-                changes += 1
+            # docs add/remove/set
+            if args.docs_ops:
+                req.setdefault("docs", [])
+                for op, value in args.docs_ops:
+                    if op == "add":
+                        parts = value.split(",")
+                        doc_path = parts[0].strip()
+                        doc_type = parts[1].strip()
+                        # 存在则跳过（幂等）
+                        if not any(d["path"] == doc_path for d in req["docs"]):
+                            req["docs"].append({"path": doc_path, "type": doc_type})
+                            changes += 1
+                    elif op == "remove":
+                        target_path = value.strip()
+                        before = len(req["docs"])
+                        req["docs"] = [d for d in req["docs"] if d["path"] != target_path]
+                        if len(req["docs"]) < before:
+                            changes += 1
+                    elif op == "set":
+                        docs_specs = [s.strip() for s in value.split(";") if s.strip()]
+                        new_docs = []
+                        for spec in docs_specs:
+                            parts = spec.split(",")
+                            new_docs.append({"path": parts[0].strip(), "type": parts[1].strip()})
+                        req["docs"] = new_docs
+                        changes += 1
 
             if changes == 0 and not args.changelog:
                 print("提示: 未指定任何要修改的字段", file=sys.stderr)
