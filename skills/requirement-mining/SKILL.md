@@ -461,61 +461,14 @@ REQ-03 (注册转化提升)
 
 #### 8.1 选项1：落盘归档
 
-用户选择落盘归档时，执行以下操作：
+用户选择落盘归档时，引导用户确认落盘内容，然后按 **`requirement-doc-store`** skill 的「创建场景」流程执行：
 
-**8.1.1 确认落盘**
-```text
-📁 需求文档落盘
-━━━━━━━━━━━━━━━━
+1. 确认落盘：提示用户落盘内容为需求挖掘报告（`requirement.md`），确认后继续
+2. 创建需求：使用 `create-requirement.py` 创建目录并注册到 meta.json
+3. 写入文档：使用 `write_to_file` 按 frontmatter 模板写入 `requirement.md`
+4. 验证：使用 `list-requirements.py --id {REQ-NNN}` 确认
 
-需求分析已完成，是否将需求文档落盘到 .requirements/ 目录？
-
-落盘内容：需求挖掘报告（requirement.md）
-
-确认落盘？[是/否]
-```
-
-**8.1.2 执行落盘**
-
-用户确认后，进行落盘操作：
-
-1. **创建需求目录**：使用 `create-requirement.py` 创建目录并注册到 meta.json
-2. **写入文档**：将报告提炼为结论性摘要，按 `requirement-doc-store` skill 规范写入 `requirement.md`
-
-**创建需求**：
-```
-uv run python scripts/requirement-mgr/create-requirement.py \
-  --feature "{功能名称}" \
-  --tags "{逗号分隔标签}" \
-  [--depends-on "{REQ-XXX}"] \
-  --status 已确认
-```
-
-**写入文档**：
-```yaml
----
-id: {REQ-NNN}                          # 由 create-requirement.py 自动生成
-feature: {功能名称}
-status: 已确认                          # 可选值：草案、已确认、设计中、实施中、已完成、已取消
-created: {YYYY-MM-DD}
-updated: {YYYY-MM-DD}
-version: 1
-tags: [{标签}]                          # 标签必须从 .requirements/config 中的 requirement_tags 配置中选取
-                                       # 必须包含一个功能分类标签（从 feature_categories 配置中选取）
-                                       # 常见值：feat, fix, refactor, tool, integration, security, performance, ux, infra 等
-depends_on: [{依赖 ID}]                 # 依赖的需求 ID 列表，用于：
-                                       # - 识别需求间先后顺序（如 REQ-002 依赖 REQ-001）
-                                       # - 脚本自动做循环依赖检测
-                                       # - 反向查询"哪些需求依赖了我"
-author: AI
-document_type: requirement
----
-```
-
-**验证**：
-```
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
-```
+> 详细步骤、frontmatter 模板和脚本参数见 `requirement-doc-store` skill。
 
 #### 8.2 选项2：进入需求拆分
 
