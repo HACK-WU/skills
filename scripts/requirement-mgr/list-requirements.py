@@ -43,6 +43,8 @@ def _build_table(rows: list[dict], columns: list[str]) -> str:
         "created": "创建日期",
         "updated": "更新日期",
         "depends_on": "依赖",
+        "docs": "关联文档",
+        "commits": "关联提交",
     }
     header_row = [headers.get(c, c) for c in columns]
 
@@ -176,6 +178,7 @@ def main():
     parser.add_argument("--id", help="精确匹配需求 ID")
     parser.add_argument("--status", help="按状态筛选")
     parser.add_argument("--tag", action="append", help="按标签筛选（可重复，AND 关系）")
+    parser.add_argument("--category", help="按功能分类筛选")
     parser.add_argument("--from", dest="date_from", help="更新日期起 (YYYY-MM-DD)")
     parser.add_argument("--to", dest="date_to", help="更新日期止 (YYYY-MM-DD)")
     parser.add_argument("--search", help="模糊搜索功能名称")
@@ -213,6 +216,15 @@ def main():
         if args.tag:
             req_tags = req.get("tags", [])
             if not all(t in req_tags for t in args.tag):
+                continue
+        # --category
+        if args.category:
+            # 从 dir_name 中提取 category（格式：{category}/{date}-{feature}）
+            parts = dir_name.split("/")
+            if len(parts) < 2:
+                # 旧格式需求不属于任何分类
+                continue
+            if parts[0] != args.category:
                 continue
         # --from / --to
         updated = req.get("updated", "")

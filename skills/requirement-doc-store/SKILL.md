@@ -25,8 +25,8 @@ description: >-
 
 | 配置项 | 约束规则 | 示例 |
 |--------|----------|------|
-| `feature_categories` | 功能分类标签，多个分类用逗号分隔。必须包含一个功能分类标签 | `告警,监控,日志,权限` |
-| `requirement_tags` | 标签可选值，必须从此配置中选取 | `feat,fix,refactor,tool` |
+| `feature_categories` | 功能分类标签，多个分类用逗号分隔。必须包含一个功能分类标签 | `security,performance,integration` |
+| `requirement_tags` | 标签可选值，必须从此配置中选取 | `feat,fix,refactor,tool,security,...` |
 
 **约束验证**：
 - `--tags` 或 `--tag add/set` 操作时，标签必须来自 `requirement_tags` 配置
@@ -41,7 +41,7 @@ description: >-
 
 | 场景 | 判别条件 | 处理方式 |
 |------|----------|----------|
-| **创建** | 需求目录不存在（`{storage_path}/{date}-{feature}/` 不存在） | 先用 `create-requirement.py` 创建目录 + 注册 meta.json，再写入文档 |
+| **创建** | 需求目录不存在（`{storage_path}/{category}/{date}-{feature}/` 不存在） | 先用 `create-requirement.py` 创建目录 + 注册 meta.json，再写入文档 |
 | **更新** | 需求目录已存在，meta.json 中已有该条目 | 直接写入/覆盖文档，用 `update-requirement.py --docs add` 注册关联 |
 | **删除** | 需求目录已存在，需要废弃或清理 | 使用 `delete-requirement.py` 删除条目和目录 |
 
@@ -77,7 +77,9 @@ uv run python scripts/requirement-mgr/create-requirement.py \
 
 **自动填充**：`id`（自增）、`created`/`updated`（当前日期）、`version`（=1）、`changelog`（`["初始创建"]`）、`commits`（`[]`）、`docs`（`[]`）。
 
-目录名自动生成为 `{YYYY-MM-DD}-{feature前20字}/`。
+目录名自动生成为 `{YYYY-MM-DD}-{feature前20字}/`，存储路径为 `{storage_path}/{feature_category}/{目录名}/`。
+
+**meta.json 键名格式**：`{feature_category}/{目录名}`（如 `security/2026-06-12-用户认证模块`），用于定位需求目录。
 
 ### Step C3：写入文档
 
@@ -303,23 +305,33 @@ uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN} --force
 ## 目录结构
 
 ```
-{功能名称}/
-├── requirement.md              # 需求分析报告
-├── report.md                   # 实现报告
-├── design/
-│   ├── DESIGN.md               # 技术设计文档
-│   ├── data-flow.md            # 数据流/数据模型
-│   ├── interaction-design.md   # 交互设计
-│   └── design-review.md        # 设计评审报告
-├── demo/
-│   ├── verify-report.md        # 验证报告
-│   └── [demo 代码文件]
-├── test/
-│   ├── test-plan.md            # 测试计划
-│   └── test-report.md          # 测试报告
-└── review/
-    ├── code-review.md          # 代码审查报告
-    └── challenge-report.md     # 质疑/二次审查报告
+{feature_category}/
+└── {date}-{功能名称}/
+    ├── requirement.md              # 需求分析报告
+    ├── report.md                   # 实现报告
+    ├── design/
+    │   ├── DESIGN.md               # 技术设计文档
+    │   ├── data-flow.md            # 数据流/数据模型
+    │   ├── interaction-design.md   # 交互设计
+    │   └── design-review.md        # 设计评审报告
+    ├── demo/
+    │   ├── verify-report.md        # 验证报告
+    │   └── [demo 代码文件]
+    ├── test/
+    │   ├── test-plan.md            # 测试计划
+    │   └── test-report.md          # 测试报告
+    └── review/
+        ├── code-review.md          # 代码审查报告
+        └── challenge-report.md     # 质疑/二次审查报告
+```
+
+**示例**：
+```
+security/
+└── 2026-06-12-用户认证模块/
+    ├── requirement.md
+    └── design/
+        └── DESIGN.md
 ```
 
 ## 存储路径映射
@@ -380,6 +392,9 @@ uv run python scripts/requirement-mgr/list-requirements.py --status {状态}
 
 # 按标签筛选（可重复，AND 关系）
 uv run python scripts/requirement-mgr/list-requirements.py --tag {标签1} --tag {标签2}
+
+# 按功能分类筛选
+uv run python scripts/requirement-mgr/list-requirements.py --category {feature_category}
 
 # 按日期范围筛选
 uv run python scripts/requirement-mgr/list-requirements.py --from {YYYY-MM-DD} --to {YYYY-MM-DD}

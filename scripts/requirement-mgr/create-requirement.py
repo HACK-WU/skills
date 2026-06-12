@@ -52,9 +52,33 @@ def main():
     try:
         cl = ConfigLoader()
         storage_root = cl.read()
+        feature_categories = cl.get_feature_categories()
+        requirement_tags = cl.get_requirement_tags()
     except (FileNotFoundError, ValueError) as e:
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # 标签验证
+    category_tags = []
+
+    # 1. 验证标签来源（必须来自 requirement_tags 配置）
+    if requirement_tags:
+        invalid_tags = [t for t in tags if t not in requirement_tags]
+        if invalid_tags:
+            print(f"错误: 标签 {invalid_tags} 不在 requirement_tags 配置中", file=sys.stderr)
+            print(f"  允许的标签: {', '.join(requirement_tags)}", file=sys.stderr)
+            sys.exit(1)
+    
+    # 2. 验证功能分类标签（如果配置了 feature_categories）
+    if feature_categories:
+        category_tags = [t for t in tags if t in feature_categories]
+        if len(category_tags) == 0:
+            print(f"错误: 必须包含一个功能分类标签", file=sys.stderr)
+            print(f"  功能分类标签: {', '.join(feature_categories)}", file=sys.stderr)
+            sys.exit(1)
+        elif len(category_tags) > 1:
+            print(f"错误: 功能分类标签只能有一个，当前有: {', '.join(category_tags)}", file=sys.stderr)
+            sys.exit(1)
 
     ms = MetaStore(storage_root)
 
@@ -69,6 +93,9 @@ def main():
             print(f"错误: 依赖需求 {rid} 不存在", file=sys.stderr)
             sys.exit(1)
 
+    # 提取功能分类标签
+    category = category_tags[0] if category_tags else ""
+    
     # 生成目录名
     today = date.today().isoformat()
     if args.dir_name:
@@ -77,14 +104,20 @@ def main():
         safe_feature = feature[:20]
         dir_name = f"{today}-{safe_feature}"
 
-    dir_path = storage_root / dir_name
+    # 目录路径：{storage_root}/{category}/{dir_name}
+    if category:
+        dir_path = storage_root / category / dir_name
+    else:
+        dir_path = storage_root / dir_name
 
     # 加锁 + 原子写入 + 创建目录
     meta_path = storage_root / "meta.json"
 
-    # 确保 .requirements 目录存在（meta.json 可能不存在）
+    # 确保目录结构存在
     if not storage_root.exists():
         storage_root.mkdir(parents=True, exist_ok=True)
+    if category:
+        (storage_root / category).mkdir(parents=True, exist_ok=True)
 
     try:
         with FileLock(str(meta_path)):
@@ -124,7 +157,12 @@ def main():
                 "commits": [],
                 "docs": [],
             }
-            requirements[dir_name] = entry
+            # 使用包含 category 的路径作为键名
+            if category:
+                meta_key = f"{category}/{dir_name}"
+            else:
+                meta_key = dir_name
+            requirements[meta_key] = entry
             ms.save(data)
 
     except TimeoutError as e:

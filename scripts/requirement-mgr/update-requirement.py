@@ -43,6 +43,8 @@ def main():
     try:
         cl = ConfigLoader()
         storage_root = cl.read()
+        feature_categories = cl.get_feature_categories()
+        requirement_tags = cl.get_requirement_tags()
     except (FileNotFoundError, ValueError) as e:
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(1)
@@ -65,13 +67,59 @@ def main():
         print(f"错误: 无效状态 '{args.status}'", file=sys.stderr)
         sys.exit(1)
 
-    # tag remove 最后一个
+    # tag 操作校验
     current_tags = list(req.get("tags", []))
+    current_category_tag = next((t for t in current_tags if t in feature_categories), None) if feature_categories else None
     if args.tag:
         for op, value in args.tag:
-            if op == "remove" and len(current_tags) <= 1:
-                print("错误: 不能删除最后一个标签", file=sys.stderr)
-                sys.exit(1)
+            if op == "remove":
+                if len(current_tags) <= 1:
+                    print("错误: 不能删除最后一个标签", file=sys.stderr)
+                    sys.exit(1)
+                # 功能分类标签不得删除（目录位置依赖此标签）
+                if feature_categories and value in feature_categories:
+                    print(f"错误: 不能删除功能分类标签 '{value}'，目录位置依赖此标签", file=sys.stderr)
+                    print(f"  如需更改分类，请删除并重新创建需求", file=sys.stderr)
+                    sys.exit(1)
+            elif op == "add":
+                # 验证标签来源
+                if requirement_tags and value not in requirement_tags:
+                    print(f"错误: 标签 '{value}' 不在 requirement_tags 配置中", file=sys.stderr)
+                    print(f"  允许的标签: {', '.join(requirement_tags)}", file=sys.stderr)
+                    sys.exit(1)
+                # 验证功能分类标签唯一性
+                if feature_categories and value in feature_categories:
+                    if any(t in feature_categories for t in current_tags):
+                        print(f"错误: 已存在功能分类标签，不能添加另一个功能分类标签 '{value}'", file=sys.stderr)
+                        sys.exit(1)
+            elif op == "set":
+                new_tags = [t.strip() for t in value.split(",") if t.strip()]
+                if not new_tags:
+                    print("错误: --tag set 不能设置为空", file=sys.stderr)
+                    sys.exit(1)
+                # 验证标签来源
+                if requirement_tags:
+                    invalid_tags = [t for t in new_tags if t not in requirement_tags]
+                    if invalid_tags:
+                        print(f"错误: 标签 {invalid_tags} 不在 requirement_tags 配置中", file=sys.stderr)
+                        print(f"  允许的标签: {', '.join(requirement_tags)}", file=sys.stderr)
+                        sys.exit(1)
+                # 验证功能分类标签
+                if feature_categories:
+                    new_category_tags = [t for t in new_tags if t in feature_categories]
+                    if len(new_category_tags) == 0:
+                        print(f"错误: 必须包含一个功能分类标签", file=sys.stderr)
+                        print(f"  功能分类标签: {', '.join(feature_categories)}", file=sys.stderr)
+                        sys.exit(1)
+                    elif len(new_category_tags) > 1:
+                        print(f"错误: 功能分类标签只能有一个，当前有: {', '.join(new_category_tags)}", file=sys.stderr)
+                        sys.exit(1)
+                    # 功能分类标签变更会导致目录位置不匹配，拒绝操作
+                    new_category = new_category_tags[0]
+                    if current_category_tag and new_category != current_category_tag:
+                        print(f"错误: 不能更改功能分类标签（'{current_category_tag}' → '{new_category}'），目录位置依赖此标签", file=sys.stderr)
+                        print(f"  如需更改分类，请删除并重新创建需求", file=sys.stderr)
+                        sys.exit(1)
 
     # docs 操作校验
     if args.docs_ops:

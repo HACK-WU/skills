@@ -122,6 +122,11 @@ def main():
             try:
                 if dir_path.exists():
                     shutil.rmtree(dir_path)
+                # 清理空的分类目录
+                if "/" in dir_name:
+                    category_dir = dir_path.parent
+                    if category_dir != storage_root and category_dir.exists() and not any(category_dir.iterdir()):
+                        category_dir.rmdir()
             except OSError as e:
                 print(f"警告: 目录删除失败 ({e})，请手动清理: {dir_path}", file=sys.stderr)
 

@@ -1,16 +1,17 @@
 {
   "requirements": {
-    "2026-06-11-requirement-management": {
+    "security/2026-06-11-requirement-management": {
       "id": "REQ-001",
       "feature": "需求管理脚本系统",
       "created": "2026-06-11",
       "updated": "2026-06-12",
       "status": "实施中",
       "tags": [
-        "feat",
-        "tool"
+        "tool",
+        "security",
+        "feat"
       ],
-      "version": 4,
+      "version": 8,
       "depends_on": [],
       "changelog": [
         "初始创建"
@@ -23,7 +24,7 @@
         }
       ]
     },
-    "2026-06-11-Skill 需求管理集成": {
+    "integration/2026-06-11-Skill 需求管理集成": {
       "id": "REQ-002",
       "feature": "Skill 需求管理集成",
       "created": "2026-06-11",
@@ -44,7 +45,7 @@
       "commits": [],
       "docs": []
     },
-    "2026-06-11-需求文档存储规范": {
+    "integration/2026-06-11-需求文档存储规范": {
       "id": "REQ-003",
       "feature": "需求文档存储规范",
       "created": "2026-06-11",
