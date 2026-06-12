@@ -28,13 +28,13 @@ document_type: requirement
 | 优先级 | 需求 ID | 需求描述 | 预期效果 | 依赖 |
 |:---:|--------|----------|----------|------|
 | P0 | REQ-002-01 | design-craft 集成 | 设计文档写入 `{dir}/design/`，状态→设计中 | REQ-001 |
-| P0 | REQ-002-02 | data-flow-model 集成 | 数据流文档写入 `{dir}/data-flow.md`，回写路径 | REQ-001 |
+| P0 | REQ-002-02 | data-flow-model 集成 | 数据流文档写入 `{dir}/design/data-flow.md`，回写路径 | REQ-001 |
 | P0 | REQ-002-03 | implementation-report 集成 | 实现报告写入 `{dir}/report.md`，状态→已完成 | REQ-001 |
 | P1 | REQ-002-04 | work-breakdown 集成 | 工作项清单写入需求目录 | REQ-001 |
 | P1 | REQ-002-05 | interaction-design 集成 | 交互设计文档写入需求目录 | REQ-001 |
 | P1 | REQ-002-06 | design-review 集成 | 评审结果关联到需求 changelog | REQ-001 |
 | P2 | REQ-002-07 | code-review / challenger 集成 | 读取需求上下文作为 review 参照 | REQ-001 |
-| P2 | REQ-002-08 | demo-verify 集成 | 验证 demo 代码写入 `{dir}/demo/`，验证结果写入 `{dir}/demo/result.md` | REQ-001 |
+| P2 | REQ-002-08 | demo-verify 集成 | 验证 demo 代码写入 `{dir}/demo/`，验证结果写入 `{dir}/demo/verify-report.md` | REQ-001 |
 
 ## 需求依赖图
 
@@ -67,16 +67,16 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-NNN --deps
 # 3. 回写文档路径和状态
 # --docs add PATH,TYPE：追加文档记录到 meta.json 的 docs 数组
 uv run python scripts/requirement-mgr/update-requirement.py REQ-NNN \
-  --docs add data-flow.md,data_flow --status 设计中
+  --docs add design/data-flow.md,data_flow --status 设计中
 
 # 其他写入型示例：
-# design-craft → --docs add design/main.md,design --status 设计中
+# design-craft → --docs add design/DESIGN.md,design --status 设计中
 # implementation-report → --docs add report.md,report --status 已完成 --commit abc1234
 ```
 
-### 读取型（消费需求上下文）
+### 读写型（先读取需求上下文，后写入审查报告）
 
-code-review, challenger, design-review, expert-panel
+design-review, code-review, challenger, expert-panel
 
 ```bash
 # 获取需求背景
@@ -93,13 +93,13 @@ create (requirement-mining)
        │
        ▼
 data-flow-model
-  ├─ docs += [{path: "data-flow.md", type: "data_flow"}]
-  └─ 写入 data-flow.md
+  ├─ docs += [{path: "design/data-flow.md", type: "data_flow"}]
+  └─ 写入 design/data-flow.md
        │
        ▼
 design-craft
   ├─ status = "设计中"
-  └─ 写入 design/*.md → docs += [{path: "design/main.md", type: "design"}]
+  └─ 写入 design/*.md → docs += [{path: "design/DESIGN.md", type: "design"}]
        │
        ▼
 开发实现

@@ -451,11 +451,11 @@ uv run python scripts/requirement-mgr/list-requirements.py --no-color
 | implementation-report | P0 | 写入型 | `report.md` |
 | work-breakdown | P1 | 写入型 | `design/work-breakdown.md` |
 | interaction-design | P1 | 写入型 | `design/interaction-design.md` |
-| design-review | P1 | 写入型 | `design/design-review.md` |
-| code-review | P2 | 读取型 | `review/code-review.md` |
-| challenger | P2 | 读取型 | `review/challenge-report.md` |
+| design-review | P1 | 读写型 | `design/design-review.md` |
+| code-review | P2 | 读写型 | `review/code-review.md` |
+| challenger | P2 | 读写型 | `review/challenge-report.md` |
 | demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |
-| expert-panel | P2 | 读取型 | `review/expert-panel.md` |
+| expert-panel | P2 | 读写型 | `review/expert-panel.md` |
 
 **写入型**：skill 产出文档后自动调用 `update-requirement.py --docs add` 注册并更新状态。
-**读取型**：skill 执行前自动调用 `list-requirements.py` 获取需求上下文作为参照，完成后写入报告。
+**读写型**：skill 执行前自动调用 `list-requirements.py` 获取需求上下文作为参照，完成后写入报告。

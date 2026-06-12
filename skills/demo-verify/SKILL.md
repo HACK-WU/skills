@@ -272,7 +272,7 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
   --docs add demo/verify-report.md,demo --changelog "完成设计验证"
 ```
 
-3. **demo 代码**存入需求目录的 `demo/` 子目录（而非 `.demo-verify/`），作为需求产出物的持久化部分。
+3. **demo 代码迁移**：将 `.demo-verify/` 下的 demo 代码复制到需求目录的 `demo/` 子目录（而非 `.demo-verify/`），作为需求产出物的持久化部分。复制完成后删除 `.demo-verify/` 临时目录。
 
 4. **错误处理**：
    - 需求 ID 不存在 → 提示用户先创建需求，跳过集成
