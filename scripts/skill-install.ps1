@@ -19,9 +19,13 @@ param(
 
 $RawBase = "https://raw.githubusercontent.com/HACK-WU/skills/master"
 
-if (-not (Test-Path $TargetPath)) {
-    Write-Host "Creating: $TargetPath"
-    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+# 去掉末尾斜杠，计算归一化路径
+$NormalizedPath = $TargetPath.TrimEnd('\').TrimEnd('/')
+$LeafName = Split-Path $NormalizedPath -Leaf
+
+if (-not (Test-Path $NormalizedPath)) {
+    Write-Host "Creating: $NormalizedPath"
+    New-Item -ItemType Directory -Path $NormalizedPath -Force | Out-Null
 }
 
 function Install-Files {
@@ -55,17 +59,21 @@ function Install-Files {
 }
 
 if ($Scripts) {
-    Write-Host "Scripts -> $(Join-Path $TargetPath 'scripts')"
+    # 如果传入路径已以 scripts 结尾，直接使用，避免嵌套
+    $ScriptsDest = if ($LeafName -eq "scripts") { $NormalizedPath } else { Join-Path $NormalizedPath "scripts" }
+    Write-Host "Scripts -> $ScriptsDest"
     Install-Files "scripts/requirement-mgr" @(
         "config_loader.py", "create-requirement.py", "delete-requirement.py",
         "file_lock.py", "id_generator.py", "list-requirements.py",
         "meta_store.py", "requirement_utils.py", "update-requirement.py"
-    ) (Join-Path $TargetPath "scripts")
+    ) $ScriptsDest
 }
 
 if ($Skills) {
+    # 如果传入路径已以 skills 结尾，直接使用，避免嵌套
+    $SkillsDest = if ($LeafName -eq "skills") { $NormalizedPath } else { Join-Path $NormalizedPath "skills" }
     # 注意: skill-updater 是内部维护工具，不包含在用户安装列表中
-    Write-Host "Skills -> $(Join-Path $TargetPath 'skills')"
+    Write-Host "Skills -> $SkillsDest"
     Install-Files "skills" @(
         "challenger/SKILL.md", "challenger/strategies/bug-fix.md",
         "challenger/strategies/feature.md", "challenger/strategies/optimization.md",
@@ -83,7 +91,7 @@ if ($Skills) {
         "requirement-mining/SKILL.md", "requirement-mining/references/example.md",
         "test-planner/SKILL.md", "test-planner/references/test-strategies.md",
         "test-planner/references/examples/example-1-registration.md", "work-breakdown/SKILL.md"
-    ) (Join-Path $TargetPath "skills")
+    ) $SkillsDest
 }
 
 Write-Host "Complete: $TargetPath"

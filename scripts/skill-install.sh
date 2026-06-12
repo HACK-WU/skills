@@ -56,10 +56,16 @@ download() {
 }
 
 # ============================================================
-# --scripts: CRUD 脚本
+# 计算安装目标路径：如果传入路径已以子目录名结尾，则直接使用，避免嵌套
 # ============================================================
+NORMALIZED_DIR="${TARGET_DIR%/}"
+
 if [ "$MODE" = "scripts" ]; then
-    DEST="$TARGET_DIR/scripts"
+    if [ "${NORMALIZED_DIR##*/}" = "scripts" ]; then
+        DEST="$NORMALIZED_DIR"
+    else
+        DEST="$NORMALIZED_DIR/scripts"
+    fi
     mkdir -p "$DEST"
 
     FILES=(
@@ -100,7 +106,11 @@ fi
 # --skills: AI Skill 定义
 # ============================================================
 if [ "$MODE" = "skills" ]; then
-    DEST="$TARGET_DIR/skills"
+    if [ "${NORMALIZED_DIR##*/}" = "skills" ]; then
+        DEST="$NORMALIZED_DIR"
+    else
+        DEST="$NORMALIZED_DIR/skills"
+    fi
     mkdir -p "$DEST"
 
     # 注意: skill-updater 是内部维护工具，不包含在用户安装列表中
