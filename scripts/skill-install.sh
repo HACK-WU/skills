@@ -23,21 +23,24 @@ for arg in "$@"; do
     case "$arg" in
         --scripts) MODE="scripts" ;;
         --skills)  MODE="skills" ;;
+        --rules)   MODE="rules" ;;
         -*)        echo "未知选项: $arg"; exit 1 ;;
         *)         TARGET_DIR="$arg" ;;
     esac
 done
 
 if [ -z "$TARGET_DIR" ] || [ -z "$MODE" ]; then
-    echo "用法: bash skill-install.sh <目标项目路径> --scripts|--skills"
+    echo "用法: bash skill-install.sh <目标项目路径> --scripts|--skills|--rules"
     echo ""
     echo "  目标项目路径    安装到的项目根目录"
     echo "  --scripts       安装 CRUD 管理脚本（scripts/）"
     echo "  --skills        安装 AI Skill 定义（skills/）"
+    echo "  --rules         安装 AI 规则（rules/）"
     echo ""
     echo "示例:"
     echo "  bash skill-install.sh ~/projects/my-app --scripts"
     echo "  bash skill-install.sh ~/projects/my-app --skills"
+    echo "  bash skill-install.sh ~/projects/my-app --rules"
     echo ""
     echo "一键安装:"
     echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | bash -s -- ~/projects/my-app --scripts"
@@ -166,6 +169,39 @@ if [ "$MODE" = "skills" ]; then
     echo ""
     echo "已安装: ${count}/${#FILES[@]} 个 skill 文件"
     echo "  共 $(echo "${FILES[@]}" | wc -w) 个 skill"
+fi
+
+# ============================================================
+# --rules: AI 规则
+# ============================================================
+if [ "$MODE" = "rules" ]; then
+    if [ "${NORMALIZED_DIR##*/}" = "rules" ]; then
+        DEST="$NORMALIZED_DIR"
+    else
+        DEST="$NORMALIZED_DIR/rules"
+    fi
+    mkdir -p "$DEST"
+
+    FILES=(
+        "writing-pipeline.md"
+    )
+
+    echo "📏 安装 AI Rules → ${DEST}"
+    echo ""
+
+    count=0
+    for f in "${FILES[@]}"; do
+        url="${RAW_BASE}/rules/${f}"
+        dest="${DEST}/${f}"
+        if download "$url" "$dest"; then
+            echo "  [OK] ${f}"
+            count=$((count + 1))
+        else
+            echo "  [FAIL] ${f}"
+        fi
+    done
+    echo ""
+    echo "已安装: ${count}/${#FILES[@]} 个规则文件"
 fi
 
 echo ""

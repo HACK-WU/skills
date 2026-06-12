@@ -8,13 +8,17 @@
 param(
     [Parameter(Position=0, Mandatory=$true, ParameterSetName="Scripts")]
     [Parameter(Position=0, Mandatory=$true, ParameterSetName="Skills")]
+    [Parameter(Position=0, Mandatory=$true, ParameterSetName="Rules")]
     [string]$TargetPath,
 
     [Parameter(Mandatory=$true, ParameterSetName="Scripts")]
     [switch]$Scripts,
 
     [Parameter(Mandatory=$true, ParameterSetName="Skills")]
-    [switch]$Skills
+    [switch]$Skills,
+
+    [Parameter(Mandatory=$true, ParameterSetName="Rules")]
+    [switch]$Rules
 )
 
 $RawBase = "https://raw.githubusercontent.com/HACK-WU/skills/master"
@@ -93,6 +97,15 @@ if ($Skills) {
         "test-planner/SKILL.md", "test-planner/references/test-strategies.md",
         "test-planner/references/examples/example-1-registration.md", "work-breakdown/SKILL.md"
     ) $SkillsDest
+}
+
+if ($Rules) {
+    # 如果传入路径已以 rules 结尾，直接使用，避免嵌套
+    $RulesDest = if ($LeafName -eq "rules") { $NormalizedPath } else { Join-Path $NormalizedPath "rules" }
+    Write-Host "Rules -> $RulesDest"
+    Install-Files "rules" @(
+        "writing-pipeline.md"
+    ) $RulesDest
 }
 
 Write-Host "Complete: $TargetPath"
