@@ -61,15 +61,14 @@ description: >-
 
 ## 触发方式
 
-任何 skill 在生成需求相关文档后，通过以下方式加载本 skill：
+当其他 Skill 完成文档生成后，本 Skill 自动介入决定存储路径和格式。典型流程：
 
-```markdown
-请加载 requirement-doc-store skill，存储以下文档：
+1. 其他 Skill 产出文档内容后，询问 "文档存储到哪个路径？" 或 "需要更新 meta.json 吗？"
+2. 本 Skill 根据文档类型映射表，返回目标路径和 `--docs add` 命令
+3. 最终由执行方完成落盘和元数据更新
 
-需求 ID：{REQ-NNN}
-文档类型：{design / data-flow / review / test / demo / report}
-文档内容：[Markdown 内容]
-```
+其他 Skill 可通过以下方式显式引导加载本 Skill：
+> 请按 requirement-doc-store 规范存储本文档，需求 ID: REQ-NNN，类型: design
 
 ## 存储流程
 
