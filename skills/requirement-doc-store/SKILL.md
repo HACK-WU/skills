@@ -19,6 +19,20 @@ description: >-
 - **中文命名**：目录名和文件名使用中文，与 meta.json 中 feature 字段一致
 - **脚本操作元数据**：禁止直接编辑 `meta.json`，必须通过脚本操作
 
+## 配置约束
+
+`.requirements/config` 文件定义了以下约束规则：
+
+| 配置项 | 约束规则 | 示例 |
+|--------|----------|------|
+| `feature_categories` | 功能分类标签，多个分类用逗号分隔。必须包含一个功能分类标签 | `告警,监控,日志,权限` |
+| `requirement_tags` | 标签可选值，必须从此配置中选取 | `feat,fix,refactor,tool` |
+
+**约束验证**：
+- `--tags` 或 `--tag add/set` 操作时，标签必须来自 `requirement_tags` 配置
+- 创建需求时，必须包含一个 `feature_categories` 中的功能分类标签
+- 违反约束会导致操作失败并显示错误信息
+
 ---
 
 ## 场景判断
@@ -29,6 +43,7 @@ description: >-
 |------|----------|----------|
 | **创建** | 需求目录不存在（`{storage_path}/{date}-{feature}/` 不存在） | 先用 `create-requirement.py` 创建目录 + 注册 meta.json，再写入文档 |
 | **更新** | 需求目录已存在，meta.json 中已有该条目 | 直接写入/覆盖文档，用 `update-requirement.py --docs add` 注册关联 |
+| **删除** | 需求目录已存在，需要废弃或清理 | 使用 `delete-requirement.py` 删除条目和目录 |
 
 ---
 
@@ -79,6 +94,7 @@ version: 1
 tags: [{标签}]                          # 标签必须从 .requirements/config 的 requirement_tags 配置中选取
                                        # 必须包含一个功能分类标签（从 feature_categories 配置中选取）
                                        # 常见值：feat, fix, refactor, tool, integration, security, performance, ux, infra
+                                       # 创建时自动验证：标签必须来自配置，且必须包含功能分类标签
 depends_on: [{依赖 ID}]                 # 依赖的需求 ID 列表
 author: AI
 document_type: requirement             # 文档类型枚举（见下方文档类型表）
@@ -136,10 +152,23 @@ uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
 
 ### Step U4：注册文档关联
 
-文档落盘后，使用 `update-requirement.py --docs add` 注册到 meta.json：
+> **废弃字段说明**：`--data-flow` 参数已废弃，请使用 `--docs add` 替代。
 
+文档落盘后，使用 `update-requirement.py --docs` 注册到 meta.json：
+
+**添加文档关联**：
 ```bash
 uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs add {相对路径},{类型}
+```
+
+**删除文档关联**：
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs remove {相对路径}
+```
+
+**批量覆盖文档关联**：
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 ```
 
 文档类型映射：
@@ -167,9 +196,9 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs add
 uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
   --status 已确认 --changelog "需求评审通过"
 
-# 进入设计
+# 进入设计（注册设计文档）
 uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
-  --status 设计中 --changelog "开始技术设计"
+  --status 设计中 --docs add design/DESIGN.md,design --changelog "开始技术设计"
 
 # 开始开发
 uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
@@ -178,6 +207,32 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
 # 验收完成
 uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
   --status 已完成 --changelog "功能验收通过"
+```
+
+### Step U5.1：管理标签
+
+标签管理支持增删改操作：
+
+```bash
+# 添加标签
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag add {标签名}
+
+# 删除标签
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag remove {标签名}
+
+# 覆盖标签列表
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag set {标签1},{标签2},{标签3}
+```
+
+**约束规则**：
+- 标签必须从 `.requirements/config` 的 `requirement_tags` 配置中选取
+- 不能删除最后一个标签
+- 必须包含一个功能分类标签（从 `feature_categories` 配置中选取）
+
+### Step U5.2：更新功能名称
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --feature "{新功能名称}"
 ```
 
 ### Step U6：追加关联 commit
@@ -205,12 +260,51 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --depends-
 uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
 ```
 
+---
+
+## 删除场景（需求废弃或清理）
+
+### Step D1：预览删除
+
+使用 `--dry-run` 预览删除操作，确认影响范围：
+
+```bash
+uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN} --dry-run
+```
+
+### Step D2：确认删除
+
+交互式确认删除（默认）：
+
+```bash
+uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN}
+```
+
+输出会显示：
+- 需求详情（ID、名称、目录、状态）
+- 反向依赖（哪些需求依赖了当前需求）
+- 警告信息（如果有反向依赖将被清理）
+
+### Step D3：自动化删除
+
+在脚本中自动化删除（跳过确认）：
+
+```bash
+uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN} --force
+```
+
+**删除操作会**：
+1. 清理所有反向依赖引用
+2. 删除 meta.json 中的条目
+3. 删除整个需求目录
+
+---
+
 ## 目录结构
 
 ```
 {功能名称}/
 ├── requirement.md              # 需求分析报告
-├── changelog.md                # 变更追踪
 ├── report.md                   # 实现报告
 ├── design/
 │   ├── DESIGN.md               # 技术设计文档
@@ -243,7 +337,6 @@ uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
 | 代码审查 | code-review | `review/code-review.md` |
 | 质疑审查 | challenger | `review/challenge-report.md` |
 | 实现报告 | 需求完成时 | `report.md` |
-| 变更记录 | 全局 | `changelog.md` |
 
 ## 需求生命周期状态流
 
@@ -261,6 +354,62 @@ uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
 | `实施中` | 开发编码 | → 已完成 |
 | `已完成` | 验收通过 | 终态 |
 | `已取消` | 废弃保留 | 终态 |
+
+## 查询功能
+
+使用 `list-requirements.py` 进行需求查询和依赖分析：
+
+### 基本查询
+
+```bash
+# 列出所有需求
+uv run python scripts/requirement-mgr/list-requirements.py
+
+# 精确查询需求详情
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
+
+# JSON 格式输出（适合脚本消费）
+uv run python scripts/requirement-mgr/list-requirements.py --json
+```
+
+### 筛选查询
+
+```bash
+# 按状态筛选
+uv run python scripts/requirement-mgr/list-requirements.py --status {状态}
+
+# 按标签筛选（可重复，AND 关系）
+uv run python scripts/requirement-mgr/list-requirements.py --tag {标签1} --tag {标签2}
+
+# 按日期范围筛选
+uv run python scripts/requirement-mgr/list-requirements.py --from {YYYY-MM-DD} --to {YYYY-MM-DD}
+
+# 模糊搜索功能名称
+uv run python scripts/requirement-mgr/list-requirements.py --search "{关键词}"
+```
+
+### 依赖分析
+
+```bash
+# 展示依赖树
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+
+# 展示依赖树（指定深度）
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps --deps-depth 3
+
+# 查看反向依赖（谁依赖了我）
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --rev-deps
+```
+
+### 输出控制
+
+```bash
+# 自定义显示列
+uv run python scripts/requirement-mgr/list-requirements.py --columns id,feature,status,tags
+
+# 禁用颜色
+uv run python scripts/requirement-mgr/list-requirements.py --no-color
+```
 
 ## 行为边界
 
