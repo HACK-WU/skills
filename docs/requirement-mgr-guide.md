@@ -50,7 +50,7 @@
 - **4 个 Python 脚本**：`list-requirements.py`、`create-requirement.py`、`update-requirement.py`、`delete-requirement.py`
 - **集中元数据存储**：`.requirements/meta.json` 文件
 - **配置管理**：`.requirements/config` 文件
-- **需求目录结构**：`{date}-{feature}/` 格式的需求文档目录
+- **需求目录结构**：`{category}/{date}-{feature}/` 格式的需求文档目录（category 为功能分类标签）
 
 ### 1.2 核心价值
 
@@ -110,9 +110,9 @@ echo "storage_path=.requirements" > .requirements/config
 storage_path=.requirements
 
 # 需求功能分类配置
-# 多个分类用逗号分隔，例如：告警,监控,日志,权限
+# 多个分类用逗号分隔
 # 默认值为空，表示不进行功能分类
-feature_categories=
+feature_categories=security,performance,integration,monitoring,logging
 
 # 需求标签配置
 # tags 字段的可选值必须从此配置中选取，不能凭空创造
@@ -125,14 +125,16 @@ requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infr
 | 配置项 | 说明 | 示例值 |
 |--------|------|--------|
 | `storage_path` | 需求文档存储路径 | `.requirements` |
-| `feature_categories` | 功能分类配置，多个分类用逗号分隔 | `告警,监控,日志,权限,安全,性能,用户体验,集成` |
-| `requirement_tags` | 需求标签配置，tags 字段必须从此配置中选取 | `feat,fix,refactor,tool,integration,security,performance,ux,infra` |
+| `feature_categories` | 功能分类配置，多个分类用逗号分隔 | `security,performance,integration,monitoring,logging` |
+| `requirement_tags` | 需求标签配置，tags 字段必须从此配置中选取 | `feat,fix,refactor,tool,integration,security,performance` |
 
 **约束规则**：
 
 1. **标签来源约束**：tags 字段的值必须从 `requirement_tags` 配置中选取，不能凭空创造
-2. **功能分类约束**：必须包含一个功能分类标签，该标签必须从 `feature_categories` 配置中选取
-3. **配置优先级**：配置文件中的值优先于默认值
+2. **功能分类约束**：如果配置了 `feature_categories`，必须包含一个功能分类标签，该标签必须从 `feature_categories` 配置中选取
+3. **功能分类唯一性**：功能分类标签有且只能有一个
+4. **功能分类变更限制**：功能分类标签与目录位置关联，不允许删除或更改功能分类标签（如需更改，请删除并重新创建需求）
+5. **配置优先级**：配置文件中的值优先于默认值
 
 **方式三：Windows PowerShell**
 ```powershell
@@ -146,10 +148,10 @@ requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infr
 # 1. 查看当前需求（首次使用为空）
 uv run python scripts/requirement-mgr/list-requirements.py
 
-# 2. 创建第一个需求
+# 2. 创建第一个需求（必须包含功能分类标签）
 uv run python scripts/requirement-mgr/create-requirement.py \
   --feature "需求管理脚本系统" \
-  --tags feat,tool \
+  --tags feat,tool,security \
   --status 已确认
 
 # 3. 查看创建的需求
@@ -211,7 +213,7 @@ erDiagram
     }
     
     Meta {
-        object requirements "key=目录名, value=元数据"
+        object requirements "key=分类/目录名, value=元数据"
     }
     
     Requirement {
@@ -352,10 +354,10 @@ def atomic_write_json(filepath: Path, data: dict) -> None:
 # 1. 检查是否已存在类似需求
 uv run python scripts/requirement-mgr/list-requirements.py --search "用户认证" --json
 
-# 2. 创建新需求
+# 2. 创建新需求（必须包含功能分类标签）
 uv run python scripts/requirement-mgr/create-requirement.py \
   --feature "用户认证模块" \
-  --tags feat,backend,security \
+  --tags feat,security \
   --status 已确认
 
 # 3. AI 生成需求文档
@@ -453,7 +455,8 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001 --rev-de
 |------|------|------|
 | `--id` | 精确匹配需求 ID | `--id REQ-001` |
 | `--status` | 按状态筛选 | `--status 实施中` |
-| `--tag` | 按标签筛选（可重复） | `--tag feat --tag backend` |
+| `--tag` | 按标签筛选（可重复，AND 关系） | `--tag feat --tag security` |
+| `--category` | 按功能分类筛选 | `--category security` |
 | `--from` | 更新日期起 | `--from 2026-01-01` |
 | `--to` | 更新日期止 | `--to 2026-12-31` |
 | `--search` | 模糊搜索功能名称 | `--search "用户认证"` |
@@ -471,20 +474,20 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001 --rev-de
 
 **基本用法**：
 ```bash
-# 快速新建
+# 快速新建（必须包含功能分类标签）
 uv run python scripts/requirement-mgr/create-requirement.py \
-  --feature "用户认证模块" --tags feat,backend
+  --feature "用户认证模块" --tags feat,security
 
 # 带依赖创建
 uv run python scripts/requirement-mgr/create-requirement.py \
   --feature "支付网关" \
-  --tags feat,payment \
+  --tags feat,integration \
   --depends-on REQ-001,REQ-002 \
   --status 已确认
 
 # 自定义目录名
 uv run python scripts/requirement-mgr/create-requirement.py \
-  --feature "自定义目录" --dir-name "custom-dir-name"
+  --feature "自定义目录" --tags feat,security --dir-name "custom-dir-name"
 ```
 
 **自动填充字段**：
@@ -507,9 +510,9 @@ uv run python scripts/requirement-mgr/create-requirement.py \
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
   --status 已确认 --changelog "需求评审通过"
 
-# 进入设计
+# 进入设计（注册设计文档）
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
-  --status 设计中 --data-flow data-flow.md
+  --status 设计中 --docs add design/DESIGN.md,design --changelog "开始技术设计"
 
 # 开始开发
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
@@ -538,17 +541,17 @@ uv run python scripts/requirement-mgr/update-requirement.py REQ-002 \
 
 **标签管理**：
 ```bash
-# 添加标签
+# 添加标签（必须来自 requirement_tags 配置）
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
-  --tag add deploy
+  --tag add documentation
 
-# 删除标签
+# 删除标签（不能删除功能分类标签，不能删除最后一个标签）
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
-  --tag remove deprecated
+  --tag remove documentation
 
-# 覆盖标签
+# 覆盖标签（必须包含一个功能分类标签，且只能有一个）
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
-  --tag set feat,backend,security
+  --tag set feat,security,documentation
 ```
 
 ### 6.4 删除需求 (delete-requirement)
@@ -604,7 +607,7 @@ flowchart LR
     update -->|"U: 加锁 → 原子写"| Meta
     delete -->|"D: 加锁 → 删条目 → 删目录"| Meta
     
-    Meta -.->|映射| RequirementDir["{date}-{feature}/"]
+    Meta -.->|映射| RequirementDir["{category}/{date}-{feature}/"]
     RequirementDir -.->|AI 创建| requirement_md["requirement.md"]
     RequirementDir -.->|AI 创建| data_flow["data-flow.md"]
     RequirementDir -.->|AI 创建| Design["design/"]
@@ -646,19 +649,17 @@ flowchart TB
 ```json
 {
   "requirements": {
-    "2026-06-11-requirement-management": {
+    "security/2026-06-11-requirement-management": {
       "id": "REQ-001",
       "feature": "需求管理脚本系统",
       "created": "2026-06-11",
-      "updated": "2026-06-11",
-      "status": "设计中",
-      "tags": ["feat", "tool"],
-      "version": 3,
+      "updated": "2026-06-12",
+      "status": "实施中",
+      "tags": ["tool", "security", "feat"],
+      "version": 8,
       "depends_on": [],
       "changelog": [
-        "初始创建",
-        "2026-06-11 v2: 确定技术选型为 Python",
-        "2026-06-11 v3: 新增并发安全设计"
+        "初始创建"
       ],
       "commits": [],
       "docs": [
@@ -668,6 +669,8 @@ flowchart TB
   }
 }
 ```
+
+**键名格式**：`{feature_category}/{date}-{feature}`（如 `security/2026-06-11-requirement-management`），用于定位需求目录。
 
 **字段生命周期**：
 | 字段 | create | list | update | delete |
@@ -694,6 +697,11 @@ flowchart TB
 | `无法在 5s 内获取文件锁` | 其他进程持有锁或残留 `.lock` | 等待后重试，或手动删除残留 `.meta.json.lock` |
 | `依赖需求 REQ-XXX 不存在` | depends-on 指向不存在的 ID | 先 `create` 依赖需求，或修正 ID |
 | `不能删除最后一个标签` | 标签列表至少保留 1 个 | 先 `--tag add` 再加 `--tag remove` |
+| `标签 XXX 不在 requirement_tags 配置中` | 标签不在配置的允许列表中 | 使用配置中的标签，或更新 `.requirements/config` 的 `requirement_tags` |
+| `必须包含一个功能分类标签` | 创建需求时未指定功能分类标签 | 添加一个 `feature_categories` 中的标签，如 `--tags feat,security` |
+| `功能分类标签只能有一个` | 指定了多个功能分类标签 | 只保留一个功能分类标签 |
+| `不能删除功能分类标签` | 尝试删除功能分类标签 | 功能分类标签与目录位置关联，如需更改请删除并重新创建需求 |
+| `不能更改功能分类标签` | 尝试通过 `--tag set` 更改分类 | 同上，删除并重新创建需求 |
 | `会形成循环依赖` | 添加依赖后形成 A→B→A | 检查依赖链，调整设计 |
 | `目录已存在` (create) | 同名目录残留 | 指定 `--dir-name` 或清理旧目录 |
 | create 后 meta.json 有条目但无目录 | 进程崩溃（已修复：先建目录再写） | 不应出现（v2 已修复顺序） |
@@ -708,15 +716,16 @@ flowchart TB
 ```
 项目根目录/
 ├── .requirements/
-│   ├── config              # storage_path 配置
-│   ├── meta.json           # 集中元数据（脚本管理）
-│   └── {date}-{feature}/   # 单需求目录（AI 管理内容）
-│       ├── requirement.md
-│       ├── data-flow.md
-│       ├── design/
-│       └── report.md
+│   ├── config                  # storage_path + feature_categories + requirement_tags 配置
+│   ├── meta.json               # 集中元数据（脚本管理）
+│   └── {category}/             # 功能分类目录（如 security/、performance/）
+│       └── {date}-{feature}/   # 单需求目录（AI 管理内容）
+│           ├── requirement.md
+│           ├── data-flow.md
+│           ├── design/
+│           └── report.md
 └── scripts/
-    └── requirement-mgr/    # CRUD 脚本
+    └── requirement-mgr/        # CRUD 脚本
         ├── list-requirements.py
         ├── create-requirement.py
         ├── update-requirement.py
@@ -726,6 +735,21 @@ flowchart TB
         ├── id_generator.py
         ├── meta_store.py
         └── requirement_utils.py
+```
+
+**示例**：
+```
+.requirements/
+├── config
+├── meta.json
+├── security/
+│   └── 2026-06-11-requirement-management/
+│       ├── requirement.md
+│       ├── data-flow.md
+│       └── design/
+└── integration/
+    └── 2026-06-11-Skill 需求管理集成/
+        └── requirement.md
 ```
 
 ### 9.2 状态枚举
@@ -755,6 +779,6 @@ flowchart TB
 
 ---
 
-> **文档版本**：v1.0  
-> **最后更新**：2026-06-11  
+> **文档版本**：v1.1  
+> **最后更新**：2026-06-12  
 > **维护者**：AI Agent
