@@ -86,6 +86,7 @@ if ($Skills) {
         "document-writer/references/strategies.md", "document-writer/references/examples/example-1-library.md",
         "document-writer/references/examples/example-2-cli.md", "document-writer/references/examples/README.md",
         "expert-panel/SKILL.md", "expert-panel/references/review-panel.md",
+        "implementation-report/SKILL.md",
         "interaction-design/SKILL.md",
         "migrate-to-codehub/SKILL.md", "requirement-doc-store/SKILL.md",
         "requirement-mining/SKILL.md", "requirement-mining/references/example.md",

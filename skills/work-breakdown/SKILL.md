@@ -279,3 +279,36 @@ requirement-mining → interaction-design → work-breakdown → 每个切片独
 - ❌ 切片粒度太细（一个函数一个切片）→ 切片数量爆炸，管理成本高
 - ❌ 在拆分阶段规定实现方案 → 越界，设计由 design-craft 负责
 - ❌ 忽略 HITL 标记 → Agent 尝试自主完成需要人决策的工作
+
+## 需求管理集成
+
+当项目配置了 `.requirements/config` 时，work-breakdown 在输出工作项清单（阶段 6）后自动执行以下集成操作：
+
+### 自动触发条件
+
+项目中存在 `.requirements/config` 且 `storage_path` 指向有效目录。
+
+### 集成步骤
+
+1. **获取需求上下文**：如果用户提供了 REQ-ID，先读取需求信息作为拆分输入：
+
+```bash
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+```
+
+2. **写入工作项清单**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+  --docs add design/work-breakdown.md,design --changelog "完成工作项拆分"
+```
+
+3. **错误处理**：
+   - 需求 ID 不存在 → 提示用户先创建需求，跳过集成
+   - 文件锁超时 → 自动重试 1 次，仍失败则告知用户
+
+### 存储路径映射
+
+| 产出物 | 存储路径 | docs 类型 |
+|--------|----------|-----------|
+| 工作项清单 | `design/work-breakdown.md` | `design` |

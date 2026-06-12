@@ -375,3 +375,36 @@ flowchart TD
 - ❌ 混淆场景类型术语（CLI 场景用"按钮"、API 场景用"页面"）
 - ❌ 跳过确认直接进入下一阶段
 - ❌ 异常处理只写"报错"不写用户感知和恢复路径
+
+## 需求管理集成
+
+当项目配置了 `.requirements/config` 时，interaction-design 在落盘输出（阶段 7）后自动执行以下集成操作：
+
+### 自动触发条件
+
+项目中存在 `.requirements/config` 且 `storage_path` 指向有效目录。
+
+### 集成步骤
+
+1. **获取需求上下文**：如果用户提供了 REQ-ID，先读取需求信息作为设计输入：
+
+```bash
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+```
+
+2. **写入交互设计文档**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+  --docs add design/interaction-design.md,design --changelog "完成交互设计"
+```
+
+3. **错误处理**：
+   - 需求 ID 不存在 → 提示用户先创建需求，跳过集成
+   - 文件锁超时 → 自动重试 1 次，仍失败则告知用户
+
+### 存储路径映射
+
+| 产出物 | 存储路径 | docs 类型 |
+|--------|----------|-----------|
+| 交互设计文档 | `design/interaction-design.md` | `design` |

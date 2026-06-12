@@ -1379,3 +1379,36 @@ def init_database():
     禁止默认"精确即最优"——精确方案在关联代码变动时往往更脆弱，鲁棒方案以可控误差换取更高的整体健壮性，往往是更工程化的选择
 
 19. **新增注释审慎处理**：本次提交新增或修改的注释，其可信度默认为**低**。新增注释可能存在问题（过度承诺、描述不准确、与代码行为不一致等），必须与代码行为交叉验证后才能作为语义参考。当新增注释与代码行为不一致时，以代码行为为准
+
+## 需求管理集成
+
+当项目配置了 `.requirements/config` 时，code-review 审查完成后自动执行以下集成操作：
+
+### 自动触发条件
+
+项目中存在 `.requirements/config` 且 `storage_path` 指向有效目录。
+
+### 集成步骤（读取型）
+
+1. **获取需求上下文**：审查代码前，如果关联了 REQ-ID，先读取需求信息作为审查参照：
+
+```bash
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+```
+
+2. **写入审查报告**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+  --docs add review/code-review.md,review --changelog "完成代码审查"
+```
+
+3. **错误处理**：
+   - 需求 ID 不存在 → 跳过集成，不影响审查本身
+   - 文件锁超时 → 自动重试 1 次，仍失败则告知用户
+
+### 存储路径映射
+
+| 产出物 | 存储路径 | docs 类型 |
+|--------|----------|-----------|
+| 代码审查报告 | `review/code-review.md` | `review` |

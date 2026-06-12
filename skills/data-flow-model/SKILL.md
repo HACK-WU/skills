@@ -378,6 +378,41 @@ flowchart LR
 - **时序图章**：参考数据流图的流向绘制时序
 - **异常处理章**：参考场景分析中的冲突处理、错误恢复策略
 
+## 需求管理集成
+
+当项目配置了 `.requirements/config` 时，data-flow-model 在落盘输出（阶段 6）后自动执行以下集成操作：
+
+### 自动触发条件
+
+项目中存在 `.requirements/config` 且 `storage_path` 指向有效目录。
+
+### 集成步骤
+
+1. **写入数据模型文档**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+  --docs add design/data-flow.md,data_flow --changelog "完成数据建模与流图"
+```
+
+2. **获取需求上下文**：如果用户提供了 REQ-ID，先读取需求信息作为建模输入：
+
+```bash
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+```
+
+3. **错误处理**：
+   - 需求 ID 不存在 → 提示用户先创建需求，跳过集成
+   - 文件锁超时 → 自动重试 1 次，仍失败则告知用户
+
+### 存储路径映射
+
+| 产出物 | 存储路径 | docs 类型 |
+|--------|----------|-----------|
+| 数据模型文档 | `design/data-flow.md` | `data_flow` |
+
+---
+
 ## 反模式
 
 - ❌ 跳过 ER 图直接画数据流图 → 不知道数据长什么样就谈流动，空中楼阁

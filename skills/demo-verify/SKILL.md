@@ -248,3 +248,39 @@ design-craft → demo-verify（可选）→ 完整开发
 - ❌ 结论模糊（"大概可行"）→ 每个风险点必须有明确的通过/不通过
 - ❌ 忘记清理原型 → 开发完成后必须删除 `.demo-verify/` 目录
 - ❌ 验证失败后硬继续 → 发现方案不可行必须回退，不能硬着头皮开发
+
+## 需求管理集成
+
+当项目配置了 `.requirements/config` 时，demo-verify 在阶段 5（决策与清理）后自动执行以下集成操作：
+
+### 自动触发条件
+
+项目中存在 `.requirements/config` 且 `storage_path` 指向有效目录。
+
+### 集成步骤
+
+1. **获取需求上下文**：验证前，如果关联了 REQ-ID，先读取需求信息作为验证参照：
+
+```bash
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+```
+
+2. **写入验证报告和 demo 代码**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+  --docs add demo/verify-report.md,demo --changelog "完成设计验证"
+```
+
+3. **demo 代码**存入需求目录的 `demo/` 子目录（而非 `.demo-verify/`），作为需求产出物的持久化部分。
+
+4. **错误处理**：
+   - 需求 ID 不存在 → 提示用户先创建需求，跳过集成
+   - 文件锁超时 → 自动重试 1 次，仍失败则告知用户
+
+### 存储路径映射
+
+| 产出物 | 存储路径 | docs 类型 |
+|--------|----------|-----------|
+| 验证报告 | `demo/verify-report.md` | `demo` |
+| demo 代码 | `demo/` 目录下 | — |

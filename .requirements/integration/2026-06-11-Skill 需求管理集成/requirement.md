@@ -34,7 +34,7 @@ document_type: requirement
 | P1 | REQ-002-05 | interaction-design 集成 | 交互设计文档写入需求目录 | REQ-001 |
 | P1 | REQ-002-06 | design-review 集成 | 评审结果关联到需求 changelog | REQ-001 |
 | P2 | REQ-002-07 | code-review / challenger 集成 | 读取需求上下文作为 review 参照 | REQ-001 |
-| P2 | REQ-002-08 | demo-verify 集成 | 验证结果存入需求目录 | REQ-001 |
+| P2 | REQ-002-08 | demo-verify 集成 | 验证 demo 代码写入 `{dir}/demo/`，验证结果写入 `{dir}/demo/result.md` | REQ-001 |
 
 ## 需求依赖图
 
@@ -64,9 +64,14 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-NNN --deps
 
 # 2. Skill 生成文档 → 写入需求目录
 
-# 3. 回写路径和状态
+# 3. 回写文档路径和状态
+# --docs add PATH,TYPE：追加文档记录到 meta.json 的 docs 数组
 uv run python scripts/requirement-mgr/update-requirement.py REQ-NNN \
-  --data-flow data-flow.md --status 设计中
+  --docs add data-flow.md,data_flow --status 设计中
+
+# 其他写入型示例：
+# design-craft → --docs add design/main.md,design --status 设计中
+# implementation-report → --docs add report.md,report --status 已完成 --commit abc1234
 ```
 
 ### 读取型（消费需求上下文）
@@ -83,19 +88,18 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-NNN
 ```
 create (requirement-mining)
   ├─ status = "已确认"
-  ├─ data_flow = ""
-  ├─ report = ""
+  ├─ docs = []
   └─ commits = []
        │
        ▼
 data-flow-model
-  ├─ data_flow = "data-flow.md"
+  ├─ docs += [{path: "data-flow.md", type: "data_flow"}]
   └─ 写入 data-flow.md
        │
        ▼
 design-craft
   ├─ status = "设计中"
-  └─ 写入 design/*.md
+  └─ 写入 design/*.md → docs += [{path: "design/main.md", type: "design"}]
        │
        ▼
 开发实现
@@ -104,7 +108,7 @@ design-craft
        ▼
 implementation-report
   ├─ status = "已完成"
-  ├─ report = "report.md"
+  ├─ docs += [{path: "report.md", type: "report"}]
   └─ 写入 report.md
 ```
 
@@ -122,10 +126,24 @@ implementation-report
 - [ ] P1 Skill 改造完成
 - [ ] 集成分析文档已更新（含改造后的具体步骤）
 
+## 错误处理策略
+
+各 Skill 在调用需求管理脚本时，可能遇到以下异常情况：
+
+| 异常场景 | 处理方式 | 脚本退出码 |
+|----------|----------|-----------|
+| 需求 ID 不存在 | 提示用户先创建需求，跳过集成步骤 | 1 |
+| 文件锁超时（并发冲突） | 自动重试 1 次，仍失败则告知用户稍后重试 | 2 |
+| 标签/状态校验失败 | 提示具体校验错误，不自动修复（需用户确认） | 1 |
+| 写入文件失败（权限/磁盘） | 告知用户具体错误，保留已生成的文档内容 | 1 |
+
+**重试策略**：仅对文件锁超时（退出码 2）自动重试 1 次，其余错误直接报告用户。
+
 ## 关键假设
 
 | 假设 ID | 假设内容 | 验证难度 |
 |---------|----------|----------|
 | H-01 | 各 Skill 的 SKILL.md 可以被修改以增加集成章节 | 低 |
 | H-02 | AI Agent 在执行 Skill 时能正确调用 CRUD 脚本 | 中 |
-| H-03 | 需求目录结构（date-feature）能容纳所有产出物 | 低 |
+| H-03 | 需求目录结构（{category}/{date}-{feature}）能容纳所有产出物 | 低 |
+| H-04 | 设计文档多文件结构（design-craft SUB_TEMPLATE）使用子目录 design/ 组织，不与根目录文件冲突 | 低 |

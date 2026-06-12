@@ -586,3 +586,36 @@ description: >-
 ## 参考文档
 
 - [references/review-panel.md](references/review-panel.md) — 评审专家团角色prompt模板和信息传递协议
+
+## 需求管理集成
+
+当项目配置了 `.requirements/config` 时，expert-panel 评审完成后自动执行以下集成操作：
+
+### 自动触发条件
+
+项目中存在 `.requirements/config` 且 `storage_path` 指向有效目录。
+
+### 集成步骤（读取型）
+
+1. **获取需求上下文**：评审前，如果关联了 REQ-ID，先读取需求信息作为评审参照：
+
+```bash
+uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+```
+
+2. **写入评审报告**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+
+```bash
+uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+  --docs add review/expert-panel.md,review --changelog "完成专家团评审"
+```
+
+3. **错误处理**：
+   - 需求 ID 不存在 → 跳过集成，不影响评审本身
+   - 文件锁超时 → 自动重试 1 次，仍失败则告知用户
+
+### 存储路径映射
+
+| 产出物 | 存储路径 | docs 类型 |
+|--------|----------|-----------|
+| 专家团评审报告 | `review/expert-panel.md` | `review` |

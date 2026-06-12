@@ -377,9 +377,9 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
   --status 已确认 --changelog "需求评审通过，可以进入设计"
 
-# 2. 开始设计
+# 2. 开始设计（注册设计文档）
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
-  --status 设计中 --data-flow data-flow.md
+  --status 设计中 --docs add design/data-flow.md,data_flow
 
 # 3. 开始开发
 uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
