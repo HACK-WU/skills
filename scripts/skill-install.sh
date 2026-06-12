@@ -103,6 +103,7 @@ if [ "$MODE" = "skills" ]; then
     DEST="$TARGET_DIR/skills"
     mkdir -p "$DEST"
 
+    # 注意: skill-updater 是内部维护工具，不包含在用户安装列表中
     FILES=(
         "challenger/SKILL.md"
         "challenger/strategies/bug-fix.md"
