@@ -144,6 +144,7 @@ if [ "$MODE" = "skills" ]; then
         "expert-panel/references/review-panel.md"
         "implementation-report/SKILL.md"
         "interaction-design/SKILL.md"
+        "memory-creator/SKILL.md"
         "migrate-to-codehub/SKILL.md"
         "requirement-doc-store/SKILL.md"
         "requirement-mining/SKILL.md"

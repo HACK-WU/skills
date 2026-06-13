@@ -93,7 +93,7 @@ if ($Skills) {
         "expert-panel/SKILL.md", "expert-panel/references/review-panel.md",
         "implementation-report/SKILL.md",
         "interaction-design/SKILL.md",
-        "migrate-to-codehub/SKILL.md", "requirement-doc-store/SKILL.md",
+        "memory-creator/SKILL.md", "migrate-to-codehub/SKILL.md", "requirement-doc-store/SKILL.md",
         "requirement-mining/SKILL.md", "requirement-mining/references/example.md",
         "test-planner/SKILL.md", "test-planner/references/test-strategies.md",
         "test-planner/references/examples/example-1-registration.md", "work-breakdown/SKILL.md"

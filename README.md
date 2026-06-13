@@ -50,6 +50,7 @@ Windows 用户使用 PowerShell 版本：
 | **[expert-panel](./skills/expert-panel/SKILL.md)** | 启动多角色专家团进行方案评审 | "专家团评审"、"expert panel" |
 | **[create-rules](./skills/create-rules/SKILL.md)** | 引导创建符合规范的 AI 规则文件 | "创建规则"、"写一个规则" |
 | **[create-skill](./skills/create-skill/SKILL.md)** | 引导创建新的 Agent Skill | "创建 skill"、"写一个技能" |
+| **[memory-creator](./skills/memory-creator/SKILL.md)** | 指导 AI 生成简洁的记忆内容描述 | "记住这个"、"创建记忆" |
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 
 ### 需求管理脚本
@@ -124,6 +125,7 @@ skills/
 ├── expert-panel/             # 专家团
 ├── create-rules/             # 创建规则
 ├── create-skill/             # 创建技能
+├── memory-creator/           # 记忆生成
 └── migrate-to-codehub/       # 迁移工具
 
 scripts/
