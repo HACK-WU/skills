@@ -186,6 +186,7 @@ if [ "$MODE" = "rules" ]; then
     mkdir -p "$DEST"
 
     FILES=(
+        "gitnexus-mcp-rules.md"
         "writing-pipeline.md"
     )
 

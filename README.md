@@ -53,6 +53,13 @@ Windows 用户使用 PowerShell 版本：
 | **[memory-creator](./skills/memory-creator/SKILL.md)** | 指导 AI 生成简洁的记忆内容描述 | "记住这个"、"创建记忆" |
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 
+### 规则
+
+| 规则 | 作用 | 适用场景 |
+|------|------|----------|
+| **[gitnexus-mcp-rules](./rules/gitnexus-mcp-rules.md)** | GitNexus MCP 强制规则，指导工具选择和使用方式 | 使用 GitNexus MCP 时 |
+| **[writing-pipeline](./rules/writing-pipeline.md)** | 自动审查修复闭环，复杂场景调用 challenger 二次质疑 | 文档或代码编写完成后 |
+
 ### 需求管理脚本
 
 项目内置一套 Python CRUD 脚本，用于以编程方式管理需求元数据。AI Skill 和 CLI 共享同一套入口。
@@ -127,6 +134,10 @@ skills/
 ├── create-skill/             # 创建技能
 ├── memory-creator/           # 记忆生成
 └── migrate-to-codehub/       # 迁移工具
+
+rules/
+├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则
+└── writing-pipeline.md        # 自动审查修复闭环
 
 scripts/
 ├── skill-install.sh           # 一键安装器（Linux/Mac）

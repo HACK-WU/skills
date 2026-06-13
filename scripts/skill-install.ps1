@@ -105,6 +105,7 @@ if ($Rules) {
     $RulesDest = if ($LeafName -eq "rules") { $NormalizedPath } else { Join-Path $NormalizedPath "rules" }
     Write-Host "Rules -> $RulesDest"
     Install-Files "rules" @(
+        "gitnexus-mcp-rules.md",
         "writing-pipeline.md"
     ) $RulesDest
 }
