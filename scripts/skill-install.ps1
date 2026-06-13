@@ -79,6 +79,7 @@ if ($Skills) {
     # 注意: skill-updater 是内部维护工具，不包含在用户安装列表中
     Write-Host "Skills -> $SkillsDest"
     Install-Files "skills" @(
+        "auto-review/SKILL.md",
         "challenger/SKILL.md", "challenger/strategies/bug-fix.md",
         "challenger/strategies/feature.md", "challenger/strategies/optimization.md",
         "challenger/templates/report.md", "code-review/SKILL.md",
