@@ -125,6 +125,7 @@ if [ "$MODE" = "skills" ]; then
         "challenger/strategies/optimization.md"
         "challenger/templates/report.md"
         "code-review/SKILL.md"
+        "create-rules/SKILL.md"
         "create-skill/SKILL.md"
         "data-flow-model/SKILL.md"
         "demo-verify/SKILL.md"

@@ -83,7 +83,7 @@ if ($Skills) {
         "challenger/SKILL.md", "challenger/strategies/bug-fix.md",
         "challenger/strategies/feature.md", "challenger/strategies/optimization.md",
         "challenger/templates/report.md", "code-review/SKILL.md",
-        "create-skill/SKILL.md", "data-flow-model/SKILL.md",
+        "create-rules/SKILL.md", "create-skill/SKILL.md", "data-flow-model/SKILL.md",
         "demo-verify/SKILL.md", "design-craft/SKILL.md",
         "design-craft/SUB_TEMPLATE.md", "design-craft/reference.md",
         "design-review/SKILL.md", "design-review/reference.md",
