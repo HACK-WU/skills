@@ -4,39 +4,52 @@
 
 ## 快速安装
 
+> **获取脚本**：`skill-install.sh` 位于本仓库 `scripts/` 目录。你可以克隆仓库或直接下载脚本使用。
+
+### 获取脚本
+
+```bash
+# 方式1：克隆仓库
+git clone https://github.com/HACK-WU/skills.git
+cd skills
+
+# 方式2：仅下载安装脚本
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh -o skill-install.sh
+```
+
 ### 安装 AI Skill 定义
 ```bash
 # 单目录
-bash skill-install.sh --skills -t /path/to/your-project
+bash scripts/skill-install.sh --skills -t /path/to/your-project
 
 # 多目录
-bash skill-install.sh --skills -t ~/projects/app -t ~/projects/api
+bash scripts/skill-install.sh --skills -t ~/projects/app -t ~/projects/api
 
-# 一键安装
+# 一键安装（无需先下载脚本）
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
   bash -s -- --skills -t /path/to/your-project
 ```
 
 ### 安装 AI 规则
 ```bash
-bash skill-install.sh --rules -t /path/to/your-project
+bash scripts/skill-install.sh --rules -t /path/to/your-project
 ```
 
 ### 安装 CRUD 脚本（需求管理工具）
 ```bash
-bash skill-install.sh --scripts -t /path/to/your-project
+bash scripts/skill-install.sh --scripts -t /path/to/your-project
 ```
 
 ### 多模式组合安装
 ```bash
 # 同时安装 skills + rules + scripts
-bash skill-install.sh --skills --rules --scripts -t /path/to/your-project
+bash scripts/skill-install.sh --skills --rules --scripts -t /path/to/your-project
 ```
 
 ### 从配置文件指定目标目录
 ```bash
 # targets.txt 每行一个目录，支持 # 注释和空行
-bash skill-install.sh --skills --file ~/my-targets.txt
+bash scripts/skill-install.sh --skills --file ~/my-targets.txt
 ```
 
 ### Windows（PowerShell）
@@ -76,17 +89,22 @@ bash skill-install.sh --skills --file ~/my-targets.txt
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度 | "review 这个提交"、"code review" |
-| **[challenger](./skills/challenger/SKILL.md)** | 代码质疑者，对 code-review 结果进行二次审查 | "质疑这个修复"、"二次审查" |
+| **[challenger](./skills/challenger/SKILL.md)** | 代码质疑者，对 code-review 结果进行二次审查，支持三种质疑策略 | "质疑这个修复"、"二次审查" |
+| **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
+| **[test-planner](./skills/test-planner/SKILL.md)** | 根据需求文档自动生成结构化测试计划，覆盖功能/性能/安全等维度 | "生成测试计划"、"写测试用例" |
 
 ### 工具
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[expert-panel](./skills/expert-panel/SKILL.md)** | 启动多角色专家团进行方案评审 | "专家团评审"、"expert panel" |
+| **[document-writer](./skills/document-writer/SKILL.md)** | 为项目生成高质量 README 及子文档，根据项目类型自动选择策略 | "生成 README"、"写项目文档" |
 | **[create-rules](./skills/create-rules/SKILL.md)** | 引导创建符合规范的 AI 规则文件 | "创建规则"、"写一个规则" |
 | **[create-skill](./skills/create-skill/SKILL.md)** | 引导创建新的 Agent Skill | "创建 skill"、"写一个技能" |
+| **[content-simplifier](./skills/content-simplifier/SKILL.md)** | 精简 skill 和 rules 文件内容，识别冗余，优化决策流程清晰度 | "精简skill"、"优化rules"、"清理冗余" |
 | **[memory-creator](./skills/memory-creator/SKILL.md)** | 指导 AI 生成简洁的记忆内容描述 | "记住这个"、"创建记忆" |
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
+| **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 
 ### 规则
 
@@ -164,11 +182,16 @@ skills/
 ├── implementation-report/    # 实现报告
 ├── code-review/              # 代码评审
 ├── challenger/               # 代码质疑
+├── auto-review/              # 自动审查修复闭环
+├── test-planner/             # 测试计划生成
 ├── expert-panel/             # 专家团
+├── document-writer/          # 项目文档生成
 ├── create-rules/             # 创建规则
 ├── create-skill/             # 创建技能
+├── content-simplifier/       # 内容精简
 ├── memory-creator/           # 记忆生成
-└── migrate-to-codehub/       # 迁移工具
+├── migrate-to-codehub/       # 迁移工具
+└── requirement-doc-store/    # 需求文档存储规范
 
 rules/
 ├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则

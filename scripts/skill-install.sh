@@ -272,6 +272,7 @@ install_skills() {
             "challenger/strategies/optimization.md"
             "challenger/templates/report.md"
             "code-review/SKILL.md"
+            "content-simplifier/SKILL.md"
             "create-rules/SKILL.md"
             "create-skill/SKILL.md"
             "data-flow-model/SKILL.md"
