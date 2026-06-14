@@ -392,13 +392,13 @@ description: 对设计文档进行结构化评审，产出按严重度分级的�
 1. **获取需求上下文**：评审设计文档时，如果关联了 REQ-ID，先读取需求信息作为评审背景：
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 ```
 
-2. **写入评审报告**到需求目录后，调用 `update-requirement.py` 注册文档关联并追加变更记录：
+2. **写入评审报告**到需求目录后，调用 `req update` 注册文档关联并追加变更记录：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add design/design-review.md,review --changelog "完成设计评审"
 ```
 

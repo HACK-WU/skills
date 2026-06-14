@@ -1393,13 +1393,13 @@ def init_database():
 1. **获取需求上下文**：审查代码前，如果关联了 REQ-ID，先读取需求信息作为审查参照：
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 ```
 
-2. **写入审查报告**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+2. **写入审查报告**到需求目录后，调用 `req update` 注册文档关联：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add review/code-review.md,review --changelog "完成代码审查"
 ```
 

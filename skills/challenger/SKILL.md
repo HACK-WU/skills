@@ -75,13 +75,13 @@ description: 代码质疑者，专门寻找code-review可能遗漏的问题。�
 1. **获取需求上下文**：质疑审查前，如果关联了 REQ-ID，先读取需求信息作为参照：
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 ```
 
-2. **写入质疑报告**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+2. **写入质疑报告**到需求目录后，调用 `req update` 注册文档关联：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add review/challenge-report.md,review --changelog "完成质疑审查"
 ```
 

@@ -1,7 +1,6 @@
 ---
 name: requirement-doc-store
-description: >-
-  需求相关文档的通用存储规范。根据文档类型自动决定存储路径，确保各 skill
+description: 需求相关文档的通用存储规范。根据文档类型自动决定存储路径，确保各 skill
   产出文档统一归位到需求目录下的正确子目录。
   适用场景：(1) 任何 skill 生成需求相关文档后需要落盘时，(2) design-craft
   完成设计文档需要存储时，(3) data-flow-model 完成数据流图需要存储时，
@@ -17,7 +16,7 @@ description: >-
 
 - **按文档类型分目录**：不同阶段产出的文档放入不同子目录
 - **中文命名**：目录名和文件名使用中文，与 meta.json 中 feature 字段一致
-- **脚本操作元数据**：禁止直接编辑 `meta.json`，必须通过脚本操作
+- **命令操作元数据**：禁止直接编辑 `meta.json`，必须通过 `req` 命令操作
 
 ## 配置约束
 
@@ -33,6 +32,57 @@ description: >-
 - 创建需求时，必须包含一个 `feature_categories` 中的功能分类标签
 - 违反约束会导致操作失败并显示错误信息
 
+## 前置步骤：初始化配置
+
+使用任何 `req` 命令前，必须先执行 `req init` 初始化项目配置文件 `.requirements/config`：
+
+```bash
+req init
+```
+
+**命令行为**：
+- 自动向上查找项目根目录（含 `.requirements` 或 `.git` 的目录），确保在子目录中运行也能正确定位
+- 生成 `.requirements/config` 和 `.requirements/` 目录
+- 如果配置文件已存在，提示使用 `req init --force` 覆盖
+
+**选项**：
+
+| 选项 | 说明 |
+|------|------|
+| `--force` | 强制覆盖已存在的配置文件，覆盖前自动备份旧配置为 `config.bak` |
+| `--yes` | 非交互模式，跳过确认提示，直接创建或覆盖 |
+
+**生成的默认配置模板**：
+
+```ini
+# requirement-mgr 项目配置
+# 由 req init 自动生成
+
+storage_path=.requirements
+feature_categories=
+requirement_tags=
+requirement_statuses=草案,已确认,设计中,实施中,已完成,已取消
+requirement_roles=standalone,parent,child
+id_prefix=REQ
+id_digits=3
+lock_timeout=5
+backup_enabled=false
+```
+
+配置项说明：
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `storage_path` | 需求文档存储根路径 | `.requirements` |
+| `feature_categories` | 功能分类标签（逗号分隔） | 空 |
+| `requirement_tags` | 标签可选值（逗号分隔） | 空 |
+| `requirement_statuses` | 需求状态可选值，第一个为默认初始状态 | `草案,已确认,...` |
+| `requirement_roles` | 需求角色可选值 | `standalone,parent,child` |
+| `id_prefix` | 需求 ID 前缀 | `REQ` |
+| `id_digits` | ID 日期后序号位数 | `3` |
+| `lock_timeout` | 文件锁超时秒数 | `5` |
+| `backup_enabled` | 写入前是否备份 meta.json | `false` |
+
 ---
 
 ## 场景判断
@@ -41,9 +91,9 @@ description: >-
 
 | 场景 | 判别条件 | 处理方式 |
 |------|----------|----------|
-| **创建** | 需求目录不存在（`{storage_path}/{category}/{date}-{feature}/` 不存在） | 先用 `create-requirement.py` 创建目录 + 注册 meta.json，再写入文档 |
-| **更新** | 需求目录已存在，meta.json 中已有该条目 | 直接写入/覆盖文档，用 `update-requirement.py --docs add` 注册关联 |
-| **删除** | 需求目录已存在，需要废弃或清理 | 使用 `delete-requirement.py` 删除条目和目录 |
+| **创建** | 需求目录不存在（`{storage_path}/{category}/{date}-{feature}/` 不存在） | 先用 `req create` 创建目录 + 注册 meta.json，再写入文档 |
+| **更新** | 需求目录已存在，meta.json 中已有该条目 | 直接写入/覆盖文档，用 `req update --docs add` 注册关联 |
+| **删除** | 需求目录已存在，需要废弃或清理 | 使用 `req delete` 删除条目和目录 |
 
 ---
 
@@ -56,14 +106,14 @@ description: >-
 
 ### Step C2：创建需求目录并注册
 
-使用 `create-requirement.py` 创建目录并写入 meta.json：
+使用 `req create` 命令创建需求目录并写入 meta.json：
 
 ```bash
-uv run python scripts/requirement-mgr/create-requirement.py \
+req create \
   --feature "{功能名称}" \
   --tags "{逗号分隔标签}" \
   [--depends-on "{REQ-XXX,REQ-YYY}"] \
-  --status {状态}
+  [--status {状态}]
 ```
 
 参数说明：
@@ -87,7 +137,7 @@ uv run python scripts/requirement-mgr/create-requirement.py \
 
 ```yaml
 ---
-id: {REQ-NNN}                          # 由 create-requirement.py 自动生成
+id: {REQ-NNN}                          # 由 req create 命令自动生成
 feature: {功能名称}
 status: {状态}                          # 可选值：草案、已确认、设计中、实施中、已完成、已取消
 created: {YYYY-MM-DD}
@@ -119,15 +169,15 @@ document_type: requirement             # 文档类型枚举（见下方文档类
 ### Step C4：验证创建结果
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
+req list --id {REQ-NNN}
 ```
 
 ### Step C5：注册文档关联（可选）
 
-如果除 `requirement.md` 外还写入了其他文档（如 `data-flow.md`），需要用 `update-requirement.py --docs add` 注册：
+如果除 `requirement.md` 外还写入了其他文档（如 `data-flow.md`），需要用 `req update --docs add` 注册：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs add data-flow.md,data_flow
+req update {REQ-NNN} --docs add data-flow.md,data_flow
 ```
 
 ---
@@ -137,7 +187,7 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs add
 ### Step U1：确认需求目录
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
+req list --id {REQ-NNN}
 ```
 
 根据输出中的需求目录名拼出完整路径：`{storage_path}/{需求目录}/`
@@ -156,21 +206,21 @@ uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
 
 > **废弃字段说明**：`--data-flow` 参数已废弃，请使用 `--docs add` 替代。
 
-文档落盘后，使用 `update-requirement.py --docs` 注册到 meta.json：
+文档落盘后，使用 `req update --docs` 注册到 meta.json：
 
 **添加文档关联**：
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs add {相对路径},{类型}
+req update {REQ-NNN} --docs add {相对路径},{类型}
 ```
 
 **删除文档关联**：
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs remove {相对路径}
+req update {REQ-NNN} --docs remove {相对路径}
 ```
 
 **批量覆盖文档关联**：
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
+req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 ```
 
 文档类型映射：
@@ -195,19 +245,19 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --docs set
 
 ```bash
 # 评审通过
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --status 已确认 --changelog "需求评审通过"
 
 # 进入设计（注册设计文档）
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --status 设计中 --docs add design/DESIGN.md,design --changelog "开始技术设计"
 
 # 开始开发
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --status 实施中 --commit {git_hash}
 
 # 验收完成
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --status 已完成 --changelog "功能验收通过"
 ```
 
@@ -217,13 +267,13 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
 
 ```bash
 # 添加标签
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag add {标签名}
+req update {REQ-NNN} --tag add {标签名}
 
 # 删除标签
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag remove {标签名}
+req update {REQ-NNN} --tag remove {标签名}
 
 # 覆盖标签列表
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag set {标签1},{标签2},{标签3}
+req update {REQ-NNN} --tag set {标签1},{标签2},{标签3}
 ```
 
 **约束规则**：
@@ -236,32 +286,32 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --tag set 
 ### Step U5.2：更新功能名称
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --feature "{新功能名称}"
+req update {REQ-NNN} --feature "{新功能名称}"
 ```
 
 ### Step U6：追加关联 commit
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --commit {git_hash}
+req update {REQ-NNN} --commit {git_hash}
 ```
 
 ### Step U7：管理依赖关系
 
 ```bash
 # 添加依赖
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --depends-on add REQ-XXX
+req update {REQ-NNN} --depends-on add REQ-XXX
 
 # 移除依赖
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --depends-on remove REQ-XXX
+req update {REQ-NNN} --depends-on remove REQ-XXX
 
 # 覆盖依赖列表
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} --depends-on set REQ-XXX,REQ-YYY
+req update {REQ-NNN} --depends-on set REQ-XXX,REQ-YYY
 ```
 
 ### Step U8：验证更新
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
+req list --id {REQ-NNN}
 ```
 
 ---
@@ -273,7 +323,7 @@ uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
 使用 `--dry-run` 预览删除操作，确认影响范围：
 
 ```bash
-uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN} --dry-run
+req delete {REQ-NNN} --dry-run
 ```
 
 ### Step D2：确认删除
@@ -281,7 +331,7 @@ uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN} --dry-run
 交互式确认删除（默认）：
 
 ```bash
-uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN}
+req delete {REQ-NNN}
 ```
 
 输出会显示：
@@ -294,7 +344,7 @@ uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN}
 在脚本中自动化删除（跳过确认）：
 
 ```bash
-uv run python scripts/requirement-mgr/delete-requirement.py {REQ-NNN} --force
+req delete {REQ-NNN} --force
 ```
 
 **删除操作会**：
@@ -371,78 +421,79 @@ security/
 
 ## 查询功能
 
-使用 `list-requirements.py` 进行需求查询和依赖分析：
+使用 `req list` 进行需求查询和依赖分析：
 
 ### 基本查询
 
 ```bash
 # 列出所有需求
-uv run python scripts/requirement-mgr/list-requirements.py
+req list
 
 # 精确查询需求详情
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN}
+req list --id {REQ-NNN}
 
 # JSON 格式输出（适合脚本消费）
-uv run python scripts/requirement-mgr/list-requirements.py --json
+req list --json
 ```
 
 ### 筛选查询
 
 ```bash
 # 按状态筛选
-uv run python scripts/requirement-mgr/list-requirements.py --status {状态}
+req list --status {状态}
 
 # 按标签筛选（可重复，AND 关系）
-uv run python scripts/requirement-mgr/list-requirements.py --tag {标签1} --tag {标签2}
+req list --tag {标签1} --tag {标签2}
 
 # 按功能分类筛选
-uv run python scripts/requirement-mgr/list-requirements.py --category {feature_category}
+req list --category {feature_category}
 
 # 按日期范围筛选
-uv run python scripts/requirement-mgr/list-requirements.py --from {YYYY-MM-DD} --to {YYYY-MM-DD}
+req list --from {YYYY-MM-DD} --to {YYYY-MM-DD}
 
 # 模糊搜索功能名称
-uv run python scripts/requirement-mgr/list-requirements.py --search "{关键词}"
+req list --search "{关键词}"
 ```
 
 ### 依赖分析
 
 ```bash
 # 展示依赖树
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 
 # 展示依赖树（指定深度）
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps --deps-depth 3
+req list --id {REQ-NNN} --deps --deps-depth 3
 
 # 查看反向依赖（谁依赖了我）
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --rev-deps
+req list --id {REQ-NNN} --rev-deps
 ```
 
 ### 输出控制
 
 ```bash
 # 自定义显示列
-uv run python scripts/requirement-mgr/list-requirements.py --columns id,feature,status,tags
+req list --columns id,feature,status,tags
 
 # 禁用颜色
-uv run python scripts/requirement-mgr/list-requirements.py --no-color
+req list --no-color
 ```
 
 ## 行为边界
 
-- **脚本操作元数据**：frontmatter 和 meta.json 必须通过脚本操作，禁止手动拼接路径写入
-- **不创建需求目录**：需求目录由 `create-requirement.py` 创建
+- **命令操作元数据**：frontmatter 和 meta.json 必须通过 `req` 命令操作，禁止手动拼接路径写入
+- **不创建需求目录**：需求目录由 `req create` 命令创建
 - **只处理已存在的需求**：必须有对应的 meta.json 条目
-- **持久化后验证**：任何创建或更新操作后，必须用 `list-requirements.py --id {REQ-NNN}` 验证结果
+- **持久化后验证**：任何创建或更新操作后，必须用 `req list --id {REQ-NNN}` 验证结果
 
 ## 参考
 
-- 需求管理脚本系统完整指南：`docs/requirement-mgr-guide.md`
-- CRUD 脚本路径：`scripts/requirement-mgr/`
+- 需求管理系统完整指南：`docs/requirement-mgr-guide.md`
+- 命令参考：`docs/command-reference.md`
+- 配置指南：`docs/configuration.md`
 
 ## 集成 skill 清单
 
-以下 skill 已集成需求管理，在落盘阶段自动调用 CRUD 脚本更新 meta.json：
+以下 skill 已集成需求管理，在落盘阶段自动调用 `req` 命令更新 meta.json：
 
 | Skill | 优先级 | 集成类型 | 产出文档路径 |
 |-------|--------|----------|-------------|
@@ -457,5 +508,5 @@ uv run python scripts/requirement-mgr/list-requirements.py --no-color
 | demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |
 | expert-panel | P2 | 读写型 | `review/expert-panel.md` |
 
-**写入型**：skill 产出文档后自动调用 `update-requirement.py --docs add` 注册并更新状态。
-**读写型**：skill 执行前自动调用 `list-requirements.py` 获取需求上下文作为参照，完成后写入报告。
+**写入型**：skill 产出文档后自动调用 `req update --docs add` 注册并更新状态。
+**读写型**：skill 执行前自动调用 `req list` 获取需求上下文作为参照，完成后写入报告。

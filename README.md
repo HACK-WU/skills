@@ -165,6 +165,15 @@ C:\projects\app
 
 **详细使用指南**：[requirement-mgr-guide.md](./docs/requirement-mgr-guide.md)
 
+### 需求管理文档
+
+| 文档 | 说明 |
+|------|------|
+| [命令参考](./docs/command-reference.md) | `req` 命令行工具的所有命令及其参数和输出示例 |
+| [配置指南](./docs/configuration.md) | 配置文件格式、配置项详解和约束规则 |
+| [架构文档](./docs/requirement-mgr-guide.md) | 系统架构、技术实现细节、数据模型 |
+| [故障排查](./docs/troubleshooting.md) | 常见问题及解决方案 |
+
 ## 设计流程
 
 这些技能可以串联使用，形成完整的设计-开发流程：

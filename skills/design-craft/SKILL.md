@@ -588,15 +588,15 @@ flowchart LR
 
 ### 集成步骤
 
-1. **写入设计文档**到需求目录后，调用 `update-requirement.py` 注册文档关联并更新状态：
+1. **写入设计文档**到需求目录后，调用 `req update` 注册文档关联并更新状态：
 
 ```bash
 # 单文档场景
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add design/DESIGN.md,design --status 设计中 --changelog "完成技术设计"
 
 # 多文档场景：父文档 + 子文档分别注册
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add design/DESIGN.md,design \
   --docs add design/S01_子需求名称_DESIGN.md,design \
   --status 设计中 --changelog "完成技术设计（N 个子需求）"
@@ -605,7 +605,7 @@ uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
 2. **获取需求上下文**（阶段 0 需求成熟度判定时）：如果用户提供了 REQ-ID，先读取需求信息作为设计输入：
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 ```
 
 3. **错误处理**：

@@ -427,11 +427,11 @@ REQ-03 (注册转化提升)
 用户选择落盘归档时，引导用户确认落盘内容，然后按 **`requirement-doc-store`** skill 的「创建场景」流程执行：
 
 1. 确认落盘：提示用户落盘内容为需求挖掘报告（`requirement.md`），确认后继续
-2. 创建需求：使用 `create-requirement.py` 创建目录并注册到 meta.json
+2. 创建需求：使用 `req create` 命令创建目录并注册到 meta.json
 3. 写入文档：使用 `write_to_file` 按 frontmatter 模板写入 `requirement.md`
-4. 验证：使用 `list-requirements.py --id {REQ-NNN}` 确认
+4. 验证：使用 `req list --id {REQ-NNN}` 确认
 
-> 详细步骤、frontmatter 模板和脚本参数见 `requirement-doc-store` skill。
+> 详细步骤、frontmatter 模板和命令参数见 `requirement-doc-store` skill。
 
 #### 8.2 选项2：进入需求拆分
 
@@ -673,5 +673,5 @@ design-craft 技能输出技术设计文档后，提示用户：
 - **处理多需求混合**：如果用户一次性提出多个不相关的功能需求，先请用户挑一个最优先的深入挖掘，不要混在一起处理
 - **探索性需求引导**：当用户提出探索性需求时，必须先引导用户聚焦方向，再进行深入分析
 - **迭代限制**：假设验证迭代不超过 3 次，超过后建议用户重新描述需求
-- **元数据管理**：需求文档的 frontmatter 和 meta.json 必须通过脚本操作（`create-requirement.py` / `update-requirement.py`），禁止手动拼接路径写入。脚本保证原子性与并发安全
-- **持久化后验证**：任何创建或更新操作后，必须用 `list-requirements.py --id {REQ-NNN}` 验证结果
+- **元数据管理**：需求文档的 frontmatter 和 meta.json 必须通过 `req` 命令操作（`req create` / `req update`），禁止手动拼接路径写入。命令保证原子性与并发安全
+- **持久化后验证**：任何创建或更新操作后，必须用 `req list --id {REQ-NNN}` 验证结果

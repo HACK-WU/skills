@@ -49,7 +49,7 @@ design-craft → 开发实现 → implementation-report
 
 | 来源 | 提取内容 | 提取方式 |
 |------|----------|----------|
-| meta.json | 需求元数据（feature、tags、depends_on） | `list-requirements.py --id {REQ-NNN}` |
+| meta.json | 需求元数据（feature、tags、depends_on） | `req list --id {REQ-NNN}` |
 | git 历史 | 关联提交的变更内容 | `git log --oneline {commit_hash}` |
 | 设计文档 | 设计方案（用于偏差对比） | 读取需求目录下的 design/ 文档 |
 | 代码文件 | 实际实现 | 读取相关代码文件 |
@@ -161,17 +161,17 @@ document_type: report
 
 ### 集成步骤
 
-1. **写入实现报告**到需求目录后，调用 `update-requirement.py` 注册文档关联并更新状态：
+1. **写入实现报告**到需求目录后，调用 `req update` 注册文档关联并更新状态：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add report.md,report --status 已完成 --changelog "实现报告归档"
 ```
 
 2. **追加关联提交**（如果 meta.json 中尚未记录）：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --commit {git_hash}
 ```
 

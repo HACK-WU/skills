@@ -382,17 +382,17 @@ flowchart LR
 
 ### 集成步骤
 
-1. **写入数据模型文档**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+1. **写入数据模型文档**到需求目录后，调用 `req update` 注册文档关联：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add design/data-flow.md,data_flow --changelog "完成数据建模与流图"
 ```
 
 2. **获取需求上下文**：如果用户提供了 REQ-ID，先读取需求信息作为建模输入：
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 ```
 
 3. **错误处理**：

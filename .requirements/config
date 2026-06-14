@@ -1,11 +1,31 @@
+# ──────────────────────────────────────────────
+# requirement-mgr 项目配置
+# 由 req init 自动生成
+# ──────────────────────────────────────────────
+
+# 存储路径（相对于项目根目录）
 storage_path=.requirements
 
-# 需求功能分类配置
-# 多个分类用逗号分隔，例如：告警,监控,日志,权限
-# 默认值为空，表示不进行功能分类
-feature_categories=security,performance,integration,monitoring,logging
+# 需求功能分类（为空表示不进行功能分类）
+feature_categories=
 
-# 需求标签配置
-# tags 字段的可选值必须从此配置中选取，不能凭空创造
-# 多个标签用逗号分隔
-requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infra,bugfix,optimization,documentation
+# 需求标签（为空表示不限制标签）
+requirement_tags=
+
+# 需求状态（第一个值为默认初始状态）
+requirement_statuses=草案,已确认,设计中,实施中,已完成,已取消
+
+# 需求角色（第一个值为默认角色）
+requirement_roles=standalone,parent,child
+
+# ID 前缀
+id_prefix=REQ
+
+# ID 日期后序号位数
+id_digits=3
+
+# 文件锁超时秒数
+lock_timeout=5
+
+# 写入前备份 meta.json
+backup_enabled=false

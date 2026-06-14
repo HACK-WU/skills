@@ -382,13 +382,13 @@ flowchart TD
 1. **获取需求上下文**：如果用户提供了 REQ-ID，先读取需求信息作为设计输入：
 
 ```bash
-uv run python scripts/requirement-mgr/list-requirements.py --id {REQ-NNN} --deps
+req list --id {REQ-NNN} --deps
 ```
 
-2. **写入交互设计文档**到需求目录后，调用 `update-requirement.py` 注册文档关联：
+2. **写入交互设计文档**到需求目录后，调用 `req update` 注册文档关联：
 
 ```bash
-uv run python scripts/requirement-mgr/update-requirement.py {REQ-NNN} \
+req update {REQ-NNN} \
   --docs add design/interaction-design.md,design --changelog "完成交互设计"
 ```
 
