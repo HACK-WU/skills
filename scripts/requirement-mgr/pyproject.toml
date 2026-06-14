@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "requirement-mgr"
+version = "1.0.0"
+description = "需求管理 CLI 工具"
+requires-python = ">=3.10"
+# 零外部依赖
+
+[project.scripts]
+req = "requirement_mgr.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/requirement_mgr"]
