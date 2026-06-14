@@ -4,17 +4,18 @@
       "id": "REQ-001",
       "feature": "需求管理脚本系统",
       "created": "2026-06-11",
-      "updated": "2026-06-12",
-      "status": "实施中",
+      "updated": "2026-06-14",
+      "status": "设计中",
       "tags": [
         "tool",
         "security",
         "feat"
       ],
-      "version": 8,
+      "version": 9,
       "depends_on": [],
       "changelog": [
-        "初始创建"
+        "初始创建",
+        "2026-06-14 v9: 兼容性测试"
       ],
       "commits": [],
       "docs": [
@@ -49,14 +50,12 @@
       "id": "REQ-003",
       "feature": "需求文档存储规范",
       "created": "2026-06-11",
-      "updated": "2026-06-11",
+      "updated": "2026-06-14",
       "status": "已确认",
       "tags": [
-        "feat",
-        "tool",
         "integration"
       ],
-      "version": 1,
+      "version": 3,
       "depends_on": [
         "REQ-001"
       ],
@@ -65,6 +64,46 @@
       ],
       "commits": [],
       "docs": []
+    },
+    "integration/2026-06-14-requirement-mgr 包化与配": {
+      "id": "REQ-004",
+      "feature": "requirement-mgr 包化与配置增强",
+      "created": "2026-06-14",
+      "updated": "2026-06-14",
+      "status": "实施中",
+      "tags": [
+        "feat",
+        "tool",
+        "integration"
+      ],
+      "version": 7,
+      "depends_on": [
+        "REQ-001"
+      ],
+      "changelog": [
+        "初始创建",
+        "2026-06-14 v2: 创建需求文档和技术设计",
+        "2026-06-14 v3: 审查修复：补充 depends_on 与 parent/child 关系定义、config 路径说明、约束规则完善、新增 REQ-15/16/17",
+        "2026-06-14 v4: 质疑修复：补充 parent role 自动升级、config 空值防护、子目录 config 查找、force 备份、parent/child+depends_on 组合说明",
+        "2026-06-14 v5: 二次审查修复：修复init子目录路径、备份路径错误、backup_enabled连接、自动升级代码、核心场景补充",
+        "2026-06-14 v6: 完成数据模型与数据流图",
+        "2026-06-14 v7: 包化改造实施完成：pyproject.toml + 5个子命令 + 5个核心模块，父子需求、日期ID、config增强全部实现"
+      ],
+      "commits": [],
+      "docs": [
+        {
+          "path": "requirement.md",
+          "type": "requirement"
+        },
+        {
+          "path": "design/DESIGN.md",
+          "type": "design"
+        },
+        {
+          "path": "design/data-flow.md",
+          "type": "data_flow"
+        }
+      ]
     }
   }
 }

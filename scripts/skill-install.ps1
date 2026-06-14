@@ -27,7 +27,9 @@ $GITHUB_REPO = "HACK-WU/skills"
 $GITHUB_BRANCH = "master"
 $RawBase = "https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
 $ApiBase = "https://api.github.com/repos/${GITHUB_REPO}/contents"
-$DefaultTargetsFile = "$env:USERPROFILE\.skill-targets"
+$DefaultSkillsTargets = "$env:USERPROFILE\.skill-targets"
+$DefaultRulesTargets = "$env:USERPROFILE\.rule-targets"
+$DefaultScriptsTargets = "$env:USERPROFILE\.script-targets"
 
 # ============================================================
 # 收集安装模式
@@ -55,6 +57,11 @@ if ($Modes.Count -eq 0) {
   .\skill-install.ps1 -Skills -Target C:\projects\app -Target C:\projects\api
   .\skill-install.ps1 -Rules -ConfigFile C:\my-targets.txt
   .\skill-install.ps1 -Scripts -Skills -Rules -Target C:\projects\my-app
+
+默认配置文件（不指定 -Target / -ConfigFile 时自动读取）:
+  -Skills   → $env:USERPROFILE\.skill-targets
+  -Rules    → $env:USERPROFILE\.rule-targets
+  -Scripts  → $env:USERPROFILE\.script-targets
 
 一键安装:
   iex (irm https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1)
@@ -91,13 +98,32 @@ if ($Target) {
         exit 1
     }
     $SourceDesc = "配置文件: $ConfigFile"
-} elseif (Test-Path $DefaultTargetsFile) {
-    foreach ($line in (Get-Content $DefaultTargetsFile -ErrorAction SilentlyContinue)) {
-        $trimmed = $line.Trim()
-        if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
-        $TargetDirs += $trimmed
+} elseif ($Modes.Count -gt 0) {
+    # 模式特定的默认配置文件
+    $modeFiles = @()
+    foreach ($mode in $Modes) {
+        switch ($mode) {
+            "scripts" { $modeFiles += $DefaultScriptsTargets }
+            "skills"  { $modeFiles += $DefaultSkillsTargets }
+            "rules"   { $modeFiles += $DefaultRulesTargets }
+        }
     }
-    $SourceDesc = "默认配置: $DefaultTargetsFile"
+    $seen = @{}
+    foreach ($cf in $modeFiles) {
+        if (Test-Path $cf) {
+            foreach ($line in (Get-Content $cf -ErrorAction SilentlyContinue)) {
+                $trimmed = $line.Trim()
+                if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
+                if (-not $seen.ContainsKey($trimmed)) {
+                    $TargetDirs += $trimmed
+                    $seen[$trimmed] = $true
+                }
+            }
+        }
+    }
+    if ($TargetDirs.Count -gt 0) {
+        $SourceDesc = "默认配置（模式区分）"
+    }
 } elseif ($TargetPath) {
     $TargetDirs = @($TargetPath)
     $SourceDesc = "位置参数"

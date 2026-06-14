@@ -1,9 +1,6 @@
 ---
 name: auto-review
-description: >-
-  AI 生成 Markdown 文件或代码文件后，自动触发质量审查与修复闭环。
-  审查完成后自动判断是否属于复杂场景，若属于则调用 challenger skill 进行二次质疑。
-  触发条件：每次使用 write_to_file 或 replace_in_file 写入 .md / 代码文件后自动执行。
+description: AI 生成 Markdown 文件或代码文件后，自动触发质量审查与修复闭环。审查完成后自动判断是否属于复杂场景，若属于则调用 challenger skill 进行二次质疑。触发条件：每次使用 write_to_file 或 replace_in_file 写入 .md / 代码文件后自动执行。
 ---
 
 # 自动审查规则

@@ -17,7 +17,9 @@ GITHUB_REPO="HACK-WU/skills"
 GITHUB_BRANCH="master"
 RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
 
-DEFAULT_TARGETS_FILE="$HOME/.skill-targets"
+DEFAULT_SKILLS_TARGETS="$HOME/.skill-targets"
+DEFAULT_RULES_TARGETS="$HOME/.rule-targets"
+DEFAULT_SCRIPTS_TARGETS="$HOME/.script-targets"
 POSITIONAL_TARGET=""
 TARGETS=()
 CONFIG_FILE=""
@@ -83,15 +85,34 @@ elif [ -n "$CONFIG_FILE" ]; then
         exit 1
     fi
     SOURCE_DESC="配置文件: $CONFIG_FILE"
-elif [ -f "$DEFAULT_TARGETS_FILE" ]; then
+elif [ ${#MODES[@]} -gt 0 ]; then
+    # 模式特定的默认配置文件
     TARGET_DIRS=()
-    while IFS= read -r line; do
-        line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        [ -z "$line" ] && continue
-        [[ "$line" =~ ^# ]] && continue
-        TARGET_DIRS+=("$line")
-    done < "$DEFAULT_TARGETS_FILE"
-    SOURCE_DESC="默认配置: $DEFAULT_TARGETS_FILE"
+    MODE_FILES=()
+    declare -A SEEN_TARGETS
+    for mode in "${MODES[@]}"; do
+        case "$mode" in
+            scripts) MODE_FILES+=("$DEFAULT_SCRIPTS_TARGETS") ;;
+            skills)  MODE_FILES+=("$DEFAULT_SKILLS_TARGETS") ;;
+            rules)   MODE_FILES+=("$DEFAULT_RULES_TARGETS") ;;
+        esac
+    done
+    for cf in "${MODE_FILES[@]}"; do
+        if [ -f "$cf" ]; then
+            while IFS= read -r line; do
+                line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+                [ -z "$line" ] && continue
+                [[ "$line" =~ ^# ]] && continue
+                if [ -z "${SEEN_TARGETS[$line]:-}" ]; then
+                    TARGET_DIRS+=("$line")
+                    SEEN_TARGETS[$line]=1
+                fi
+            done < "$cf"
+        fi
+    done
+    if [ ${#TARGET_DIRS[@]} -gt 0 ]; then
+        SOURCE_DESC="默认配置（模式区分）"
+    fi
 elif [ -n "$POSITIONAL_TARGET" ]; then
     TARGET_DIRS=("$POSITIONAL_TARGET")
     SOURCE_DESC="位置参数"
@@ -115,6 +136,11 @@ if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ ${#MODES[@]} -eq 0 ]; then
     echo "  bash skill-install.sh --skills -t ~/projects/app -t ~/projects/api"
     echo "  bash skill-install.sh --rules --file ~/my-targets.txt"
     echo "  bash skill-install.sh --scripts --skills --rules -t ~/projects/my-app"
+    echo ""
+    echo "默认配置文件（不指定 -t / --file 时自动读取）:"
+    echo "  --skills  → $HOME/.skill-targets"
+    echo "  --rules   → $HOME/.rule-targets"
+    echo "  --scripts → $HOME/.script-targets"
     echo ""
     echo "一键安装:"
     echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | \\"

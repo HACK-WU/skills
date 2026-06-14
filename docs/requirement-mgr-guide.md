@@ -1,6 +1,6 @@
 # 需求管理脚本系统 — 完整指南
 
-> 基于 `meta.json` 集中元数据的零依赖 Python CRUD 工具，支持原子写入、并发文件锁、依赖追踪。
+> 基于 `meta.json` 集中元数据的零依赖 Python 包（CLI 工具），支持原子写入、并发文件锁、父子需求层级、依赖追踪。
 
 ## 目录
 
@@ -27,10 +27,10 @@
   - [5.3 依赖分析与影响评估](#53-依赖分析与影响评估)
   - [5.4 批量操作与清理](#54-批量操作与清理)
 - [6. 详细使用说明](#6-详细使用说明)
-  - [6.1 查询需求 (list-requirements)](#61-查询需求-list-requirements)
-  - [6.2 新建需求 (create-requirement)](#62-新建需求-create-requirement)
-  - [6.3 修改需求 (update-requirement)](#63-修改需求-update-requirement)
-  - [6.4 删除需求 (delete-requirement)](#64-删除需求-delete-requirement)
+  - [6.1 查询需求 (req list)](#61-查询需求-req-list)
+  - [6.2 新建需求 (req create)](#62-新建需求-req-create)
+  - [6.3 修改需求 (req update)](#63-修改需求-req-update)
+  - [6.4 删除需求 (req delete)](#64-删除需求-req-delete)
 - [7. 技术实现细节](#7-技术实现细节)
   - [7.1 数据流图](#71-数据流图)
   - [7.2 文件锁流程](#72-文件锁流程)
@@ -44,20 +44,25 @@
 
 ### 1.1 是什么
 
-需求管理脚本系统是一套**零外部依赖**的 Python 命令行工具集，专门用于管理项目需求文档的元数据。它通过集中式的 `meta.json` 文件，为 AI Agent 和开发者提供结构化、并发安全的需求 CRUD 操作。
+需求管理系统是一个 **零外部依赖** 的 Python 包，提供 `req` 命令行工具，专门用于管理项目需求文档的元数据。它通过集中式的 `meta.json` 文件，为 AI Agent 和开发者提供结构化、并发安全的需求 CRUD 操作。
 
 **核心组件**：
-- **4 个 Python 脚本**：`list-requirements.py`、`create-requirement.py`、`update-requirement.py`、`delete-requirement.py`
+- **Python 包**：`src/requirement_mgr/`（CLI 入口 + 5 个命令模块 + 6 个核心模块）
+- **CLI 入口**：`req` 命令（通过 `uv tool install` 注册）
 - **集中元数据存储**：`.requirements/meta.json` 文件
 - **配置管理**：`.requirements/config` 文件
-- **需求目录结构**：`{category}/{date}-{feature}/` 格式的需求文档目录（category 为功能分类标签）
+- **需求目录结构**：`{category}/{date}-{feature}/` 格式的需求文档目录
 
 ### 1.2 核心价值
 
 | 特性 | 说明 | 业务价值 |
 |------|------|----------|
 | **零依赖** | 全部使用 Python 标准库 | 部署简单，无外部依赖风险 |
-| **并发安全** | 排他文件锁 + 原子写入 | 多 Agent/用户同时操作不冲突 |
+| **CLI 包** | `uv tool install` 一键安装，`req` 命令全局可用 | 无需 `uv run python` 前缀 |
+| **并发安全** | 排他文件锁 + 原子写入 + TOCTOU 防护 | 多 Agent/用户同时操作不冲突 |
+| **父子需求** | standalone / parent / child 角色自动升降级 | 支持需求分解与层级管理 |
+| **日期 ID** | `REQ-YYYYMMDD-NNN` 格式，按天自增 | 有序、可读、兼容旧格式 |
+| **Config 驱动** | statuses/roles/id_prefix 等全部可配置 | 适配不同项目工作流 |
 | **结构化数据** | JSON 集中存储 | 支持程序化查询、筛选、分析 |
 | **依赖追踪** | 需求间依赖关系管理 | 影响分析、循环检测 |
 | **审计追踪** | 完整的变更日志和版本控制 | 可追溯性、合规性 |
@@ -89,17 +94,45 @@
 
 ### 2.2 安装配置
 
-**方式一：一键安装（推荐）**
+**方式一：uv tool install（推荐）**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | bash -s -- /path/to/project --scripts
+# 在项目根目录执行
+cd /path/to/project
+uv tool install scripts/requirement-mgr/
+
+# 安装后全局可用
+req --version
+req init  # 初始化当前项目的 .requirements/config
 ```
 
-**方式二：手动安装**
+**方式二：从 GitHub Release 安装**
 ```bash
-# 1. 克隆或下载脚本到 scripts/requirement-mgr/ 目录
-# 2. 创建配置文件
-mkdir -p .requirements
-echo "storage_path=.requirements" > .requirements/config
+# 从 GitHub Release 安装（无需本地构建）
+uv tool install https://github.com/HACK-WU/skills/releases/download/requirement-mgr-v1.0.0/requirement_mgr-1.0.0-py3-none-any.whl
+```
+
+**方式三：开发模式安装**
+```bash
+cd scripts/requirement-mgr/
+uv tool install . --force --no-cache
+```
+
+**方式四：Windows PowerShell**
+```powershell
+# 使用 PowerShell 安装脚本
+.\scripts\skill-install.ps1 -Scripts
+```
+
+**初始化配置**：
+
+安装后运行 `req init` 自动生成 `.requirements/config`：
+
+```bash
+req init
+# 自动生成:
+# storage_path=.requirements
+# feature_categories=
+# requirement_tags=feat,fix,refactor,tool,security
 ```
 
 **配置文件模板**：
@@ -122,11 +155,17 @@ requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infr
 
 **配置说明**：
 
-| 配置项 | 说明 | 示例值 |
+| 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `storage_path` | 需求文档存储路径 | `.requirements` |
-| `feature_categories` | 功能分类配置，多个分类用逗号分隔 | `security,performance,integration,monitoring,logging` |
-| `requirement_tags` | 需求标签配置，tags 字段必须从此配置中选取 | `feat,fix,refactor,tool,integration,security,performance` |
+| `storage_path` | 需求文档存储路径 | （必填） |
+| `feature_categories` | 功能分类配置，多个分类用逗号分隔 | 空 |
+| `requirement_tags` | 需求标签配置，tags 字段必须从此配置中选取 | 空 |
+| `requirement_statuses` | 需求状态列表 | `草案,已确认,设计中,实施中,已完成,已取消` |
+| `requirement_roles` | 需求角色列表 | `standalone,parent,child` |
+| `id_prefix` | ID 前缀 | `REQ` |
+| `id_digits` | ID 日期后序号位数 | `3` |
+| `lock_timeout` | 文件锁超时秒数 | `5` |
+| `backup_enabled` | 写入前是否备份 meta.json | `false` |
 
 **约束规则**：
 
@@ -136,26 +175,20 @@ requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infr
 4. **功能分类变更限制**：功能分类标签与目录位置关联，不允许删除或更改功能分类标签（如需更改，请删除并重新创建需求）
 5. **配置优先级**：配置文件中的值优先于默认值
 
-**方式三：Windows PowerShell**
-```powershell
-# 使用 PowerShell 安装脚本
-.\scripts\skill-install.ps1 -Scripts
-```
-
 ### 2.3 首次使用
 
 ```bash
-# 1. 查看当前需求（首次使用为空）
-uv run python scripts/requirement-mgr/list-requirements.py
+# 1. 初始化项目配置（首次使用）
+req init
 
-# 2. 创建第一个需求（必须包含功能分类标签）
-uv run python scripts/requirement-mgr/create-requirement.py \
-  --feature "需求管理脚本系统" \
-  --tags feat,tool,security \
-  --status 已确认
+# 2. 查看当前需求（首次使用为空）
+req list
 
-# 3. 查看创建的需求
-uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001
+# 3. 创建第一个需求（必须包含功能分类标签）
+req create --feature "需求管理脚本系统" --tags feat,tool,security --status 已确认
+
+# 4. 查看创建的需求
+req list --id REQ-20260611-001
 ```
 
 ---
@@ -166,10 +199,12 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001
 
 | 组件 | 技术选择 | 选择理由 |
 |------|----------|----------|
-| **语言** | Python 3.x | 零依赖、标准库完善 |
+| **语言** | Python 3.10+ | 零依赖、标准库完善 |
+| **构建** | hatchling + pyproject.toml | PEP 517 标准构建 |
+| **安装** | uv tool install | 全局 CLI 注册 |
 | **原子写入** | `tempfile` + `os.replace()` | POSIX 原子操作，崩溃安全 |
 | **文件锁** | `fcntl.flock` / `msvcrt.locking` | 跨平台标准库支持 |
-| **CLI 解析** | `argparse` | 标准库，功能完整 |
+| **CLI 解析** | `argparse` 子命令模式 | 标准库，支持 help、version |
 | **JSON 处理** | `json` | 标准库，性能良好 |
 
 ### 3.2 分层架构
@@ -177,17 +212,20 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001
 ```mermaid
 graph TB
     subgraph CLI["CLI 层（用户界面）"]
-        S2["list-requirements.py<br/>查询筛选"]
-        S3["create-requirement.py<br/>新建需求"]
-        S4["update-requirement.py<br/>修改需求"]
-        S5["delete-requirement.py<br/>删除需求"]
+        REQ["req 命令入口<br/>cli.py"]
+        S1["req init<br/>初始化配置"]
+        S2["req list<br/>查询筛选"]
+        S3["req create<br/>新建需求"]
+        S4["req update<br/>修改需求"]
+        S5["req delete<br/>删除需求"]
     end
     
     subgraph Core["核心层（业务逻辑）"]
         MetaS["MetaStore<br/>元数据读写"]
         LockF["FileLock<br/>并发控制"]
         ConfigL["ConfigLoader<br/>配置管理"]
-        IDGen["IDGenerator<br/>ID 生成"]
+        IDGen["IDGenerator<br/>日期+序号 ID"]
+        Utils["RequirementUtils<br/>依赖检测/角色校验"]
     end
     
     subgraph Store["存储层（持久化）"]
@@ -196,6 +234,7 @@ graph TB
         DIR["需求目录"]
     end
     
+    REQ --> S1 & S2 & S3 & S4 & S5
     CLI --> Core
     Core --> Store
 ```
@@ -207,6 +246,7 @@ erDiagram
     Config ||--|| Meta : "定义存储路径"
     Meta ||--o{ Requirement : "包含多个需求"
     Requirement }o--o{ Requirement : "依赖关系"
+    Requirement }o--o{ Requirement : "父子关系"
     
     Config {
         string storage_path "存储根路径"
@@ -217,9 +257,12 @@ erDiagram
     }
     
     Requirement {
-        string id "REQ-NNN 全局唯一"
+        string id "REQ-YYYYMMDD-NNN 全局唯一"
         string feature "功能名称"
         string status "生命周期状态"
+        string role "standalone/parent/child"
+        string parent_id "父需求 ID（child 时非空）"
+        array child_ids "子需求 ID 列表（parent 时非空）"
         array tags "标签列表"
         int version "版本号，自增"
         array depends_on "依赖的 REQ-ID"
@@ -259,7 +302,37 @@ stateDiagram-v2
 - `已完成`：开发与验收均通过（终态）
 - `已取消`：需求废弃，保留记录不删除（终态）
 
-### 4.2 依赖关系管理
+### 4.2 父子需求层级
+
+需求支持三种角色：
+
+| 角色 | 说明 | 自动升降级 |
+|------|------|------------|
+| `standalone` | 独立需求（默认） | — |
+| `parent` | 父需求（有子需求） | standalone→parent（首次挂子需求时自动升级） |
+| `child` | 子需求（隶属于父需求） | — |
+
+**升降级规则**：
+- 创建子需求时，如果父需求是 standalone，自动升级为 parent
+- 删除最后一个子需求时，parent 自动降级为 standalone
+- child 角色的 parent_id 不能指向自己
+- 子需求变更角色为 standalone/parent 时，自动清除 parent_id
+
+```bash
+# 创建父子需求
+req create --feature "认证模块" --tags feat,security     # → standalone
+req create --feature "JWT 鉴权" --tags feat \
+  --parent-id REQ-20260611-001                             # → child，父自动升级为 parent
+req create --feature "OAuth2 鉴权" --tags feat \
+  --role child --parent-id REQ-20260611-001                # → child
+
+# 查询父子关系
+req list --id REQ-20260611-001       # 显示 child_ids
+req list --parent-id REQ-20260611-001 # 查看所有子需求
+req list --role parent                # 查看所有父需求
+```
+
+### 4.3 依赖关系管理
 
 **依赖类型**：
 - **直接依赖**：A 依赖 B（`A.depends_on` 包含 `B.id`）
@@ -274,16 +347,16 @@ stateDiagram-v2
 **依赖操作**：
 ```bash
 # 添加依赖
-uv run python scripts/requirement-mgr/update-requirement.py REQ-002 --depends-on add REQ-001
+req update REQ-20260611-002 --depends-on add REQ-20260611-001
 
 # 查看依赖树
-uv run python scripts/requirement-mgr/list-requirements.py --id REQ-002 --deps --deps-depth 3
+req list --id REQ-20260611-002 --deps --deps-depth 3
 
 # 查看反向依赖（谁依赖了我）
-uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001 --rev-deps
+req list --id REQ-20260611-001 --rev-deps
 ```
 
-### 4.3 并发安全机制
+### 4.4 并发安全机制
 
 **问题场景**：
 - 多个 AI Agent 同时创建需求
@@ -352,10 +425,10 @@ def atomic_write_json(filepath: Path, data: dict) -> None:
 **工作流**：
 ```bash
 # 1. 检查是否已存在类似需求
-uv run python scripts/requirement-mgr/list-requirements.py --search "用户认证" --json
+req list --search "用户认证" --json
 
 # 2. 创建新需求（必须包含功能分类标签）
-uv run python scripts/requirement-mgr/create-requirement.py \
+req create \
   --feature "用户认证模块" \
   --tags feat,security \
   --status 已确认
@@ -364,7 +437,7 @@ uv run python scripts/requirement-mgr/create-requirement.py \
 # AI 使用 write_to_file 写入 requirement.md 到脚本创建的目录
 
 # 4. 验证创建成功
-uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001
+req list --id REQ-20260611-001
 ```
 
 ### 5.2 需求状态流转
@@ -374,19 +447,19 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001
 **工作流**：
 ```bash
 # 1. 需求评审通过
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 已确认 --changelog "需求评审通过，可以进入设计"
 
 # 2. 开始设计（注册设计文档）
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 设计中 --docs add design/data-flow.md,data_flow
 
 # 3. 开始开发
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 实施中 --commit abc1234
 
 # 4. 验收完成
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 已完成 --changelog "功能验收通过"
 ```
 
@@ -397,12 +470,12 @@ uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
 **工作流**：
 ```bash
 # 1. 查看当前需求的依赖树
-uv run python scripts/requirement-mgr/list-requirements.py \
-  --id REQ-001 --deps --deps-depth 5
+req list \
+  --id REQ-20260611-001 --deps --deps-depth 5
 
 # 2. 查看哪些需求依赖了当前需求（影响分析）
-uv run python scripts/requirement-mgr/list-requirements.py \
-  --id REQ-001 --rev-deps
+req list \
+  --id REQ-20260611-001 --rev-deps
 
 # 3. 根据影响范围决定变更策略
 ```
@@ -414,48 +487,50 @@ uv run python scripts/requirement-mgr/list-requirements.py \
 **工作流**：
 ```bash
 # 1. 查看所有已取消的需求
-uv run python scripts/requirement-mgr/list-requirements.py \
+req list \
   --json --status 已取消
 
 # 2. 预览删除操作
-for id in $(uv run python scripts/requirement-mgr/list-requirements.py \
+for id in $(req list \
   --json --status 已取消 | jq -r '.[].id'); do
-  uv run python scripts/requirement-mgr/delete-requirement.py $id --dry-run
+  req delete $id --dry-run
 done
 
 # 3. 确认后删除
-uv run python scripts/requirement-mgr/delete-requirement.py REQ-099 --force
+req delete REQ-20260613-001 --force
 ```
 
 ---
 
 ## 6. 详细使用说明
 
-### 6.1 查询需求 (list-requirements)
+### 6.1 查询需求 (req list)
 
-**职责**：无锁只读，支持筛选、详情、依赖展开、反向依赖。
+**职责**：无锁只读，支持筛选、详情、依赖展开、反向依赖、父子层级查询。
 
 **基本用法**：
 ```bash
 # 列出所有需求
-uv run python scripts/requirement-mgr/list-requirements.py
+req list
 
 # JSON 格式输出（适合脚本消费）
-uv run python scripts/requirement-mgr/list-requirements.py --json
+req list --json
 
 # 精确查询 + 依赖展开
-uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001 --deps
+req list --id REQ-20260611-001 --deps
 
 # 反向依赖查询
-uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001 --rev-deps
+req list --id REQ-20260611-001 --rev-deps
 ```
 
 **筛选参数**：
 | 参数 | 说明 | 示例 |
 |------|------|------|
-| `--id` | 精确匹配需求 ID | `--id REQ-001` |
+| `--id` | 精确匹配需求 ID | `--id REQ-20260611-001` |
 | `--status` | 按状态筛选 | `--status 实施中` |
 | `--tag` | 按标签筛选（可重复，AND 关系） | `--tag feat --tag security` |
+| `--role` | 按角色筛选 | `--role parent` |
+| `--parent-id` | 按父需求筛选子需求 | `--parent-id REQ-20260611-001` |
 | `--category` | 按功能分类筛选 | `--category security` |
 | `--from` | 更新日期起 | `--from 2026-01-01` |
 | `--to` | 更新日期止 | `--to 2026-12-31` |
@@ -468,111 +543,116 @@ uv run python scripts/requirement-mgr/list-requirements.py --id REQ-001 --rev-de
 | `--columns` | 自定义显示列 |
 | `--no-color` | 禁用 ANSI 颜色 |
 
-### 6.2 新建需求 (create-requirement)
+### 6.2 新建需求 (req create)
 
 **职责**：加锁 → 自增 ID → 创建目录 → 原子写入 `meta.json`。
 
 **基本用法**：
 ```bash
 # 快速新建（必须包含功能分类标签）
-uv run python scripts/requirement-mgr/create-requirement.py \
+req create \
   --feature "用户认证模块" --tags feat,security
 
 # 带依赖创建
-uv run python scripts/requirement-mgr/create-requirement.py \
+req create \
   --feature "支付网关" \
   --tags feat,integration \
-  --depends-on REQ-001,REQ-002 \
+  --depends-on REQ-20260611-001,REQ-20260611-002 \
   --status 已确认
 
+# 创建子需求（父需求自动升级为 parent）
+req create \
+  --feature "JWT 鉴权" --tags feat \
+  --parent-id REQ-20260611-001
+
 # 自定义目录名
-uv run python scripts/requirement-mgr/create-requirement.py \
+req create \
   --feature "自定义目录" --tags feat,security --dir-name "custom-dir-name"
 ```
 
 **自动填充字段**：
 | 字段 | 值 |
 |------|-----|
-| `id` | `REQ-NNN`（最大编号 +1） |
+| `id` | `REQ-YYYYMMDD-NNN`（日期+序号） |
 | `created` | 当前日期 |
 | `updated` | 当前日期 |
 | `version` | 1 |
 | `changelog` | `["初始创建"]` |
 | `commits` | `[]` |
 
-### 6.3 修改需求 (update-requirement)
+### 6.3 修改需求 (req update)
 
 **职责**：加锁 → 校验（循环依赖 / 标签下限）→ 字段合并 → 版号自增 → 原子写入。
 
 **状态流转**：
 ```bash
 # 评审通过
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 已确认 --changelog "需求评审通过"
 
 # 进入设计（注册设计文档）
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 设计中 --docs add design/DESIGN.md,design --changelog "开始技术设计"
 
 # 开始开发
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 实施中 --commit abc1234
 
 # 验收完成
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --status 已完成 --changelog "功能验收通过"
 ```
 
 **依赖管理**：
 ```bash
 # 添加依赖
-uv run python scripts/requirement-mgr/update-requirement.py REQ-002 \
-  --depends-on add REQ-001
+req update REQ-20260611-002 \
+  --depends-on add REQ-20260611-001
 
 # 循环检测（自动拒绝）
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
-  --depends-on add REQ-002
-# → 错误: 添加 REQ-002 会形成循环依赖 (REQ-001→REQ-002→REQ-001)
+req update REQ-20260611-001 \
+  --depends-on add REQ-20260611-002
+# → 错误: 添加 REQ-20260611-002 会形成循环依赖 (REQ-20260611-001→REQ-20260611-002→REQ-20260611-001)
 
 # 删除依赖
-uv run python scripts/requirement-mgr/update-requirement.py REQ-002 \
-  --depends-on remove REQ-001
+req update REQ-20260611-002 \
+  --depends-on remove REQ-20260611-001
 ```
 
 **标签管理**：
 ```bash
 # 添加标签（必须来自 requirement_tags 配置）
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --tag add documentation
 
 # 删除标签（不能删除功能分类标签，不能删除最后一个标签）
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --tag remove documentation
 
 # 覆盖标签（必须包含一个功能分类标签，且只能有一个）
-uv run python scripts/requirement-mgr/update-requirement.py REQ-001 \
+req update REQ-20260611-001 \
   --tag set feat,security,documentation
 ```
 
-### 6.4 删除需求 (delete-requirement)
+### 6.4 删除需求 (req delete)
 
 **职责**：反向依赖扫描 → 确认 → 加锁 → 删条目 → 清理引用 → 删目录。
 
 **安全删除（默认交互）**：
 ```bash
-uv run python scripts/requirement-mgr/delete-requirement.py REQ-003
+req delete REQ-20260612-001
 ```
 
 输出示例：
 ```
 ──────────────────────────────────────────────────
-  ID:        REQ-003
+  ID:        REQ-20260612-001
   名称:      旧模块迁移工具
   目录:      2026-05-15-legacy-migration
   状态:      已取消
 
   反向依赖（1 项将清理引用）：
-    REQ-001  需求管理脚本系统
+    REQ-20260611-001  需求管理脚本系统
 ──────────────────────────────────────────────────
 ⚠ 警告: 有 1 个需求的 depends_on 将被清理
 
@@ -581,12 +661,12 @@ uv run python scripts/requirement-mgr/delete-requirement.py REQ-003
 
 **预览模式**：
 ```bash
-uv run python scripts/requirement-mgr/delete-requirement.py REQ-003 --dry-run
+req delete REQ-20260612-001 --dry-run
 ```
 
 **自动化删除**：
 ```bash
-uv run python scripts/requirement-mgr/delete-requirement.py REQ-003 --force
+req delete REQ-20260612-001 --force
 ```
 
 ---
@@ -597,15 +677,15 @@ uv run python scripts/requirement-mgr/delete-requirement.py REQ-003 --force
 
 ```mermaid
 flowchart LR
-    User["用户/AI Agent"] -->|查询| list["list-requirements.py"]
-    User -->|新建| create["create-requirement.py"]
-    User -->|修改| update["update-requirement.py"]
-    User -->|删除| delete["delete-requirement.py"]
+    User["用户/AI Agent"] -->|查询| list["req list"]
+    User -->|新建| create["req create"]
+    User -->|修改| update["req update"]
+    User -->|删除| delete["req delete"]
     
     list -->|"R: 只读"| Meta["meta.json"]
-    create -->|"C: 加锁 → 创建目录 → 原子写"| Meta
-    update -->|"U: 加锁 → 原子写"| Meta
-    delete -->|"D: 加锁 → 删条目 → 删目录"| Meta
+    create -->|"C: 加锁 → TOCTOU → 创建目录 → 原子写"| Meta
+    update -->|"U: 加锁 → TOCTOU → 原子写"| Meta
+    delete -->|"D: 加锁 → TOCTOU → 删条目 → 删目录"| Meta
     
     Meta -.->|映射| RequirementDir["{category}/{date}-{feature}/"]
     RequirementDir -.->|AI 创建| requirement_md["requirement.md"]
@@ -650,11 +730,14 @@ flowchart TB
 {
   "requirements": {
     "security/2026-06-11-requirement-management": {
-      "id": "REQ-001",
+      "id": "REQ-20260611-001",
       "feature": "需求管理脚本系统",
       "created": "2026-06-11",
       "updated": "2026-06-12",
       "status": "实施中",
+      "role": "standalone",
+      "parent_id": null,
+      "child_ids": [],
       "tags": ["tool", "security", "feat"],
       "version": 8,
       "depends_on": [],
@@ -675,15 +758,18 @@ flowchart TB
 **字段生命周期**：
 | 字段 | create | list | update | delete |
 |------|:---:|:---:|:---:|:---:|
-| `id` | 自动生成 | 筛选/展示 | 不可修改 | — |
+| `id` | 自动生成 (`REQ-YYYYMMDD-NNN`) | 筛选/展示 | 不可修改 | — |
 | `feature` | 必填 | 展示/搜索 | 可修改 | — |
-| `status` | 默认"草案" | 筛选 | 覆盖 | — |
-| `tags` | 默认["feat"] | 筛选 | 增/删/改 | — |
+| `status` | 默认“草案” | 筛选 | 覆盖 | — |
+| `role` | 默认 standalone | 筛选 | 覆盖 | — |
+| `parent_id` | 自动（有 --parent-id 时） | 展示/筛选 | 可修改 | 清理 |
+| `child_ids` | 自动（有子需求时追加） | 展示/筛选 | 自动升降级 | 清理 |
+| `tags` | 默认[“feat”] | 筛选 | 增/删/改 | — |
 | `version` | =1 | 展示 | +1 | — |
 | `created` | 自动 | 展示 | 不可修改 | — |
 | `updated` | =created | 展示 | 自动刷新 | — |
 | `depends_on` | 可选 | 展示/展开+反向 | 增/删/改+循环检测 | 清理引用 |
-| `changelog` | ["初始创建"] | 展示 | 追加 | — |
+| `changelog` | [“初始创建”] | 展示 | 追加 | — |
 | `commits` | [] | 展示 | 追加+去重 | — |
 | `docs` | [] | 展示 | 增/删/改 | — |
 
@@ -693,19 +779,17 @@ flowchart TB
 
 | 现象 | 原因 | 解决 |
 |------|------|------|
-| `配置文件不存在` | `.requirements/config` 未创建 | `echo storage_path=.requirements > .requirements/config` |
+| `.requirements/config 不存在` | 未运行 `req init` | `req init` 初始化配置 |
 | `无法在 5s 内获取文件锁` | 其他进程持有锁或残留 `.lock` | 等待后重试，或手动删除残留 `.meta.json.lock` |
-| `依赖需求 REQ-XXX 不存在` | depends-on 指向不存在的 ID | 先 `create` 依赖需求，或修正 ID |
-| `不能删除最后一个标签` | 标签列表至少保留 1 个 | 先 `--tag add` 再加 `--tag remove` |
+| `依赖需求 REQ-XXX 不存在` | depends-on 指向不存在的 ID | 先 `req create` 依赖需求，或修正 ID |
+| `不能删除最后一个标签` | 标签列表至少保留 1 个 | 先 `req update <ID> --tag add xxx` 再删 |
 | `标签 XXX 不在 requirement_tags 配置中` | 标签不在配置的允许列表中 | 使用配置中的标签，或更新 `.requirements/config` 的 `requirement_tags` |
 | `必须包含一个功能分类标签` | 创建需求时未指定功能分类标签 | 添加一个 `feature_categories` 中的标签，如 `--tags feat,security` |
 | `功能分类标签只能有一个` | 指定了多个功能分类标签 | 只保留一个功能分类标签 |
 | `不能删除功能分类标签` | 尝试删除功能分类标签 | 功能分类标签与目录位置关联，如需更改请删除并重新创建需求 |
-| `不能更改功能分类标签` | 尝试通过 `--tag set` 更改分类 | 同上，删除并重新创建需求 |
 | `会形成循环依赖` | 添加依赖后形成 A→B→A | 检查依赖链，调整设计 |
 | `目录已存在` (create) | 同名目录残留 | 指定 `--dir-name` 或清理旧目录 |
-| create 后 meta.json 有条目但无目录 | 进程崩溃（已修复：先建目录再写） | 不应出现（v2 已修复顺序） |
-| Python 版本不兼容 | 脚本需要 Python 3.10+ | 升级 Python 或使用 `uv run` |
+| Python 版本不兼容 | 包需要 Python 3.10+ | 升级 Python 或使用 `uv` |
 
 ---
 
@@ -725,16 +809,23 @@ flowchart TB
 │           ├── design/
 │           └── report.md
 └── scripts/
-    └── requirement-mgr/        # CRUD 脚本
-        ├── list-requirements.py
-        ├── create-requirement.py
-        ├── update-requirement.py
-        ├── delete-requirement.py
-        ├── config_loader.py
-        ├── file_lock.py
-        ├── id_generator.py
-        ├── meta_store.py
-        └── requirement_utils.py
+    └── requirement-mgr/        # Python 包
+        ├── pyproject.toml      # 包定义（hatchling 构建）
+        └── src/requirement_mgr/
+            ├── __init__.py
+            ├── cli.py          # req 命令入口
+            ├── commands/       # 5 个子命令
+            │   ├── init.py
+            │   ├── create.py
+            │   ├── list.py
+            │   ├── update.py
+            │   └── delete.py
+            └── core/           # 6 个核心模块
+                ├── config_loader.py
+                ├── file_lock.py
+                ├── id_generator.py
+                ├── meta_store.py
+                └── requirement_utils.py
 ```
 
 **示例**：
@@ -779,6 +870,6 @@ flowchart TB
 
 ---
 
-> **文档版本**：v1.1  
-> **最后更新**：2026-06-12  
+> **文档版本**：v2.0  
+> **最后更新**：2026-06-14  
 > **维护者**：AI Agent

@@ -32,7 +32,17 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 
 ### 安装 AI 规则
 ```bash
+# 单目录
 bash scripts/skill-install.sh --rules -t /path/to/your-project
+
+# 多目录
+bash scripts/skill-install.sh --rules -t ~/projects/app -t ~/projects/api
+
+# 从配置文件指定
+bash scripts/skill-install.sh --rules --file ~/my-targets.txt
+
+# 使用默认配置文件 ~/.rule-targets（不指定 -t 或 --file 时自动读取）
+bash scripts/skill-install.sh --rules
 ```
 
 ### 安装 CRUD 脚本（需求管理工具）
@@ -50,6 +60,22 @@ bash scripts/skill-install.sh --skills --rules --scripts -t /path/to/your-projec
 ```bash
 # targets.txt 每行一个目录，支持 # 注释和空行
 bash scripts/skill-install.sh --skills --file ~/my-targets.txt
+bash scripts/skill-install.sh --rules --file ~/my-targets.txt
+
+# 默认配置文件（不指定 -t 或 --file 时自动读取，按模式区分）:
+#   --skills  → ~/.skill-targets
+#   --rules   → ~/.rule-targets
+#   --scripts → ~/.script-targets
+#
+# 例如：创建独立的规则目标配置
+echo "~/projects/app" > ~/.rule-targets
+bash scripts/skill-install.sh --rules  # 自动读取 ~/.rule-targets
+
+# 多模式组合时，会合并各模式配置文件的目标（自动去重）
+echo "~/projects/app" > ~/.skill-targets
+echo "~/projects/api" >> ~/.rule-targets
+bash scripts/skill-install.sh --skills --rules
+# → 目标目录合并为 ~/projects/app + ~/projects/api，skills 和 rules 都安装到这两个目录
 ```
 
 ### Windows（PowerShell）
@@ -57,6 +83,7 @@ bash scripts/skill-install.sh --skills --file ~/my-targets.txt
 ```powershell
 # 单模式
 .\skill-install.ps1 -Skills -Target C:\projects\my-app
+.\skill-install.ps1 -Rules -Target C:\projects\my-app
 .\skill-install.ps1 -Scripts -Target C:\projects\my-app
 
 # 多模式组合
@@ -67,6 +94,18 @@ bash scripts/skill-install.sh --skills --file ~/my-targets.txt
 
 # 从配置文件指定
 .\skill-install.ps1 -Skills -ConfigFile C:\my-targets.txt
+.\skill-install.ps1 -Rules -ConfigFile C:\my-targets.txt
+
+# 默认配置文件（不指定 -Target 或 -ConfigFile 时自动读取，按模式区分）:
+#   -Skills   → $env:USERPROFILE\.skill-targets
+#   -Rules    → $env:USERPROFILE\.rule-targets
+#   -Scripts  → $env:USERPROFILE\.script-targets
+#
+# 例如：创建独立的规则目标配置
+@"
+C:\projects\app
+"@ | Out-File -FilePath "$env:USERPROFILE\.rule-targets" -Encoding UTF8
+.\skill-install.ps1 -Rules  # 自动读取 .rule-targets
 ```
 
 ## 技能一览
