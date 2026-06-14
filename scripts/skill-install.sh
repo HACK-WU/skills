@@ -89,7 +89,6 @@ elif [ ${#MODES[@]} -gt 0 ]; then
     # 模式特定的默认配置文件
     TARGET_DIRS=()
     MODE_FILES=()
-    declare -A SEEN_TARGETS
     for mode in "${MODES[@]}"; do
         case "$mode" in
             scripts) MODE_FILES+=("$DEFAULT_SCRIPTS_TARGETS") ;;
@@ -103,10 +102,12 @@ elif [ ${#MODES[@]} -gt 0 ]; then
                 line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
                 [ -z "$line" ] && continue
                 [[ "$line" =~ ^# ]] && continue
-                if [ -z "${SEEN_TARGETS[$line]:-}" ]; then
-                    TARGET_DIRS+=("$line")
-                    SEEN_TARGETS[$line]=1
-                fi
+                # bash 3.2 兼容的去重：遍历已有数组检查重复
+                found=0
+                for existing in "${TARGET_DIRS[@]}"; do
+                    [ "$existing" = "$line" ] && { found=1; break; }
+                done
+                [ "$found" -eq 0 ] && TARGET_DIRS+=("$line")
             done < "$cf"
         fi
     done
@@ -145,6 +146,9 @@ if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ ${#MODES[@]} -eq 0 ]; then
     echo "一键安装:"
     echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | \\"
     echo "    bash -s -- --skills --rules -t ~/projects/my-app"
+    echo ""
+    echo "  # 使用默认配置文件（~/.skill-targets / ~/.rule-targets）"
+    echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | bash -s -- --skills"
     exit 1
 fi
 
