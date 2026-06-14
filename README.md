@@ -4,21 +4,56 @@
 
 ## 快速安装
 
-###  安装 AI Skill 定义
+### 安装 AI Skill 定义
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | bash -s -- /path/to/your-project --skills
+# 单目录
+bash skill-install.sh --skills -t /path/to/your-project
+
+# 多目录
+bash skill-install.sh --skills -t ~/projects/app -t ~/projects/api
+
+# 一键安装
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
+  bash -s -- --skills -t /path/to/your-project
+```
+
+### 安装 AI 规则
+```bash
+bash skill-install.sh --rules -t /path/to/your-project
 ```
 
 ### 安装 CRUD 脚本（需求管理工具）
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | bash -s -- /path/to/your-project --scripts
+bash skill-install.sh --scripts -t /path/to/your-project
 ```
 
-Windows 用户使用 PowerShell 版本：
+### 多模式组合安装
+```bash
+# 同时安装 skills + rules + scripts
+bash skill-install.sh --skills --rules --scripts -t /path/to/your-project
+```
+
+### 从配置文件指定目标目录
+```bash
+# targets.txt 每行一个目录，支持 # 注释和空行
+bash skill-install.sh --skills --file ~/my-targets.txt
+```
+
+### Windows（PowerShell）
 
 ```powershell
-.\skill-install.ps1 C:\projects\my-app -Skills
-.\skill-install.ps1 C:\projects\my-app -Scripts
+# 单模式
+.\skill-install.ps1 -Skills -Target C:\projects\my-app
+.\skill-install.ps1 -Scripts -Target C:\projects\my-app
+
+# 多模式组合
+.\skill-install.ps1 -Skills -Rules -Scripts -Target C:\projects\my-app
+
+# 多目录
+.\skill-install.ps1 -Skills -Target C:\projects\app -Target C:\projects\api
+
+# 从配置文件指定
+.\skill-install.ps1 -Skills -ConfigFile C:\my-targets.txt
 ```
 
 ## 技能一览
