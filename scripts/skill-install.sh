@@ -26,6 +26,14 @@ CONFIG_FILE=""
 MODES=()
 GH_AUTH_OK=false
 
+# 文件列表缓存（跨目标目录复用，避免重复调用 GitHub API）
+SCRIPTS_FILES=()
+SKILLS_FILES=()
+RULES_FILES=()
+SCRIPTS_DISCOVERED=false
+SKILLS_DISCOVERED=false
+RULES_DISCOVERED=false
+
 # ============================================================
 # 前置：gh 认证检查（缓存结果，避免各 install 函数重复调用）
 # ============================================================
@@ -218,9 +226,11 @@ install_scripts() {
     fi
     mkdir -p "$DEST"
 
-    # 动态发现：优先 gh（需已登录），降级为硬编码
+    # 动态发现：优先 gh（需已登录），降级为硬编码；使用缓存避免重复 API 调用
     local FILES=()
-    if [ "$GH_AUTH_OK" = true ]; then
+    if [ "$SCRIPTS_DISCOVERED" = true ]; then
+        FILES=("${SCRIPTS_FILES[@]}")
+    elif [ "$GH_AUTH_OK" = true ]; then
         echo "🔍 正在通过 GitHub API 发现脚本文件列表..." >&2
         while IFS= read -r name; do
             [ -z "$name" ] && continue
@@ -243,6 +253,10 @@ install_scripts() {
             "requirement_utils.py"
             "update-requirement.py"
         )
+    elif [ "$SCRIPTS_DISCOVERED" = false ]; then
+        # 缓存首次发现的文件列表，后续目标目录复用
+        SCRIPTS_FILES=("${FILES[@]}")
+        SCRIPTS_DISCOVERED=true
     fi
 
     echo "📦 安装 CRUD 脚本 → ${DEST}"
@@ -282,10 +296,12 @@ install_skills() {
     fi
     mkdir -p "$DEST"
 
-    # 动态发现：优先 gh 递归获取，降级为硬编码
+    # 动态发现：优先 gh 递归获取，降级为硬编码；使用缓存避免重复 API 调用
     # gh 需已登录才能使用 API；未登录则直接走硬编码避免 API 调用延迟
     local FILES=()
-    if [ "$GH_AUTH_OK" = true ]; then
+    if [ "$SKILLS_DISCOVERED" = true ]; then
+        FILES=("${SKILLS_FILES[@]}")
+    elif [ "$GH_AUTH_OK" = true ]; then
         echo "🔍 正在通过 GitHub API 发现 skill 文件列表..." >&2
         # 先列出 skill 目录
         local SKILL_DIRS
@@ -348,6 +364,10 @@ install_skills() {
             "test-planner/references/examples/example-1-registration.md"
             "work-breakdown/SKILL.md"
         )
+    elif [ "$SKILLS_DISCOVERED" = false ]; then
+        # 缓存首次发现的文件列表，后续目标目录复用
+        SKILLS_FILES=("${FILES[@]}")
+        SKILLS_DISCOVERED=true
     fi
 
     echo "🧠 安装 AI Skills → ${DEST}"
@@ -380,9 +400,11 @@ install_rules() {
     fi
     mkdir -p "$DEST"
 
-    # 动态发现：优先 gh（需已登录），降级为硬编码
+    # 动态发现：优先 gh（需已登录），降级为硬编码；使用缓存避免重复 API 调用
     local FILES=()
-    if [ "$GH_AUTH_OK" = true ]; then
+    if [ "$RULES_DISCOVERED" = true ]; then
+        FILES=("${RULES_FILES[@]}")
+    elif [ "$GH_AUTH_OK" = true ]; then
         echo "🔍 正在通过 GitHub API 发现规则文件列表..." >&2
         while IFS= read -r name; do
             [ -z "$name" ] && continue
@@ -398,6 +420,10 @@ install_rules() {
             "gitnexus-mcp-rules.md"
             "writing-pipeline.md"
         )
+    elif [ "$RULES_DISCOVERED" = false ]; then
+        # 缓存首次发现的文件列表，后续目标目录复用
+        RULES_FILES=("${FILES[@]}")
+        RULES_DISCOVERED=true
     fi
 
     echo "📏 安装 AI Rules → ${DEST}"
