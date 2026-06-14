@@ -24,6 +24,14 @@ POSITIONAL_TARGET=""
 TARGETS=()
 CONFIG_FILE=""
 MODES=()
+GH_AUTH_OK=false
+
+# ============================================================
+# 前置：gh 认证检查（缓存结果，避免各 install 函数重复调用）
+# ============================================================
+if command -v gh &> /dev/null && gh auth status &>/dev/null; then
+    GH_AUTH_OK=true
+fi
 
 # ============================================================
 # 参数解析
@@ -104,9 +112,11 @@ elif [ ${#MODES[@]} -gt 0 ]; then
                 [[ "$line" =~ ^# ]] && continue
                 # bash 3.2 兼容的去重：遍历已有数组检查重复
                 found=0
-                for existing in "${TARGET_DIRS[@]}"; do
-                    [ "$existing" = "$line" ] && { found=1; break; }
-                done
+                if [ ${#TARGET_DIRS[@]} -gt 0 ]; then
+                    for existing in "${TARGET_DIRS[@]}"; do
+                        [ "$existing" = "$line" ] && { found=1; break; }
+                    done
+                fi
                 [ "$found" -eq 0 ] && TARGET_DIRS+=("$line")
             done < "$cf"
         fi
@@ -208,14 +218,16 @@ install_scripts() {
     fi
     mkdir -p "$DEST"
 
-    # 动态发现：优先 gh，降级为硬编码
+    # 动态发现：优先 gh（需已登录），降级为硬编码
     local FILES=()
-    if command -v gh &> /dev/null; then
+    if [ "$GH_AUTH_OK" = true ]; then
+        echo "🔍 正在通过 GitHub API 发现脚本文件列表..." >&2
         while IFS= read -r name; do
             [ -z "$name" ] && continue
             FILES+=("$name")
         done < <(gh api "repos/${GITHUB_REPO}/contents/scripts/requirement-mgr" \
             --jq '.[] | select(.name | endswith(".py")) | .name' 2>/dev/null)
+        echo "   已发现 ${#FILES[@]} 个脚本文件" >&2
     fi
 
     if [ ${#FILES[@]} -eq 0 ]; then
@@ -271,8 +283,10 @@ install_skills() {
     mkdir -p "$DEST"
 
     # 动态发现：优先 gh 递归获取，降级为硬编码
+    # gh 需已登录才能使用 API；未登录则直接走硬编码避免 API 调用延迟
     local FILES=()
-    if command -v gh &> /dev/null; then
+    if [ "$GH_AUTH_OK" = true ]; then
+        echo "🔍 正在通过 GitHub API 发现 skill 文件列表..." >&2
         # 先列出 skill 目录
         local SKILL_DIRS
         SKILL_DIRS=$(gh api "repos/${GITHUB_REPO}/contents/skills" \
@@ -288,8 +302,10 @@ install_skills() {
                     [ -z "$rel" ] && continue
                     FILES+=("${skill_name}/${rel}")
                 done < <(discover_files_recursive "skills/${skill_name}" "")
+                printf "." >&2
             done <<< "$SKILL_DIRS"
         fi
+        echo "" >&2
     fi
 
     if [ ${#FILES[@]} -eq 0 ]; then
@@ -364,14 +380,16 @@ install_rules() {
     fi
     mkdir -p "$DEST"
 
-    # 动态发现：优先 gh，降级为硬编码
+    # 动态发现：优先 gh（需已登录），降级为硬编码
     local FILES=()
-    if command -v gh &> /dev/null; then
+    if [ "$GH_AUTH_OK" = true ]; then
+        echo "🔍 正在通过 GitHub API 发现规则文件列表..." >&2
         while IFS= read -r name; do
             [ -z "$name" ] && continue
             FILES+=("$name")
         done < <(gh api "repos/${GITHUB_REPO}/contents/rules" \
             --jq '.[] | select(.name | endswith(".md")) | .name' 2>/dev/null)
+        echo "   已发现 ${#FILES[@]} 个规则文件" >&2
     fi
 
     if [ ${#FILES[@]} -eq 0 ]; then
