@@ -3,6 +3,17 @@ name: auto-review
 description: AI 生成 Markdown 文件或代码文件后，自动触发质量审查与修复闭环。审查完成后自动判断是否属于复杂场景，若属于则调用 challenger skill 进行二次质疑。触发条件：每次使用 write_to_file 或 replace_in_file 写入 .md / 代码文件后自动执行。
 ---
 
+## 概述
+
+**目的**：确保 AI 生成的每一份文件在交付前经过质量审查，减少人工返工
+
+**功能**：自动触发质量审查与修复闭环，支持 Skill/Rules 文件专项审查、代码审查、通用文档审查，并自动判断是否需要二次质疑
+
+**使用场景**：
+- AI 使用 write_to_file 或 replace_in_file 写入 .md / 代码文件后自动执行
+- 需要验证 Skill/Rules 文件是否符合 YAML frontmatter 和 AI 说明层规范时
+- 需要对代码变更进行质量审查时
+
 # 自动审查规则
 
 ## 核心原则
@@ -15,7 +26,9 @@ AI 生成的每一份文件（.md 文档、代码）在交付给用户之前，*
 
 | 文件类型 | 扩展名 | 审查策略 |
 |----------|--------|----------|
-| Markdown 文档 | `.md` | 先查对应 skill，无则通用审查 |
+| Skill 文件 | `.md`（位于 `skills/` 目录） | **专项审查**：YAML frontmatter + AI 说明层 |
+| Rules 文件 | `.md`（位于 `rules/` 目录） | **专项审查**：YAML frontmatter + 规则结构 |
+| Markdown 文档 | `.md`（其他位置） | 先查对应 skill，无则通用审查 |
 | Python 代码 | `.py` | 查 `code-review` skill → 通用审查 |
 | C/C++/Java/Go/Rust 代码 | `.c`, `.cpp`, `.h`, `.java`, `.go`, `.rs` | 通用审查 |
 | Shell 脚本 | `.sh`, `.bash` | 通用审查 |
@@ -50,7 +63,27 @@ AI 生成的每一份文件（.md 文档、代码）在交付给用户之前，*
 - **找到对应 skill**：使用 `use_skill` 加载 skill，按其流程执行审查。
 - **无匹配 skill**：使用下方"通用审查标准"执行审查。
 
-### Step 3：通用审查标准（无 skill 时的兜底）
+### Step 3：审查标准
+
+#### 3.1 Skill 文件专项审查（位于 `skills/` 目录的 `.md` 文件）
+
+| 检查项 | 内容 | 修复方式 |
+|--------|------|----------|
+| 1. YAML frontmatter | 必须包含 `name` 和 `description` 字段 | 补充缺失字段 |
+| 2. name 字段格式 | 最多 64 字符，仅允许小写字母、数字、连字符 | 修正格式 |
+| 3. description 字段格式 | 最多 1024 字符，必须非空，`description:` 后必须紧跟描述（不能换行） | 修正格式 |
+| 4. AI 说明层 | 必须包含"概述"部分，说明：目的、功能、使用场景 | 补充 AI 说明层 |
+
+#### 3.2 Rules 文件专项审查（位于 `rules/` 目录的 `.md` 文件）
+
+| 检查项 | 内容 | 修复方式 |
+|--------|------|----------|
+| 1. YAML frontmatter | 必须包含 `description`、`alwaysApply`、`enabled`、`updatedAt` 字段；可选字段：`provider` | 补充缺失字段 |
+| 2. description 字段格式 | 最多 1024 字符，必须非空，`description:` 后必须紧跟描述（不能换行） | 修正格式 |
+| 3. alwaysApply 字段 | 默认值为 `true`；如果为 `false`，提醒用户该规则不会自动应用 | 提醒用户确认 |
+| 4. 规则结构 | 规则内容结构完整，逻辑清晰 | 优化结构 |
+
+#### 3.3 通用审查标准（其他文件）
 
 当没有匹配的 skill 时，执行以下四项基础检查：
 
@@ -149,7 +182,52 @@ challenger 会根据变更类型（Bug 修复/新增功能/优化）选择对应
 
 ## 示例
 
-**场景：AI 编写了一个 Python 脚本（复杂场景 → 触发 challenger）**
+**场景 1：AI 创建了一个 Skill 文件（专项审查）**
+
+```
+1. AI 用 write_to_file 写入 skills/new-skill/SKILL.md
+2. 触发 auto-review 规则
+3. 识别为 Skill 文件（位于 skills/ 目录）
+4. 专项审查：
+   - YAML frontmatter：缺少 description 字段 → 自动补充
+   - description 格式：正确（紧跟描述）
+   - AI 说明层：缺少"概述"部分 → 自动补充
+5. 重新审查：通过
+6. 复杂场景判断：仅文档补充，不属于复杂场景 → 跳过 challenger
+7. 交付用户
+```
+
+**场景 2：AI 创建了一个 Rules 文件（专项审查）**
+
+```
+1. AI 用 write_to_file 写入 rules/new-rules.md
+2. 触发 auto-review 规则
+3. 识别为 Rules 文件（位于 rules/ 目录）
+4. 专项审查：
+   - YAML frontmatter：缺少 alwaysApply 字段 → 自动补充默认值 true
+   - description 格式：正确（紧跟描述）
+   - alwaysApply 字段：值为 true，正常
+   - 规则结构：完整
+5. 重新审查：通过
+6. 交付用户
+```
+
+**场景 3：AI 修改了一个 Rules 文件，设置 alwaysApply 为 false（提醒用户）**
+
+```
+1. AI 用 replace_in_file 修改 rules/existing-rules.md，将 alwaysApply 设置为 false
+2. 触发 auto-review 规则
+3. 识别为 Rules 文件（位于 rules/ 目录）
+4. 专项审查：
+   - YAML frontmatter：正确
+   - description 格式：正确（紧跟描述）
+   - alwaysApply 字段：值为 false → 提醒用户：该规则不会自动应用，需要手动启用
+5. 用户确认：确认设置为 false
+6. 重新审查：通过
+7. 交付用户
+```
+
+**场景 4：AI 编写了一个 Python 脚本（复杂场景 → 触发 challenger）**
 
 ```
 1. AI 用 write_to_file 写入 script.py（新增函数 + 异常处理 + 涉及数据持久化）
@@ -165,7 +243,7 @@ challenger 会根据变更类型（Bug 修复/新增功能/优化）选择对应
 11. 交付用户
 ```
 
-**场景：AI 修改了一个 .sh 脚本（简单场景 → 跳过 challenger）**
+**场景 5：AI 修改了一个 .sh 脚本（简单场景 → 跳过 challenger）**
 
 ```
 1. AI 用 replace_in_file 修改 deploy.sh

@@ -1,148 +1,170 @@
 ---
 name: create-skill
-description: Guides users through creating effective Agent Skills for Cursor. Use when you want to create, write, or author a new skill, or asks about skill structure, best practices, or SKILL.md format.
+description: 指导用户创建有效的 Agent Skills。当用户想要创建、编写新技能，或询问技能结构、最佳实践、SKILL.md 格式时使用。
 ---
-# Creating Skills in Cursor
+# 创建 Agent Skills
 
-This skill guides you through creating effective Agent Skills for Cursor. Skills are markdown files that teach the agent how to perform specific tasks: reviewing PRs using team standards, generating commit messages in a preferred format, querying database schemas, or any specialized workflow.
+本技能指导你创建有效的 Agent Skills。技能是 Markdown 文件，教会智能体如何执行特定任务：按团队标准审查 PR、生成首选格式的提交消息、查询数据库模式，或任何专业工作流。
 
-## Before You Begin: Gather Requirements
+## 开始之前：收集需求
 
-Before creating a skill, gather essential information from the user about:
+创建技能前，向用户收集以下关键信息：
 
-1. **Purpose and scope**: What specific task or workflow should this skill help with?
-2. **Target location**: Should this be a personal skill (~/.cursor/skills/) or project skill (.cursor/skills/)?
-3. **Trigger scenarios**: When should the agent automatically apply this skill?
-4. **Key domain knowledge**: What specialized information does the agent need that it wouldn't already know?
-5. **Output format preferences**: Are there specific templates, formats, or styles required?
-6. **Existing patterns**: Are there existing examples or conventions to follow?
+1. **目的与范围**：该技能应帮助完成什么具体任务或工作流？
+2. **存储位置**：应作为个人技能还是项目技能？
+3. **触发场景**：智能体何时应自动应用此技能？
+4. **关键领域知识**：智能体需要哪些它尚不了解的专业信息？
+5. **输出格式偏好**：是否有特定模板、格式或风格要求？
+6. **现有模式**：是否有可参考的现有示例或约定？
 
-### Inferring from Context
+### 从上下文推断
 
-If you have previous conversation context, infer the skill from what was discussed. You can create skills based on workflows, patterns, or domain knowledge that emerged in the conversation.
+如有之前的对话上下文，可从中推断技能需求。你可以基于对话中出现的工作流、模式或领域知识来创建技能。
 
-### Gathering Additional Information
+### 获取更多信息
 
-If you need clarification, use the AskQuestion tool when available:
+如需澄清，在可用时使用 AskQuestion 工具：
 
 ```
-Example AskQuestion usage:
-- "Where should this skill be stored?" with options like ["Personal (~/.cursor/skills/)", "Project (.cursor/skills/)"]
-- "Should this skill include executable scripts?" with options like ["Yes", "No"]
+AskQuestion 使用示例：
+- "此技能应存储在何处？" 选项如 ["个人 (~/.cursor/skills/)", "项目 (.cursor/skills/)"]
+- "此技能是否应包含可执行脚本？" 选项如 ["是", "否"]
 ```
 
-If the AskQuestion tool is not available, ask these questions conversationally.
+如 AskQuestion 工具不可用，以对话方式询问。
 
 ---
 
-## Skill File Structure
+## 技能文件结构
 
-### Directory Layout
+### 目录布局
 
-Skills are stored as directories containing a `SKILL.md` file:
+技能以目录形式存储，包含 `SKILL.md` 文件：
 
 ```
 skill-name/
-├── SKILL.md              # Required - main instructions
-├── reference.md          # Optional - detailed documentation
-├── examples.md           # Optional - usage examples
-└── scripts/              # Optional - utility scripts
+├── SKILL.md              # 必需 - 主要指令
+├── reference.md          # 可选 - 详细文档
+├── examples.md           # 可选 - 使用示例
+└── scripts/              # 可选 - 实用脚本
     ├── validate.py
     └── helper.sh
 ```
 
-### Storage Locations
+### SKILL.md 结构
 
-| Type | Path | Scope |
-|------|------|-------|
-| Personal | ~/.cursor/skills/skill-name/ | Available across all your projects |
-| Project | .cursor/skills/skill-name/ | Shared with anyone using the repository |
-
-**IMPORTANT**: Never create skills in `~/.cursor/skills-cursor/`. This directory is reserved for Cursor's internal built-in skills and is managed automatically by the system.
-
-### SKILL.md Structure
-
-Every skill requires a `SKILL.md` file with YAML frontmatter and markdown body:
+每个技能需要一个 `SKILL.md` 文件，包含 YAML 前置元数据、AI 说明层和 Markdown 正文：
 
 ```markdown
 ---
 name: your-skill-name
-description: Brief description of what this skill does and when to use it
+description: 简要描述此技能的功能及使用时机
 ---
 
-# Your Skill Name
+# 你的技能名称
 
-## Instructions
-Clear, step-by-step guidance for the agent.
+## 概述
 
-## Examples
-Concrete examples of using this skill.
+**目的**：[说明这个技能要解决什么问题或完成什么任务]
+
+**功能**：[说明这个技能能做什么，提供哪些能力]
+
+**使用场景**：[说明何时应该使用此技能，列出具体的触发场景]
+
+## 指令
+清晰、分步的智能体指导。
+
+## 示例
+使用此技能的具体示例。
 ```
 
-### Required Metadata Fields
+### AI 说明层规范
 
-| Field | Requirements | Purpose |
-|-------|--------------|---------|
-| `name` | Max 64 chars, lowercase letters/numbers/hyphens only | Unique identifier for the skill |
-| `description` | Max 1024 chars, non-empty | Helps agent decide when to apply the skill |
+**为什么需要 AI 说明层**：
+- AI 需要在众多技能中快速判断"这个技能是否适用于当前场景"
+- description 字段有 1024 字符限制，可能不够详细
+- 正文可能直接进入具体指令，缺少概述
+- AI 说明层让 AI 无需阅读全文即可理解技能用途
+
+**必须包含的三个维度**：
+
+| 维度 | 说明 | 示例 |
+|------|------|------|
+| **目的** | 这个技能要解决什么问题或完成什么任务 | "帮助用户快速生成符合团队规范的代码审查报告" |
+| **功能** | 这个技能能做什么，提供哪些能力 | "支持多语言代码审查、安全漏洞检测、性能分析" |
+| **使用场景** | 何时应该使用此技能，列出具体触发场景 | "当用户请求代码审查、提交 PR、或询问代码质量时" |
+
+**编写要求**：
+- 使用简洁明了的语言
+- 每个维度 1-2 句话即可
+- 使用场景应列出 2-3 个具体触发条件
+- 避免重复 description 字段的内容
+- 使用中文编写
+
+### 必需的元数据字段
+
+| 字段 | 要求 | 用途 |
+|------|------|------|
+| `name` | 最多 64 字符，仅小写字母/数字/连字符 | 技能的唯一标识符 |
+| `description` | 最多 1024 字符，非空 | 帮助智能体判断何时应用此技能 |
 
 ---
 
-## Writing Effective Descriptions
+## 编写有效的描述
 
-The description is **critical** for skill discovery. The agent uses it to decide when to apply your skill.
+描述对于技能发现**至关重要**。智能体通过它来判断何时应用你的技能。
 
-### Description Best Practices
+### 描述最佳实践
 
-1. **Write in third person** (the description is injected into the system prompt):
-   - ✅ Good: "Processes Excel files and generates reports"
-   - ❌ Avoid: "I can help you process Excel files"
-   - ❌ Avoid: "You can use this to process Excel files"
+1. **使用第三人称编写**（描述会被注入系统提示）：
+   - ✅ 正确："处理 Excel 文件并生成报告"
+   - ❌ 避免："我可以帮你处理 Excel 文件"
+   - ❌ 避免："你可以用这个来处理 Excel 文件"
 
-2. **Be specific and include trigger terms**:
-   - ✅ Good: "Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction."
-   - ❌ Vague: "Helps with documents"
+2. **具体且包含触发术语**：
+   - ✅ 正确："从 PDF 文件中提取文本和表格，填写表单，合并文档。当处理 PDF 文件或用户提及 PDF、表单、文档提取时使用。"
+   - ❌ 模糊："帮助处理文档"
 
-3. **Include both WHAT and WHEN**:
-   - WHAT: What the skill does (specific capabilities)
-   - WHEN: When the agent should use it (trigger scenarios)
+3. **同时包含"做什么"和"何时用"**：
+   - 做什么：技能的具体能力
+   - 何时用：智能体应何时使用（触发场景）
 
-### Description Examples
+### 描述示例
 
 ```yaml
-# PDF Processing
-description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction.
+# PDF 处理
+description: 从 PDF 文件中提取文本和表格，填写表单，合并文档。当处理 PDF 文件或用户提及 PDF、表单、文档提取时使用。
 
-# Excel Analysis
-description: Analyze Excel spreadsheets, create pivot tables, generate charts. Use when analyzing Excel files, spreadsheets, tabular data, or .xlsx files.
+# Excel 分析
+description: 分析 Excel 电子表格，创建数据透视表，生成图表。当分析 Excel 文件、电子表格、表格数据或 .xlsx 文件时使用。
 
-# Git Commit Helper
-description: Generate descriptive commit messages by analyzing git diffs. Use when the user asks for help writing commit messages or reviewing staged changes.
+# Git 提交助手
+description: 通过分析 git diff 生成描述性提交消息。当用户请求帮助编写提交消息或审查暂存更改时使用。
 
-# Code Review
-description: Review code for quality, security, and best practices following team standards. Use when reviewing pull requests, code changes, or when the user asks for a code review.
+# 代码审查
+description: 根据团队标准审查代码质量、安全性和最佳实践。当审查拉取请求、代码变更或用户请求代码审查时使用。
 ```
 
 ---
 
-## Core Authoring Principles
+## 核心编写原则
 
-### 1. Concise is Key
+### 1. 简洁是关键
 
-The context window is shared with conversation history, other skills, and requests. Every token competes for space.
+上下文窗口与对话历史、其他技能和请求共享。每个标记都在争夺空间。
 
-**Default assumption**: The agent is already very smart. Only add context it doesn't already have.
+**默认假设**：智能体已经非常聪明。只添加它尚不具备的上下文。
 
-Challenge each piece of information:
-- "Does the agent really need this explanation?"
-- "Can I assume the agent knows this?"
-- "Does this paragraph justify its token cost?"
+审视每条信息：
+- "智能体真的需要这个解释吗？"
+- "我能假设智能体知道这些吗？"
+- "这段内容值得占用标记空间吗？"
 
-**Good (concise)**:
+**好的（简洁）**：
 ```markdown
-## Extract PDF text
+## 提取 PDF 文本
 
-Use pdfplumber for text extraction:
+使用 pdfplumber 进行文本提取：
 
 \`\`\`python
 import pdfplumber
@@ -152,275 +174,272 @@ with pdfplumber.open("file.pdf") as pdf:
 \`\`\`
 ```
 
-**Bad (verbose)**:
+**差的（冗长）**：
 ```markdown
-## Extract PDF text
+## 提取 PDF 文本
 
-PDF (Portable Document Format) files are a common file format that contains
-text, images, and other content. To extract text from a PDF, you'll need to
-use a library. There are many libraries available for PDF processing, but we
-recommend pdfplumber because it's easy to use and handles most cases well...
+PDF（便携式文档格式）文件是一种常见的文件格式，包含文本、图像和其他内容。要从 PDF 中提取文本，你需要使用一个库。有很多 PDF 处理库可用，但我们推荐 pdfplumber，因为它易于使用且在大多数情况下表现良好...
 ```
 
-### 2. Keep SKILL.md Under 500 Lines
+### 2. 保持 SKILL.md 在 500 行以内
 
-For optimal performance, the main SKILL.md file should be concise. Use progressive disclosure for detailed content.
+为获得最佳性能，主 SKILL.md 文件应简洁。使用渐进式展开处理详细内容。
 
-### 3. Progressive Disclosure
+### 3. 渐进式展开
 
-Put essential information in SKILL.md; detailed reference material in separate files that the agent reads only when needed.
+将核心信息放在 SKILL.md 中；将详细参考资料放在单独的文件中，智能体仅在需要时读取。
 
 ```markdown
-# PDF Processing
+# PDF 处理
 
-## Quick start
-[Essential instructions here]
+## 快速开始
+[此处为核心指令]
 
-## Additional resources
-- For complete API details, see [reference.md](reference.md)
-- For usage examples, see [examples.md](examples.md)
+## 更多资源
+- 完整 API 详情，参见 [reference.md](reference.md)
+- 使用示例，参见 [examples.md](examples.md)
 ```
 
-**Keep references one level deep** - link directly from SKILL.md to reference files. Deeply nested references may result in partial reads.
+**保持引用层级为一层** - 从 SKILL.md 直接链接到参考文件。深层嵌套引用可能导致部分读取。
 
-### 4. Set Appropriate Degrees of Freedom
+### 4. 设置适当的自由度
 
-Match specificity to the task's fragility:
+根据任务的脆弱性匹配具体程度：
 
-| Freedom Level | When to Use | Example |
-|---------------|-------------|---------|
-| **High** (text instructions) | Multiple valid approaches, context-dependent | Code review guidelines |
-| **Medium** (pseudocode/templates) | Preferred pattern with acceptable variation | Report generation |
-| **Low** (specific scripts) | Fragile operations, consistency critical | Database migrations |
+| 自由度 | 使用时机 | 示例 |
+|--------|----------|------|
+| **高**（文本指令） | 多种有效方法，依赖上下文 | 代码审查指南 |
+| **中**（伪代码/模板） | 首选模式，可接受变化 | 报告生成 |
+| **低**（具体脚本） | 脆弱操作，一致性关键 | 数据库迁移 |
 
 ---
 
-## Common Patterns
+## 常见模式
 
-### Template Pattern
+### 模板模式
 
-Provide output format templates:
+提供输出格式模板：
 
 ```markdown
-## Report structure
+## 报告结构
 
-Use this template:
+使用此模板：
 
 \`\`\`markdown
-# [Analysis Title]
+# [分析标题]
 
-## Executive summary
-[One-paragraph overview of key findings]
+## 执行摘要
+[关键发现的单段概述]
 
-## Key findings
-- Finding 1 with supporting data
-- Finding 2 with supporting data
+## 关键发现
+- 发现 1 及支持数据
+- 发现 2 及支持数据
 
-## Recommendations
-1. Specific actionable recommendation
-2. Specific actionable recommendation
+## 建议
+1. 具体可操作的建议
+2. 具体可操作的建议
 \`\`\`
 ```
 
-### Examples Pattern
+### 示例模式
 
-For skills where output quality depends on seeing examples:
+对于输出质量依赖于示例的技能：
 
 ```markdown
-## Commit message format
+## 提交消息格式
 
-**Example 1:**
-Input: Added user authentication with JWT tokens
-Output:
+**示例 1：**
+输入：添加了基于 JWT 的用户认证
+输出：
 \`\`\`
-feat(auth): implement JWT-based authentication
+feat(auth): 实现基于 JWT 的认证
 
-Add login endpoint and token validation middleware
+添加登录端点和令牌验证中间件
 \`\`\`
 
-**Example 2:**
-Input: Fixed bug where dates displayed incorrectly
-Output:
+**示例 2：**
+输入：修复了日期显示不正确的 bug
+输出：
 \`\`\`
-fix(reports): correct date formatting in timezone conversion
+fix(reports): 修正时区转换中的日期格式
 
-Use UTC timestamps consistently across report generation
+在报告生成中统一使用 UTC 时间戳
 \`\`\`
 ```
 
-### Workflow Pattern
+### 工作流模式
 
-Break complex operations into clear steps with checklists:
+将复杂操作分解为带清单的清晰步骤：
 
 ```markdown
-## Form filling workflow
+## 表单填写工作流
 
-Copy this checklist and track progress:
+复制此清单并跟踪进度：
 
 \`\`\`
-Task Progress:
-- [ ] Step 1: Analyze the form
-- [ ] Step 2: Create field mapping
-- [ ] Step 3: Validate mapping
-- [ ] Step 4: Fill the form
-- [ ] Step 5: Verify output
+任务进度：
+- [ ] 步骤 1：分析表单
+- [ ] 步骤 2：创建字段映射
+- [ ] 步骤 3：验证映射
+- [ ] 步骤 4：填写表单
+- [ ] 步骤 5：验证输出
 \`\`\`
 
-**Step 1: Analyze the form**
-Run: \`python scripts/analyze_form.py input.pdf\`
+**步骤 1：分析表单**
+运行：\`python scripts/analyze_form.py input.pdf\`
 ...
 ```
 
-### Conditional Workflow Pattern
+### 条件工作流模式
 
-Guide through decision points:
+引导决策点：
 
 ```markdown
-## Document modification workflow
+## 文档修改工作流
 
-1. Determine the modification type:
+1. 确定修改类型：
 
-   **Creating new content?** → Follow "Creation workflow" below
-   **Editing existing content?** → Follow "Editing workflow" below
+   **创建新内容？** → 按下方"创建工作流"执行
+   **编辑现有内容？** → 按下方"编辑工作流"执行
 
-2. Creation workflow:
-   - Use docx-js library
-   - Build document from scratch
+2. 创建工作流：
+   - 使用 docx-js 库
+   - 从头构建文档
    ...
 ```
 
-### Feedback Loop Pattern
+### 反馈循环模式
 
-For quality-critical tasks, implement validation loops:
+对于质量关键的任务，实现验证循环：
 
 ```markdown
-## Document editing process
+## 文档编辑流程
 
-1. Make your edits
-2. **Validate immediately**: \`python scripts/validate.py output/\`
-3. If validation fails:
-   - Review the error message
-   - Fix the issues
-   - Run validation again
-4. **Only proceed when validation passes**
+1. 进行编辑
+2. **立即验证**：\`python scripts/validate.py output/\`
+3. 如验证失败：
+   - 查看错误信息
+   - 修复问题
+   - 再次运行验证
+4. **仅在验证通过后继续**
 ```
 
 ---
 
-## Utility Scripts
+## 实用脚本
 
-Pre-made scripts offer advantages over generated code:
-- More reliable than generated code
-- Save tokens (no code in context)
-- Save time (no code generation)
-- Ensure consistency across uses
+预制脚本相比生成代码有以下优势：
+- 比生成代码更可靠
+- 节省标记（上下文中无代码）
+- 节省时间（无需生成代码）
+- 确保使用间的一致性
 
 ```markdown
-## Utility scripts
+## 实用脚本
 
-**analyze_form.py**: Extract all form fields from PDF
+**analyze_form.py**：从 PDF 提取所有表单字段
 \`\`\`bash
 python scripts/analyze_form.py input.pdf > fields.json
 \`\`\`
 
-**validate.py**: Check for errors
+**validate.py**：检查错误
 \`\`\`bash
 python scripts/validate.py fields.json
-# Returns: "OK" or lists conflicts
+# 返回："OK" 或列出冲突
 \`\`\`
 ```
 
-Make clear whether the agent should **execute** the script (most common) or **read** it as reference.
+明确智能体应**执行**脚本（最常见）还是**读取**脚本作为参考。
 
 ---
 
-## Anti-Patterns to Avoid
+## 应避免的反模式
 
-### 1. Windows-Style Paths
-- ✅ Use: `scripts/helper.py`
-- ❌ Avoid: `scripts\helper.py`
+### 1. Windows 风格路径
+- ✅ 使用：`scripts/helper.py`
+- ❌ 避免：`scripts\helper.py`
 
-### 2. Too Many Options
+### 2. 选项过多
 ```markdown
-# Bad - confusing
-"You can use pypdf, or pdfplumber, or PyMuPDF, or..."
+# 差 - 令人困惑
+"你可以使用 pypdf，或 pdfplumber，或 PyMuPDF，或..."
 
-# Good - provide a default with escape hatch
-"Use pdfplumber for text extraction.
-For scanned PDFs requiring OCR, use pdf2image with pytesseract instead."
+# 好 - 提供默认选项及备选方案
+"使用 pdfplumber 进行文本提取。
+对于需要 OCR 的扫描 PDF，改用 pdf2image 配合 pytesseract。"
 ```
 
-### 3. Time-Sensitive Information
+### 3. 时间敏感信息
 ```markdown
-# Bad - will become outdated
-"If you're doing this before August 2025, use the old API."
+# 差 - 会过时
+"如果你在 2025 年 8 月之前执行此操作，使用旧 API。"
 
-# Good - use an "old patterns" section
-## Current method
-Use the v2 API endpoint.
+# 好 - 使用"旧模式"部分
+## 当前方法
+使用 v2 API 端点。
 
-## Old patterns (deprecated)
+## 旧模式（已弃用）
 <details>
-<summary>Legacy v1 API</summary>
+<summary>旧版 v1 API</summary>
 ...
 </details>
 ```
 
-### 4. Inconsistent Terminology
-Choose one term and use it throughout:
-- ✅ Always "API endpoint" (not mixing "URL", "route", "path")
-- ✅ Always "field" (not mixing "box", "element", "control")
+### 4. 术语不一致
+选择一个术语并贯穿使用：
+- ✅ 始终使用"API 端点"（不混用"URL"、"路由"、"路径"）
+- ✅ 始终使用"字段"（不混用"框"、"元素"、"控件"）
 
-### 5. Vague Skill Names
-- ✅ Good: `processing-pdfs`, `analyzing-spreadsheets`
-- ❌ Avoid: `helper`, `utils`, `tools`
-
----
-
-## Skill Creation Workflow
-
-When helping a user create a skill, follow this process:
-
-### Phase 1: Discovery
-
-Gather information about:
-1. The skill's purpose and primary use case
-2. Storage location (personal vs project)
-3. Trigger scenarios
-4. Any specific requirements or constraints
-5. Existing examples or patterns to follow
-
-If you have access to the AskQuestion tool, use it for efficient structured gathering. Otherwise, ask conversationally.
-
-### Phase 2: Design
-
-1. Draft the skill name (lowercase, hyphens, max 64 chars)
-2. Write a specific, third-person description
-3. Outline the main sections needed
-4. Identify if supporting files or scripts are needed
-
-### Phase 3: Implementation
-
-1. Create the directory structure
-2. Write the SKILL.md file with frontmatter
-3. Create any supporting reference files
-4. Create any utility scripts if needed
-
-### Phase 4: Verification
-
-1. Verify the SKILL.md is under 500 lines
-2. Check that the description is specific and includes trigger terms
-3. Ensure consistent terminology throughout
-4. Verify all file references are one level deep
-5. Test that the skill can be discovered and applied
+### 5. 模糊的技能名称
+- ✅ 正确：`processing-pdfs`、`analyzing-spreadsheets`
+- ❌ 避免：`helper`、`utils`、`tools`
 
 ---
 
-## Complete Example
+## 技能创建工作流
 
-Here's a complete example of a well-structured skill:
+帮助用户创建技能时，遵循以下流程：
 
-**Directory structure:**
+### 阶段 1：发现
+
+收集以下信息：
+1. 技能的目的和主要用例
+2. 存储位置（个人 vs 项目）
+3. 触发场景
+4. 任何具体需求或约束
+5. 可参考的现有示例或模式
+
+如有 AskQuestion 工具可用，使用它进行高效结构化收集。否则以对话方式询问。
+
+### 阶段 2：设计
+
+1. 起草技能名称（小写、连字符、最多 64 字符）
+2. 编写具体的第三人称描述
+3. 概述所需的主要部分
+4. 确定是否需要支持文件或脚本
+
+### 阶段 3：实现
+
+1. 创建目录结构
+2. 编写带前置元数据的 SKILL.md 文件
+3. 创建任何支持参考文件
+4. 需要时创建实用脚本
+
+### 阶段 4：验证
+
+1. 验证 SKILL.md 在 500 行以内
+2. 检查描述是否具体且包含触发术语
+3. 确保全文术语一致
+4. 验证所有文件引用层级为一层
+5. 测试技能可被发现和应用
+
+---
+
+## 完整示例
+
+这是一个结构良好的技能示例：
+
+**目录结构：**
 ```
 code-review/
 ├── SKILL.md
@@ -428,68 +447,80 @@ code-review/
 └── examples.md
 ```
 
-**SKILL.md:**
+**SKILL.md：**
 ```markdown
 ---
 name: code-review
-description: Review code for quality, security, and maintainability following team standards. Use when reviewing pull requests, examining code changes, or when the user asks for a code review.
+description: 根据团队标准审查代码质量、安全性和可维护性。当审查拉取请求、检查代码变更或用户请求代码审查时使用。
 ---
 
-# Code Review
+# 代码审查
 
-## Quick Start
+## 概述
 
-When reviewing code:
+**目的**：帮助开发者快速识别代码中的问题，确保代码质量符合团队标准
 
-1. Check for correctness and potential bugs
-2. Verify security best practices
-3. Assess code readability and maintainability
-4. Ensure tests are adequate
+**功能**：支持多语言代码审查，覆盖安全性、Bug 风险、代码规范、架构设计、性能、测试覆盖等维度
 
-## Review Checklist
+**使用场景**：
+- 当用户请求代码审查时
+- 当用户提交 PR 或询问代码质量时
+- 当用户说"review 这个提交"、"检查这段代码"时
 
-- [ ] Logic is correct and handles edge cases
-- [ ] No security vulnerabilities (SQL injection, XSS, etc.)
-- [ ] Code follows project style conventions
-- [ ] Functions are appropriately sized and focused
-- [ ] Error handling is comprehensive
-- [ ] Tests cover the changes
+## 快速开始
 
-## Providing Feedback
+审查代码时：
 
-Format feedback as:
-- 🔴 **Critical**: Must fix before merge
-- 🟡 **Suggestion**: Consider improving
-- 🟢 **Nice to have**: Optional enhancement
+1. 检查正确性和潜在 bug
+2. 验证安全最佳实践
+3. 评估代码可读性和可维护性
+4. 确保测试充分
 
-## Additional Resources
+## 审查清单
 
-- For detailed coding standards, see [STANDARDS.md](STANDARDS.md)
-- For example reviews, see [examples.md](examples.md)
+- [ ] 逻辑正确且处理边界情况
+- [ ] 无安全漏洞（SQL 注入、XSS 等）
+- [ ] 代码遵循项目风格约定
+- [ ] 函数大小适当且职责单一
+- [ ] 错误处理全面
+- [ ] 测试覆盖变更内容
+
+## 提供反馈
+
+反馈格式：
+- 🔴 **严重**：合并前必须修复
+- 🟡 **建议**：考虑改进
+- 🟢 **锦上添花**：可选增强
+
+## 更多资源
+
+- 详细编码标准，参见 [STANDARDS.md](STANDARDS.md)
+- 审查示例，参见 [examples.md](examples.md)
 ```
 
 ---
 
-## Summary Checklist
+## 总结清单
 
-Before finalizing a skill, verify:
+最终确定技能前，验证：
 
-### Core Quality
-- [ ] Description is specific and includes key terms
-- [ ] Description includes both WHAT and WHEN
-- [ ] Written in third person
-- [ ] SKILL.md body is under 500 lines
-- [ ] Consistent terminology throughout
-- [ ] Examples are concrete, not abstract
+### 核心质量
+- [ ] 描述具体且包含关键术语
+- [ ] 描述同时包含"做什么"和"何时用"
+- [ ] 使用第三人称编写
+- [ ] SKILL.md 正文在 500 行以内
+- [ ] 全文术语一致
+- [ ] 示例具体而非抽象
+- [ ] 包含 AI 说明层（目的、功能、使用场景）
 
-### Structure
-- [ ] File references are one level deep
-- [ ] Progressive disclosure used appropriately
-- [ ] Workflows have clear steps
-- [ ] No time-sensitive information
+### 结构
+- [ ] 文件引用层级为一层
+- [ ] 适当使用渐进式展开
+- [ ] 工作流步骤清晰
+- [ ] 无时间敏感信息
 
-### If Including Scripts
-- [ ] Scripts solve problems rather than punt
-- [ ] Required packages are documented
-- [ ] Error handling is explicit and helpful
-- [ ] No Windows-style paths
+### 如包含脚本
+- [ ] 脚本解决问题而非回避问题
+- [ ] 已记录所需包
+- [ ] 错误处理明确且有帮助
+- [ ] 无 Windows 风格路径

@@ -1,6 +1,6 @@
 ---
 description: GitNexus MCP 强制规则，指导 AI 何时用 GitNexus、何时用 grep、如何组合使用
-alwaysApply: false
+alwaysApply: true
 enabled: true
 updatedAt: 2026-06-13T17:30:00.000Z
 provider:
