@@ -115,9 +115,9 @@ else
   fi
 fi
 
-# 收集产物
-WHEEL=$(ls -t dist/*.whl 2>/dev/null | head -1)
-SDIST=$(ls -t dist/*.tar.gz 2>/dev/null | head -1)
+# 收集产物（使用绝对路径，避免 cd 后相对路径失效）
+WHEEL=$(ls -t "$PKG_DIR/dist/"*.whl 2>/dev/null | head -1)
+SDIST=$(ls -t "$PKG_DIR/dist/"*.tar.gz 2>/dev/null | head -1)
 
 if [ -z "$WHEEL" ] && [ -z "$SDIST" ]; then
   echo "错误: 构建产物未生成"

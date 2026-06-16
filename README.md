@@ -87,21 +87,28 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 
 ### 需求管理脚本
 
-项目内置一套 Python CRUD 脚本，用于以编程方式管理需求元数据。AI Skill 和 CLI 共享同一套入口。
+项目内置一套 Python CRUD 脚本，通过 `req` CLI 命令统一入口，支持以编程方式管理需求元数据。
 
-| 脚本 | 功能 |
+```bash
+# 安装 req 命令
+# 详见 https://github.com/HACK-WU/skills/releases/tag/requirement-mgr-v0.1.0-beta
+uv tool install /path/to/requirement_mgr-*.whl
+```
+
+| 命令 | 功能 |
 |------|------|
-| `list-requirements.py` | 查询需求列表，支持按状态/标签/依赖筛选，表格或 JSON 输出 |
-| `create-requirements.py` | 新建需求，自动生成 REQ-NNN 全局 ID，原子写入 meta.json |
-| `update-requirements.py` | 修改需求元数据（状态/标签/依赖/提交/变更记录），版本号自增 |
-| `delete-requirements.py` | 安全删除需求，反向依赖检查，级联清理引用，支持 dry-run |
+| `req list` | 查询需求列表，支持按状态/标签/依赖筛选，表格或 JSON 输出 |
+| `req create` | 新建需求，自动生成 REQ-NNN 全局 ID，原子写入 meta.json |
+| `req update` | 修改需求元数据（状态/标签/依赖/提交/变更记录），版本号自增 |
+| `req delete` | 安全删除需求，反向依赖检查，级联清理引用，支持 dry-run |
 
-**详细使用指南**：[requirement-mgr-guide.md](./docs/requirement-mgr-guide.md)
+> 📖 完整文档：[docs/README.md](./docs/README.md)
 
 ### 需求管理文档
 
 | 文档 | 说明 |
 |------|------|
+| [快速开始](./docs/README.md) | 安装、配置、核心命令速览 |
 | [命令参考](./docs/command-reference.md) | `req` 命令行工具的所有命令及其参数和输出示例 |
 | [配置指南](./docs/configuration.md) | 配置文件格式、配置项详解和约束规则 |
 | [架构文档](./docs/requirement-mgr-guide.md) | 系统架构、技术实现细节、数据模型 |

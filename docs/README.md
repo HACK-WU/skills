@@ -12,7 +12,16 @@
 - Python 3.10+
 - `uv`（推荐）或直接使用 `python`
 
-### 安装命令
+### 方式一：GitHub Release 安装（推荐）
+
+```bash
+uv tool install https://github.com/HACK-WU/skills/releases/download/requirement-mgr-v0.1.0-beta/requirement_mgr-0.1.0b0-py3-none-any.whl
+```
+
+> 📦 [所有 Release 版本](https://github.com/HACK-WU/skills/releases/tag/requirement-mgr-v0.1.0-beta)
+
+### 方式二：从源码安装
+
 ```bash
 cd /path/to/project
 uv tool install scripts/requirement-mgr/
