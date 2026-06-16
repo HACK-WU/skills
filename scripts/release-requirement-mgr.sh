@@ -148,7 +148,7 @@ if git tag -l "$TAG" | grep -q "$TAG"; then
   git push origin ":refs/tags/${TAG}" 2>/dev/null || true
 fi
 echo "==> 创建 tag: ${TAG}"
-git tag "$TAG" -m "Release ${PKG_NAME} ${VERSION}"
+git tag --no-sign "$TAG" -m "Release ${PKG_NAME} ${VERSION}"
 
 # ────────────────────────────────────────────────────────────
 # 7. 推送 tag
@@ -205,7 +205,7 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
   if gh release view "$TAG" &>/dev/null 2>&1; then
     echo "==> Release ${TAG} 已存在，删除旧版本..."
     gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-    git tag "$TAG" -m "Release ${PKG_NAME} ${VERSION}"
+    git tag --no-sign "$TAG" -m "Release ${PKG_NAME} ${VERSION}"
     git push origin "$TAG" --force
   fi
 
