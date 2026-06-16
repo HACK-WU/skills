@@ -5,62 +5,40 @@
 ## 快速安装
 
 ```bash
-# 获取安装脚本（二选一）
-git clone https://github.com/HACK-WU/skills.git && cd skills
-curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh -o skill-install.sh
+# 一键安装
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
+  bash -s -- --skills -t /path/to/your-project
 ```
 
-### 基本用法
+> 也可以先下载脚本后执行：
+> ```bash
+> git clone https://github.com/HACK-WU/skills.git && cd skills
+> # 或 curl -fsSL .../skill-install.sh -o skill-install.sh
+> bash scripts/skill-install.sh --skills -t /path/to/your-project
+> ```
 
-```bash
-bash scripts/skill-install.sh [模式] [目标选项]
-```
+### 参数说明
 
-**模式**（可组合）：
+| 参数 | 作用 |
+|------|------|
+| `--skills` | 安装 AI Skill 定义文件（与 `--rules` 互斥） |
+| `--rules` | 安装 AI 规则文件（与 `--skills` 互斥） |
 
-| 参数 | 安装内容 |
-|------|----------|
-| `--skills` | AI Skill 定义文件 |
-| `--rules` | AI 规则文件 |
-
-**目标选项**（三选一，优先级从高到低）：
+**目标目录**（三选一，优先级从高到低）：
 
 | 方式 | 示例 |
 |------|------|
-| `-t` 指定目录（支持多个） | `-t ~/projects/app -t ~/projects/api` |
-| `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，支持 `#` 注释） |
-| 不指定（自动读取默认文件） | `--skills` → `~/.skill-targets`，`--rules` → `~/.rule-targets` |
-
-### 示例
-
-```bash
-# 安装 skills 到单个项目
-bash scripts/skill-install.sh --skills -t /path/to/your-project
-
-# 同时安装 skills + rules 到多个目录
-bash scripts/skill-install.sh --skills --rules -t ~/projects/app -t ~/projects/api
-
-# 一键安装（无需先下载脚本）
-curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
-  bash -s -- --skills -t /path/to/your-project
-
-# 多模式组合时，各模式的默认配置文件会被合并（自动去重）
-```
+| `-t` 直接指定（支持多个） | `-t ~/projects/app -t ~/projects/api` |
+| `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，`#` 注释） |
+| 不指定，读默认配置 | `--skills` → `~/.skill-targets`，`--rules` → `~/.rule-targets` |
 
 ### Windows（PowerShell）
 
-参数与 Bash 版本一一对应，差异仅在于命名风格：
-
-| Bash | PowerShell | 默认配置文件路径 |
-|------|------------|------------------|
-| `--skills` | `-Skills` | `$env:USERPROFILE\.skill-targets` |
-| `--rules` | `-Rules` | `$env:USERPROFILE\.rule-targets` |
-| `-t` | `-Target` | — |
-| `--file` | `-ConfigFile` | — |
+参数映射：`--skills` → `-Skills`，`--rules` → `-Rules`，`-t` → `-Target`，`--file` → `-ConfigFile`。
 
 ```powershell
 .\skill-install.ps1 -Skills -Target C:\projects\my-app
-.\skill-install.ps1 -Skills -Rules -Target C:\projects\app -Target C:\projects\api
+.\skill-install.ps1 -Rules -Target C:\projects\my-app
 ```
 
 ## 技能一览
