@@ -14,13 +14,6 @@
 # ============================================================
 set -euo pipefail
 
-# 💡 提示：推荐使用 ki setup（支持多目录、配置文件）
-if [ -t 2 ]; then
-    echo "💡 提示：推荐使用 ki setup，功能更强大" >&2
-    echo "   curl -fsSL https://raw.githubusercontent.com/HACK-WU/knowledge-indexer/master/scripts/install-latest.sh | bash && ki setup --skills" >&2
-    echo "" >&2
-fi
-
 GITHUB_REPO="HACK-WU/skills"
 GITHUB_BRANCH="master"
 RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
@@ -71,11 +64,6 @@ while [ $# -gt 0 ]; do
             NAME_FILTER="$1"
             ;;
         --file=*) CONFIG_FILE="${arg#*=}" ;;
-        --scripts)
-            echo "错误：--scripts 已废弃，请使用 ki setup 安装脚本"
-            echo "  curl -fsSL https://raw.githubusercontent.com/HACK-WU/knowledge-indexer/master/scripts/install-latest.sh | bash"
-            exit 1
-            ;;
         --all|--docs)
             echo "错误：${arg} 已废弃"
             exit 1
@@ -190,11 +178,7 @@ if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ ${#MODES[@]} -eq 0 ]; then
     echo "  # 使用默认配置文件（~/.skill-targets / ~/.rule-targets）"
     echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | bash -s -- --skills"
     echo ""
-    echo "💡 Tips:"
-    echo "  推荐使用 ki setup（支持多目录、配置文件）:"
-    echo "    curl -fsSL https://raw.githubusercontent.com/HACK-WU/knowledge-indexer/master/scripts/install-latest.sh | bash"
-    echo "    ki setup --skills -t ~/projects/my-app"
-    exit 1
+exit 1
 fi
 
 # ============================================================
@@ -296,6 +280,7 @@ install_skills() {
         echo "⚠️  gh 不可用，使用静态 skill 列表（可能不是最新）" >&2
         FILES=(
             "auto-review/SKILL.md"
+            "bug-impact-analysis/SKILL.md"
             "challenger/SKILL.md"
             "challenger/strategies/bug-fix.md"
             "challenger/strategies/feature.md"
@@ -307,6 +292,9 @@ install_skills() {
             "create-skill/SKILL.md"
             "data-flow-model/SKILL.md"
             "demo-verify/SKILL.md"
+            "dependency-docs/SKILL.md"
+            "design-craft/CHALLENGER_REPORT.md"
+            "design-craft/SINGLE_DOC.md"
             "design-craft/SKILL.md"
             "design-craft/SUB_TEMPLATE.md"
             "design-craft/reference.md"
