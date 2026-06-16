@@ -4,108 +4,63 @@
 
 ## 快速安装
 
-> **获取脚本**：`skill-install.sh` 位于本仓库 `scripts/` 目录。你可以克隆仓库或直接下载脚本使用。
-
-### 获取脚本
-
 ```bash
-# 方式1：克隆仓库
-git clone https://github.com/HACK-WU/skills.git
-cd skills
-
-# 方式2：仅下载安装脚本
+# 获取安装脚本（二选一）
+git clone https://github.com/HACK-WU/skills.git && cd skills
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh -o skill-install.sh
 ```
 
-### 安装 AI Skill 定义
+### 基本用法
+
 ```bash
-# 单目录
+bash scripts/skill-install.sh [模式] [目标选项]
+```
+
+**模式**（可组合）：
+
+| 参数 | 安装内容 |
+|------|----------|
+| `--skills` | AI Skill 定义文件 |
+| `--rules` | AI 规则文件 |
+
+**目标选项**（三选一，优先级从高到低）：
+
+| 方式 | 示例 |
+|------|------|
+| `-t` 指定目录（支持多个） | `-t ~/projects/app -t ~/projects/api` |
+| `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，支持 `#` 注释） |
+| 不指定（自动读取默认文件） | `--skills` → `~/.skill-targets`，`--rules` → `~/.rule-targets` |
+
+### 示例
+
+```bash
+# 安装 skills 到单个项目
 bash scripts/skill-install.sh --skills -t /path/to/your-project
 
-# 多目录
-bash scripts/skill-install.sh --skills -t ~/projects/app -t ~/projects/api
+# 同时安装 skills + rules 到多个目录
+bash scripts/skill-install.sh --skills --rules -t ~/projects/app -t ~/projects/api
 
 # 一键安装（无需先下载脚本）
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
   bash -s -- --skills -t /path/to/your-project
-```
 
-### 安装 AI 规则
-```bash
-# 单目录
-bash scripts/skill-install.sh --rules -t /path/to/your-project
-
-# 多目录
-bash scripts/skill-install.sh --rules -t ~/projects/app -t ~/projects/api
-
-# 从配置文件指定
-bash scripts/skill-install.sh --rules --file ~/my-targets.txt
-
-# 使用默认配置文件 ~/.rule-targets（不指定 -t 或 --file 时自动读取）
-bash scripts/skill-install.sh --rules
-```
-
-### 安装 CRUD 脚本（需求管理工具）
-```bash
-bash scripts/skill-install.sh --scripts -t /path/to/your-project
-```
-
-### 多模式组合安装
-```bash
-# 同时安装 skills + rules + scripts
-bash scripts/skill-install.sh --skills --rules --scripts -t /path/to/your-project
-```
-
-### 从配置文件指定目标目录
-```bash
-# targets.txt 每行一个目录，支持 # 注释和空行
-bash scripts/skill-install.sh --skills --file ~/my-targets.txt
-bash scripts/skill-install.sh --rules --file ~/my-targets.txt
-
-# 默认配置文件（不指定 -t 或 --file 时自动读取，按模式区分）:
-#   --skills  → ~/.skill-targets
-#   --rules   → ~/.rule-targets
-#   --scripts → ~/.script-targets
-#
-# 例如：创建独立的规则目标配置
-echo "~/projects/app" > ~/.rule-targets
-bash scripts/skill-install.sh --rules  # 自动读取 ~/.rule-targets
-
-# 多模式组合时，会合并各模式配置文件的目标（自动去重）
-echo "~/projects/app" > ~/.skill-targets
-echo "~/projects/api" >> ~/.rule-targets
-bash scripts/skill-install.sh --skills --rules
-# → 目标目录合并为 ~/projects/app + ~/projects/api，skills 和 rules 都安装到这两个目录
+# 多模式组合时，各模式的默认配置文件会被合并（自动去重）
 ```
 
 ### Windows（PowerShell）
 
+参数与 Bash 版本一一对应，差异仅在于命名风格：
+
+| Bash | PowerShell | 默认配置文件路径 |
+|------|------------|------------------|
+| `--skills` | `-Skills` | `$env:USERPROFILE\.skill-targets` |
+| `--rules` | `-Rules` | `$env:USERPROFILE\.rule-targets` |
+| `-t` | `-Target` | — |
+| `--file` | `-ConfigFile` | — |
+
 ```powershell
-# 单模式
 .\skill-install.ps1 -Skills -Target C:\projects\my-app
-.\skill-install.ps1 -Rules -Target C:\projects\my-app
-.\skill-install.ps1 -Scripts -Target C:\projects\my-app
-
-# 多模式组合
-.\skill-install.ps1 -Skills -Rules -Scripts -Target C:\projects\my-app
-
-# 多目录
-.\skill-install.ps1 -Skills -Target C:\projects\app -Target C:\projects\api
-
-# 从配置文件指定
-.\skill-install.ps1 -Skills -ConfigFile C:\my-targets.txt
-.\skill-install.ps1 -Rules -ConfigFile C:\my-targets.txt
-
-# 默认配置文件（不指定 -Target 或 -ConfigFile 时自动读取，按模式区分）:
-#   -Skills   → $env:USERPROFILE\.skill-targets
-#   -Rules    → $env:USERPROFILE\.rule-targets
-#   -Scripts  → $env:USERPROFILE\.script-targets
-#
-# 例如：创建独立的规则目标配置
-@"
-C:\projects\app
-"@ | Out-File -FilePath "$env:USERPROFILE\.rule-targets" -Encoding UTF8
-.\skill-install.ps1 -Rules  # 自动读取 .rule-targets
+.\skill-install.ps1 -Skills -Rules -Target C:\projects\app -Target C:\projects\api
 ```
 
 ## 技能一览
