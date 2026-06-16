@@ -6,9 +6,14 @@
 # 用法:
 #   ./scripts/release-requirement-mgr.sh <version> [prerelease]
 #
+# 版本号格式约定：
+#   请使用人类可读格式，如 1.0.0、1.1.0-beta、2.0.0-rc1
+#   不要用 PEP 440 缩写（如 0.1.0b0），因为 install-latest.sh
+#   依赖 tag 中的版本号与 req --version 输出一致来做版本比较。
+#
 # 示例:
 #   ./scripts/release-requirement-mgr.sh 1.0.0              # 正式版
-#   ./scripts/release-requirement-mgr.sh 1.1.0-beta.1 true  # 预发布版
+#   ./scripts/release-requirement-mgr.sh 1.1.0-beta true  # 预发布版
 # ============================================================
 set -euo pipefail
 

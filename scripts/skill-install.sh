@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # ============================================================
-# Skills 安装器 — 从 GitHub 下载 Scripts / Skills / Rules
+# Skills 安装器 — 从 GitHub 下载 Skills / Rules
 #
 # 用法:
 #   bash skill-install.sh --skills -t /path/to/target -t /path/to/target2
 #   bash skill-install.sh --rules --file /path/to/targets.txt
-#   bash skill-install.sh /path/to/target --scripts   # 旧用法，兼容
+#   bash skill-install.sh --skills -n code-review,design-craft -t ~/projects/app
+#   bash skill-install.sh /path/to/target --skills   # 旧用法，兼容
 #
 #   或:
 #   curl -fsSL ... -o skill-install.sh
@@ -13,24 +14,29 @@
 # ============================================================
 set -euo pipefail
 
+# 💡 提示：推荐使用 ki setup（支持多目录、配置文件）
+if [ -t 2 ]; then
+    echo "💡 提示：推荐使用 ki setup，功能更强大" >&2
+    echo "   curl -fsSL https://raw.githubusercontent.com/HACK-WU/knowledge-indexer/master/scripts/install-latest.sh | bash && ki setup --skills" >&2
+    echo "" >&2
+fi
+
 GITHUB_REPO="HACK-WU/skills"
 GITHUB_BRANCH="master"
 RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
 
 DEFAULT_SKILLS_TARGETS="$HOME/.skill-targets"
 DEFAULT_RULES_TARGETS="$HOME/.rule-targets"
-DEFAULT_SCRIPTS_TARGETS="$HOME/.script-targets"
 POSITIONAL_TARGET=""
 TARGETS=()
 CONFIG_FILE=""
 MODES=()
+NAME_FILTER=""
 GH_AUTH_OK=false
 
 # 文件列表缓存（跨目标目录复用，避免重复调用 GitHub API）
-SCRIPTS_FILES=()
 SKILLS_FILES=()
 RULES_FILES=()
-SCRIPTS_DISCOVERED=false
 SKILLS_DISCOVERED=false
 RULES_DISCOVERED=false
 
@@ -47,7 +53,6 @@ fi
 while [ $# -gt 0 ]; do
     arg="$1"
     case "$arg" in
-        --scripts) MODES+=("scripts") ;;
         --skills)  MODES+=("skills") ;;
         --rules)   MODES+=("rules") ;;
         -t)
@@ -60,7 +65,21 @@ while [ $# -gt 0 ]; do
             [ $# -eq 0 ] && { echo "错误：--file 需要参数"; exit 1; }
             CONFIG_FILE="$1"
             ;;
+        -n)
+            shift
+            [ $# -eq 0 ] && { echo "错误：-n 需要参数"; exit 1; }
+            NAME_FILTER="$1"
+            ;;
         --file=*) CONFIG_FILE="${arg#*=}" ;;
+        --scripts)
+            echo "错误：--scripts 已废弃，请使用 ki setup 安装脚本"
+            echo "  curl -fsSL https://raw.githubusercontent.com/HACK-WU/knowledge-indexer/master/scripts/install-latest.sh | bash"
+            exit 1
+            ;;
+        --all|--docs)
+            echo "错误：${arg} 已废弃"
+            exit 1
+            ;;
         -*)
             echo "未知选项: $arg"
             exit 1
@@ -107,7 +126,6 @@ elif [ ${#MODES[@]} -gt 0 ]; then
     MODE_FILES=()
     for mode in "${MODES[@]}"; do
         case "$mode" in
-            scripts) MODE_FILES+=("$DEFAULT_SCRIPTS_TARGETS") ;;
             skills)  MODE_FILES+=("$DEFAULT_SKILLS_TARGETS") ;;
             rules)   MODE_FILES+=("$DEFAULT_RULES_TARGETS") ;;
         esac
@@ -140,26 +158,30 @@ else
 fi
 
 if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ ${#MODES[@]} -eq 0 ]; then
-    echo "用法: bash skill-install.sh [--scripts|--skills|--rules] [-t <path>... | --file <path>]"
+    if [ -n "$NAME_FILTER" ] && [ ${#MODES[@]} -eq 0 ]; then
+        echo "错误：-n 参数必须配合 --skills 或 --rules 使用"
+        exit 1
+    fi
+    echo "用法: bash skill-install.sh [--skills|--rules] [-t <path>... | --file <path>]"
     echo ""
-    echo "  --scripts       安装 CRUD 管理脚本（scripts/）"
     echo "  --skills        安装 AI Skill 定义（skills/）"
     echo "  --rules         安装 AI 规则（rules/）"
+    echo "  -n <names>      指定要安装的 skill/rule 名称（逗号分隔，如 -n code-review,design-craft）"
     echo "  -t <path>       指定目标目录（可多次使用，与 --file 互斥）"
     echo "  --file <path>   指定目标目录配置文件（与 -t 互斥）"
     echo ""
     echo "兼容旧用法:"
-    echo "  bash skill-install.sh <目标路径> --scripts"
+    echo "  bash skill-install.sh <目标路径> --skills"
     echo ""
     echo "示例:"
     echo "  bash skill-install.sh --skills -t ~/projects/app -t ~/projects/api"
+    echo "  bash skill-install.sh --skills -n code-review,design-craft -t ~/projects/app"
     echo "  bash skill-install.sh --rules --file ~/my-targets.txt"
-    echo "  bash skill-install.sh --scripts --skills --rules -t ~/projects/my-app"
+    echo "  bash skill-install.sh --skills --rules -t ~/projects/my-app"
     echo ""
     echo "默认配置文件（不指定 -t / --file 时自动读取）:"
     echo "  --skills  → $HOME/.skill-targets"
     echo "  --rules   → $HOME/.rule-targets"
-    echo "  --scripts → $HOME/.script-targets"
     echo ""
     echo "一键安装:"
     echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | \\"
@@ -167,6 +189,11 @@ if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ ${#MODES[@]} -eq 0 ]; then
     echo ""
     echo "  # 使用默认配置文件（~/.skill-targets / ~/.rule-targets）"
     echo "  curl -fsSL ${RAW_BASE}/scripts/skill-install.sh | bash -s -- --skills"
+    echo ""
+    echo "💡 Tips:"
+    echo "  推荐使用 ki setup（支持多目录、配置文件）:"
+    echo "    curl -fsSL https://raw.githubusercontent.com/HACK-WU/knowledge-indexer/master/scripts/install-latest.sh | bash"
+    echo "    ki setup --skills -t ~/projects/my-app"
     exit 1
 fi
 
@@ -182,6 +209,27 @@ download() {
         rm -f "$dest" 2>/dev/null
         return 1
     fi
+}
+
+# 解析名称过滤器
+if [ -n "$NAME_FILTER" ]; then
+    IFS=',' read -ra NAME_LIST <<< "$NAME_FILTER"
+    # 去除空格
+    for i in "${!NAME_LIST[@]}"; do
+        NAME_LIST[$i]="$(echo "${NAME_LIST[$i]}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    done
+else
+    NAME_LIST=()
+fi
+
+# 检查名称是否在过滤列表中（空列表表示全部匹配）
+name_matches() {
+    local name="$1"
+    [ ${#NAME_LIST[@]} -eq 0 ] && return 0
+    for filter_name in "${NAME_LIST[@]}"; do
+        [ "$name" = "$filter_name" ] && return 0
+    done
+    return 1
 }
 
 # 递归发现 GitHub 仓库目录下的文件列表
@@ -204,86 +252,6 @@ discover_files_recursive() {
     done <<< "$items"
 }
 
-# 从配置文件行列表读取目标目录（去空去注释）
-read_targets_from_file() {
-    local file="$1"
-    while IFS= read -r line; do
-        line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        [ -z "$line" ] && continue
-        [[ "$line" =~ ^# ]] && continue
-        echo "$line"
-    done < "$file"
-}
-
-# ============================================================
-# --scripts: CRUD 管理脚本
-# ============================================================
-install_scripts() {
-    if [ "${NORMALIZED_DIR##*/}" = "scripts" ]; then
-        DEST="$NORMALIZED_DIR"
-    else
-        DEST="$NORMALIZED_DIR/scripts"
-    fi
-    mkdir -p "$DEST"
-
-    # 动态发现：优先 gh（需已登录），降级为硬编码；使用缓存避免重复 API 调用
-    local FILES=()
-    if [ "$SCRIPTS_DISCOVERED" = true ]; then
-        FILES=("${SCRIPTS_FILES[@]}")
-    elif [ "$GH_AUTH_OK" = true ]; then
-        echo "🔍 正在通过 GitHub API 发现脚本文件列表..." >&2
-        while IFS= read -r name; do
-            [ -z "$name" ] && continue
-            FILES+=("$name")
-        done < <(gh api "repos/${GITHUB_REPO}/contents/scripts/requirement-mgr" \
-            --jq '.[] | select(.name | endswith(".py")) | .name' 2>/dev/null)
-        echo "   已发现 ${#FILES[@]} 个脚本文件" >&2
-    fi
-
-    if [ ${#FILES[@]} -eq 0 ]; then
-        echo "⚠️  gh 不可用，使用静态脚本列表（可能不是最新）" >&2
-        FILES=(
-            "config_loader.py"
-            "create-requirement.py"
-            "delete-requirement.py"
-            "file_lock.py"
-            "id_generator.py"
-            "list-requirements.py"
-            "meta_store.py"
-            "requirement_utils.py"
-            "update-requirement.py"
-        )
-    elif [ "$SCRIPTS_DISCOVERED" = false ]; then
-        # 缓存首次发现的文件列表，后续目标目录复用
-        SCRIPTS_FILES=("${FILES[@]}")
-        SCRIPTS_DISCOVERED=true
-    fi
-
-    echo "📦 安装 CRUD 脚本 → ${DEST}"
-    echo ""
-
-    local count=0 total=0
-    for f in "${FILES[@]}"; do
-        total=$((total + 1))
-        local url="${RAW_BASE}/scripts/requirement-mgr/${f}"
-        local dest="${DEST}/${f}"
-        if download "$url" "$dest"; then
-            echo "  [OK] ${f}"
-            count=$((count + 1))
-        else
-            echo "  [FAIL] ${f}"
-        fi
-    done
-    echo ""
-    echo "已安装: ${count}/${total}"
-
-    if [ "$count" -gt 0 ]; then
-        echo ""
-        echo "使用:"
-        echo "  uv run python scripts/list-requirements.py"
-        echo "  uv run python scripts/create-requirement.py --feature '名称' --tags feat"
-    fi
-}
 
 # ============================================================
 # --skills: AI Skill 定义
@@ -373,8 +341,14 @@ install_skills() {
     echo "🧠 安装 AI Skills → ${DEST}"
     echo ""
 
-    local count=0 total=0
+    local count=0 total=0 skipped=0
     for f in "${FILES[@]}"; do
+        # 提取 skill 名称用于过滤（取第一级目录名）
+        local skill_name="${f%%/*}"
+        if ! name_matches "$skill_name"; then
+            skipped=$((skipped + 1))
+            continue
+        fi
         total=$((total + 1))
         local url="${RAW_BASE}/skills/${f}"
         local dest="${DEST}/${f}"
@@ -385,8 +359,10 @@ install_skills() {
             echo "  [FAIL] ${f}"
         fi
     done
+    [ $skipped -gt 0 ] && echo "  跳过: ${skipped} 个未匹配的 skill"
     echo ""
     echo "已安装: ${count}/${total} 个 skill 文件"
+    if [ $count -gt 0 ]; then ANY_INSTALLED=1; fi
 }
 
 # ============================================================
@@ -429,8 +405,14 @@ install_rules() {
     echo "📏 安装 AI Rules → ${DEST}"
     echo ""
 
-    local count=0 total=0
+    local count=0 total=0 skipped=0
     for f in "${FILES[@]}"; do
+        # 提取规则名称用于过滤（去掉 .md 后缀）
+        local rule_name="${f%.md}"
+        if ! name_matches "$rule_name"; then
+            skipped=$((skipped + 1))
+            continue
+        fi
         total=$((total + 1))
         local url="${RAW_BASE}/rules/${f}"
         local dest="${DEST}/${f}"
@@ -441,8 +423,10 @@ install_rules() {
             echo "  [FAIL] ${f}"
         fi
     done
+    [ $skipped -gt 0 ] && echo "  跳过: ${skipped} 个未匹配的 rule"
     echo ""
     echo "已安装: ${count}/${total} 个规则文件"
+    if [ $count -gt 0 ]; then ANY_INSTALLED=1; fi
 }
 
 # ============================================================
@@ -452,7 +436,10 @@ echo "🚀 skill-install.sh"
 echo "   目标来源: ${SOURCE_DESC}"
 echo "   目标数量: ${#TARGET_DIRS[@]}"
 echo "   安装模式: ${MODES[*]}"
+[ ${#NAME_LIST[@]} -gt 0 ] && echo "   名称过滤: $(IFS=', '; echo "${NAME_LIST[*]}")"
 echo ""
+
+ANY_INSTALLED=0
 
 for i in "${!TARGET_DIRS[@]}"; do
     TARGET_DIR="${TARGET_DIRS[$i]}"
@@ -467,12 +454,16 @@ for i in "${!TARGET_DIRS[@]}"; do
 
     for mode in "${MODES[@]}"; do
         case "$mode" in
-            scripts) install_scripts ;;
-            skills)  install_skills  ;;
+            skills)  install_skills ;;
             rules)   install_rules  ;;
         esac
         echo ""
     done
 done
 
+echo ""
+if [ $ANY_INSTALLED -eq 0 ] && [ ${#NAME_LIST[@]} -gt 0 ]; then
+    echo "⚠️ 未找到匹配的项，请检查名称是否正确"
+    exit 1
+fi
 echo "✅ 完成"

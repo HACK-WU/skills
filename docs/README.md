@@ -12,7 +12,15 @@
 - Python 3.10+
 - `uv`（推荐）或直接使用 `python`
 
-### 方式一：GitHub Release 安装（推荐）
+### 方式一：自动安装脚本（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/install-latest.sh | bash
+# 包含预发布版本：
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/install-latest.sh | bash -s -- --pre
+```
+
+### 方式二：指定版本安装
 
 ```bash
 uv tool install https://github.com/HACK-WU/skills/releases/download/requirement-mgr-v0.1.0-beta/requirement_mgr-0.1.0b0-py3-none-any.whl
@@ -20,7 +28,7 @@ uv tool install https://github.com/HACK-WU/skills/releases/download/requirement-
 
 > 📦 [所有 Release 版本](https://github.com/HACK-WU/skills/releases/tag/requirement-mgr-v0.1.0-beta)
 
-### 方式二：从源码安装
+### 方式三：从源码安装
 
 ```bash
 cd /path/to/project
@@ -30,10 +38,10 @@ uv tool install scripts/requirement-mgr/
 ### 验证安装
 ```bash
 req --version
-# → requirement_mgr, version 1.0.0
+# → req 0.1.0-beta
 ```
 
-> 其他安装方式（GitHub Release、开发模式、Windows PowerShell）详见 [配置指南](./configuration.md)
+> Windows PowerShell 及其他高级安装方式详见 [配置指南](./configuration.md)
 
 ## 快速开始
 

@@ -90,9 +90,8 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 项目内置一套 Python CRUD 脚本，通过 `req` CLI 命令统一入口，支持以编程方式管理需求元数据。
 
 ```bash
-# 安装 req 命令
-# 详见 https://github.com/HACK-WU/skills/releases/tag/requirement-mgr-v0.1.0-beta
-uv tool install /path/to/requirement_mgr-*.whl
+# 安装 req 命令（自动获取最新版本）
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/install-latest.sh | bash
 ```
 
 | 命令 | 功能 |
