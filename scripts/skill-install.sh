@@ -293,9 +293,9 @@ install_skills() {
             "data-flow-model/SKILL.md"
             "demo-verify/SKILL.md"
             "dependency-docs/SKILL.md"
+            "design-craft/SKILL.md"
             "design-craft/CHALLENGER_REPORT.md"
             "design-craft/SINGLE_DOC.md"
-            "design-craft/SKILL.md"
             "design-craft/SUB_TEMPLATE.md"
             "design-craft/reference.md"
             "design-review/SKILL.md"
@@ -329,28 +329,75 @@ install_skills() {
     echo "🧠 安装 AI Skills → ${DEST}"
     echo ""
 
-    local count=0 total=0 skipped=0
+    local file_count=0 skipped=0
+    local skill_names_all=()   # 所有涉及的 skill 目录（去重）
+    local skill_names_ok=()    # SKILL.md 下载成功的 skill 目录（去重）
+    local _sn_fail=()          # 每个 skill 的失败文件数（与 skill_names_all 索引对齐）
+
     for f in "${FILES[@]}"; do
         # 提取 skill 名称用于过滤（取第一级目录名）
         local skill_name="${f%%/*}"
+
+        # 记录 skill 目录（去重）并初始化失败计数
+        local found=0 i=0
+        for sn in "${skill_names_all[@]}"; do
+            [ "$sn" = "$skill_name" ] && { found=1; break; }
+            i=$((i + 1))
+        done
+        if [ "$found" -eq 0 ]; then
+            skill_names_all+=("$skill_name")
+            _sn_fail+=(0)
+        fi
+
         if ! name_matches "$skill_name"; then
-            skipped=$((skipped + 1))
             continue
         fi
-        total=$((total + 1))
+
         local url="${RAW_BASE}/skills/${f}"
         local dest="${DEST}/${f}"
         if download "$url" "$dest"; then
             echo "  [OK] ${f}"
-            count=$((count + 1))
+            file_count=$((file_count + 1))
+            # 记录 SKILL.md 下载成功的 skill 目录（去重）
+            if [ "${f##*/}" = "SKILL.md" ]; then
+                local ok_found=0
+                for sn in "${skill_names_ok[@]}"; do
+                    [ "$sn" = "$skill_name" ] && { ok_found=1; break; }
+                done
+                [ "$ok_found" -eq 0 ] && skill_names_ok+=("$skill_name")
+            fi
         else
             echo "  [FAIL] ${f}"
+            # 找到 skill 在 skill_names_all 中的索引，增加失败计数
+            local fi_idx=0
+            for sn in "${skill_names_all[@]}"; do
+                [ "$sn" = "$skill_name" ] && { _sn_fail[$fi_idx]=$((${_sn_fail[$fi_idx]} + 1)); break; }
+                fi_idx=$((fi_idx + 1))
+            done
         fi
     done
+
+    # 统计跳过的 skill 数（目录级）
+    for sn in "${skill_names_all[@]}"; do
+        name_matches "$sn" || skipped=$((skipped + 1))
+    done
+
     [ $skipped -gt 0 ] && echo "  跳过: ${skipped} 个未匹配的 skill"
+
+    # 输出不完整 skill 的警告（存在下载失败文件的 skill）
+    local _warned=0 _wi=0
+    for sn in "${skill_names_all[@]}"; do
+        if name_matches "$sn" && [ "${_sn_fail[$_wi]}" -gt 0 ]; then
+            [ $_warned -eq 0 ] && echo "" && echo "⚠️ 以下 skill 存在下载失败的文件："
+            echo "  - ${sn}: ${_sn_fail[$_wi]} 个文件失败"
+            _warned=1
+        fi
+        _wi=$((_wi + 1))
+    done
+
     echo ""
-    echo "已安装: ${count}/${total} 个 skill 文件"
-    if [ $count -gt 0 ]; then ANY_INSTALLED=1; fi
+    echo "已安装: ${#skill_names_ok[@]}/${#skill_names_all[@]} 个 skill（共 ${file_count} 个文件）"
+    if [ $file_count -gt 0 ]; then ANY_INSTALLED=1; fi
 }
 
 # ============================================================
