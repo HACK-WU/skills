@@ -253,6 +253,7 @@ function Install-Skills {
             "challenger/strategies/optimization.md",
             "challenger/templates/report.md",
             "code-review/SKILL.md",
+            "code-survey/SKILL.md",
             "content-simplifier/SKILL.md",
             "create-rules/SKILL.md",
             "create-skill/SKILL.md",
