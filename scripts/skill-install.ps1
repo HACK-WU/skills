@@ -245,6 +245,7 @@ function Install-Skills {
     if ($files.Count -eq 0 -and -not $script:SkillsDiscovered) {
         Write-Host "⚠️  GitHub API 不可用，使用静态 skill 列表（可能不是最新）" -ForegroundColor Yellow
         $files = @(
+            "api-design/SKILL.md",
             "auto-review/SKILL.md",
             "bug-impact-analysis/SKILL.md",
             "challenger/SKILL.md",
@@ -268,23 +269,26 @@ function Install-Skills {
             "design-review/SKILL.md",
             "design-review/reference.md",
             "document-writer/SKILL.md",
-            "document-writer/references/quality-rules.md",
-            "document-writer/references/strategies.md",
+            "document-writer/references/examples/README.md",
             "document-writer/references/examples/example-1-library.md",
             "document-writer/references/examples/example-2-cli.md",
-            "document-writer/references/examples/README.md",
+            "document-writer/references/quality-rules.md",
+            "document-writer/references/strategies.md",
             "expert-panel/SKILL.md",
             "expert-panel/references/review-panel.md",
             "implementation-report/SKILL.md",
             "interaction-design/SKILL.md",
             "memory-creator/SKILL.md",
             "migrate-to-codehub/SKILL.md",
+            "negative-requirement/SKILL.md",
             "requirement-doc-store/SKILL.md",
             "requirement-mining/SKILL.md",
             "requirement-mining/references/example.md",
+            "scenario-rehearsal/SKILL.md",
+            "scenario-rehearsal/reference.md",
             "test-planner/SKILL.md",
-            "test-planner/references/test-strategies.md",
             "test-planner/references/examples/example-1-registration.md",
+            "test-planner/references/test-strategies.md",
             "work-breakdown/SKILL.md"
         )
     }
