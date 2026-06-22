@@ -238,6 +238,7 @@ req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 | 代码审查 | `review/code-review.md,review` |
 | 质疑审查 | `review/challenge-report.md,review` |
 | 实现报告 | `report.md,report` |
+| 场景推演 | `review/scenario-rehearsal.md,rehearsal` |
 
 ### Step U5：更新需求状态（如需要）
 
@@ -401,6 +402,8 @@ security/
 | 代码审查 | code-review | `review/code-review.md` |
 | 质疑审查 | challenger | `review/challenge-report.md` |
 | 实现报告 | 需求完成时 | `report.md` |
+| 场景推演 | scenario-rehearsal | `review/scenario-rehearsal.md` |
+| 前端集成指南 | frontend-api-guide | `frontend-guide/api-call-guide.md` |
 
 ## 需求生命周期状态流
 
@@ -507,6 +510,7 @@ req list --no-color
 | challenger | P2 | 读写型 | `review/challenge-report.md` |
 | demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |
 | expert-panel | P2 | 读写型 | `review/expert-panel.md` |
+| scenario-rehearsal | P1 | 读写型 | `review/scenario-rehearsal.md` |
 
 **写入型**：skill 产出文档后自动调用 `req update --docs add` 注册并更新状态。
 **读写型**：skill 执行前自动调用 `req list` 获取需求上下文作为参照，完成后写入报告。

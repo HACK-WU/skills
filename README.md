@@ -96,6 +96,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构 | "写设计文档"、"帮我设计"、"dd" |
 | **[negative-requirement](./skills/negative-requirement/SKILL.md)** | 从正向需求出发分析负向场景，设计程序的检测、恢复和引导策略 | "错误处理"、"异常场景"、"边界情况" |
 | **[api-design](./skills/api-design/SKILL.md)** | 基于设计文档生成详细的 API 设计文档，含完整接口契约和错误码定义 | "设计 API"、"接口设计"、"api design" |
+| **[frontend-api-guide](./skills/frontend-api-guide/SKILL.md)** | 将 API 设计转化为前端可直接编码的调用流程文档，含 UI 映射和错误处理速查 | "生成前端 API 文档"、"API 调用流程" |
 | **[demo-verify](./skills/demo-verify/SKILL.md)** | 针对设计中的风险点构建验证原型，确认可行后再投入开发（复杂需求自动触发） | "先做个 demo 验证"、"试试看" |
 | **[design-review](./skills/design-review/SKILL.md)** | 对设计文档进行结构化评审，产出分级问题清单 | "评审设计"、"review 设计文档" |
 | **[scenario-rehearsal](./skills/scenario-rehearsal/SKILL.md)** | 设计完成后模拟真实使用场景推演，验证数据走向和关键设计点可行性 | "推演一下这个设计"、"验证设计方案" |
@@ -170,6 +171,7 @@ skills/
 ├── design-craft/             # 技术设计
 ├── negative-requirement/     # 负向场景分析
 ├── api-design/               # API 设计
+├── frontend-api-guide/       # 前端集成指南
 ├── design-review/            # 设计评审
 ├── demo-verify/              # 验证原型
 ├── scenario-rehearsal/       # 场景推演

@@ -276,6 +276,8 @@ function Install-Skills {
             "document-writer/references/strategies.md",
             "expert-panel/SKILL.md",
             "expert-panel/references/review-panel.md",
+            "frontend-api-guide/SKILL.md",
+            "frontend-api-guide/reference.md",
             "implementation-report/SKILL.md",
             "interaction-design/SKILL.md",
             "memory-creator/SKILL.md",
