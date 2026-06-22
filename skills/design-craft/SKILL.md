@@ -584,9 +584,72 @@ design-review 评审通过后，**自动调用 `challenger` skill 进行深度�
 
 **challenger 二次质疑输出**：见 [CHALLENGER_REPORT.md](CHALLENGER_REPORT.md) 决策分支部分。
 
+### 场景推演（challenger 通过后执行）
+
+challenger 二次质疑通过后，**自动调用 `scenario-rehearsal` skill 进行场景推演**。
+
+核心规则：
+- 以执行者（用户角色/自动化程序）为入口，走完整流程
+- 双重验证：数据走向 + 关键设计点实现
+- 推演报告输出后**不自动修改**，向用户提供 3 个选项：🔧 修改设计 / 📁 报告落盘 / ⏭️ 跳过
+- 选修改：按推演发现的问题修改设计文档 → design-review 验证 1 轮
+- 选落盘：写入 `design/scenario-rehearsal.md` + `req update` 注册关联
+- 选跳过：不修改不落盘，直接交付
+
+**推演发现的问题分类处理**：
+- 遗漏场景/流程缺陷：修改设计文档
+- 数据问题：修改数据流图或设计文档
+- 设计冲突：统一设计方案
+
+**输出格式**：
+
+```text
+🎬 场景推演结果
+━━━━━━━━━━━━━━━━
+
+推演覆盖：X 个角色 / Y 个场景
+问题发现：🔴 阻断 X 个 / 🟡 警告 Y 个 / 🟢 建议 Z 个
+
+评审结论：❌ 不通过 / ⚠️ 有条件通过 / ✅ 通过
+
+请选择后续行动：
+1. 🔧 修改设计
+2. 📁 报告落盘
+3. ⏭️ 跳过
+```
+
+**场景推演详细流程**：见 `scenario-rehearsal` skill。
+
 ### 单文档场景
 
 落盘单文件，按 SINGLE_DOC.md 的 14 章质量自检清单执行，同样进入自动评审循环。
+
+### 后续行动选择
+
+设计文档评审通过后，向用户提供后续行动选择：
+
+```text
+🚀 后续行动选择
+━━━━━━━━━━━━━━━━
+
+设计文档已完成并通过评审。请选择后续行动：
+
+1. 📡 补充 API 设计
+   使用 api-design 技能将设计文档中的 demo 接口升级为详细的 API 设计文档（推荐，当设计涉及 API 接口时）
+
+2. 📋 生成测试计划
+   使用 test-planner 技能基于设计文档生成测试计划
+
+3. 📝 生成实施计划
+   使用阶段 6 生成独立的实施计划文档
+
+4. ⏭️ 跳过
+   不进行后续操作，结束设计流程
+
+请选择 [1/2/3/4]：
+```
+
+**触发条件**：仅当设计文档中包含 API 接口设计章节时，才推荐选项 1。
 
 ---
 
@@ -699,4 +762,5 @@ req list --id {REQ-NNN} --deps
 - challenger 二次质疑：[CHALLENGER_REPORT.md](CHALLENGER_REPORT.md)
 - 子需求章节模板：[SUB_TEMPLATE.md](SUB_TEMPLATE.md)
 - 代码现状调研：`code-survey` skill
+- API 详细设计：`api-design` skill（设计文档完成后推荐）
 - 语义分析示例 / 拆分示例 / mermaid 速查 / 反模式清单：[reference.md](reference.md)
