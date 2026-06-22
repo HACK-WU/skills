@@ -147,15 +147,16 @@ design-craft → api-design → frontend-api-guide（本 skill）
 
 步骤 2：...
 
-【调用流程图】（mermaid）
+【调用流程图】（mermaid flowchart，简要版）
 ```
 
 ### 流程图规则
 
-- 使用 mermaid sequenceDiagram 或 flowchart
-- 节点 = 前端页面/组件/API
-- 连线 = 调用方向 + 触发条件
-- 标注成功/失败分支
+- **必须使用 mermaid flowchart**，禁止使用 sequenceDiagram（时序图对前端太复杂）
+- **简要至上**：只画关键分支和主路径，不超过 10 个节点，前端一眼能看完
+- 节点 = 用户操作 / 页面 / API 调用 / 分支判断
+- 连线 = 操作顺序 + 条件分支
+- 标注成功/失败分支，但不要展开每个异常路径的细节
 
 ---
 
@@ -290,7 +291,7 @@ design-craft → api-design → frontend-api-guide（本 skill）
 
 ```
 frontend-guide/
-├── INDEX.md              # API 总览：清单 + 错误处理速查表 + 常见问题 + 注意事项
+├── INDEX.md              # API 总览：整体流程图 + 清单 + 错误处理 + 常见问题 + 注意事项
 ├── user-register.md      # 场景1：用户注册 调用流程 + 流程图
 ├── order-create.md       # 场景2：订单创建 调用流程 + 流程图
 ├── order-review.md       # 场景3：订单审核 调用流程 + 流程图
@@ -303,6 +304,26 @@ frontend-guide/
 
 > 基于 API 设计文档版本：{版本}
 > 生成时间：YYYY-MM-DD
+
+## 整体调用流程
+
+用 ASCII 字符画出前端操作 → API 调用 → 页面跳转的完整流程，让前端一眼看清全局。
+
+```
+用户点击「创建单据」
+       │
+       ▼
+  选择「TAPD 单据」
+       │
+       ▼
+  ┌─ 检查授权状态 ─┐
+  │                │
+  │  未授权          │  已授权
+  │                │
+  ▼                ▼
+跳转用户态      进入建单表单
+授权页             ...
+```
 
 ## 1. API 清单
 
@@ -341,7 +362,7 @@ frontend-guide/
 
 ## 调用流程图
 
-（mermaid 流程图）
+（mermaid flowchart 简要版：只画关键分支和主路径，不超过 10 个节点）
 
 ## UI 映射（如有）
 
@@ -353,7 +374,7 @@ frontend-guide/
 检查项目中是否已配置存储位置（`.requirements/config`）：
 
 - **已配置**：读取 `storage_path`，文档存放在 `{storage_path}/{feature}/frontend-guide/` 目录下
-  - `INDEX.md`：API 总览 + 错误处理速查表 + 注意事项
+  - `INDEX.md`：整体调用流程图 + API 总览 + 错误处理速查表 + 常见问题 + 注意事项
   - `{scene}.md`：每个场景一个独立文件（如 `user-register.md`、`order-create.md`）
 - **未配置**：询问用户，给出默认建议 `.requirements/{feature}/frontend-guide/`
 
@@ -372,9 +393,10 @@ frontend-guide/
 ☐ 每个 API 都被至少一个场景引用
 ☐ 每个错误码都有对应的前端行为
 ☐ UI 映射覆盖了所有 API 响应字段（如有 UI 设计稿）
-☐ 调用流程图使用 mermaid 语法
+☐ 调用流程图使用 mermaid flowchart（非 sequenceDiagram），简要且不超过 10 个节点
 ☐ 文档中不包含任何后端内部编号（B-03、S-01 等）
 ☐ 请求参数和响应字段均有标准 JSON 示例 + 表格说明
+☐ INDEX.md 包含整体调用流程图（ASCII 字符画，一目了然）
 ☐ INDEX.md 包含常见问题章节，预判前端可能产生的业务逻辑疑问
 
 【需人工判断】
@@ -451,7 +473,8 @@ req update {REQ-NNN} \
 - ❌ **不标注触发时机**：只说"调用 GET /users"不说什么时候调
 
 ### 格式层面
-- ❌ **缺少流程图**：纯文字描述调用序列不直观，必须配 mermaid 图
+- ❌ **缺少流程图**：纯文字描述调用序列不直观，必须配简要的 mermaid flowchart 图
+- ❌ **使用复杂时序图**：sequenceDiagram 对前端太复杂，子场景流程图必须用 flowchart 且不超过 10 个节点
 - ❌ **UI 映射模糊**："显示用户信息"不是映射，必须精确到字段
 - ❌ **错误处理写"提示错误"**：必须给出具体的提示文案
 
