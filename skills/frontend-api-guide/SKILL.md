@@ -29,11 +29,12 @@ design-craft → api-design → frontend-api-guide（本 skill）
 
 ## 核心原则
 
-1. **场景驱动**：以用户操作流程为主线，不以接口列表为主线
-2. **一看就懂**：前端拿到文档后无需再问后端"这个接口什么时候调"
-3. **纯文档输出**：输出文档不包含任何代码，只用自然语言、表格、流程图描述
-4. **可选 UI 映射**：有 UI 设计稿时，将 API 返回值与 UI 元素一一对应
-5. **错误处理闭环**：每个可能的错误响应都有明确的前端行为指引
+1. **独立自包含**：生成的前端文档必须是完全独立的，不引用任何后端设计文档中的内部编号（如 "B-03"、"S-01"）或术语。前端拿到的是一份不需要查阅其他后端文档即可完整理解的独立指南
+2. **场景驱动**：以用户操作流程为主线，不以接口列表为主线
+3. **一看就懂**：前端拿到文档后无需再问后端"这个接口什么时候调"
+4. **纯文档输出**：只描述接口调用信息，不包含任何前端代码（JS/TS/React/Vue 等），不指挥前端如何实现。文档只回答三个问题：调什么、传什么、返回什么
+5. **可选 UI 映射**：有 UI 设计稿时，将 API 返回值与 UI 元素一一对应，但不涉及前端组件的具体实现方式
+6. **错误处理闭环**：每个可能的错误响应都有明确的前端行为指引
 
 ## 工作流总览
 
@@ -109,8 +110,37 @@ design-craft → api-design → frontend-api-guide（本 skill）
 步骤 1：[用户操作描述]
   → 调用接口：[METHOD] [path]
   → 触发时机：[什么条件下调用]
-  → 需要传递：[用自然语言描述需要传什么数据，如“用户的邮箱地址”]
-  → 会返回：[用自然语言描述返回什么，如“验证码过期时间（秒）”]
+  → 请求参数：
+```json
+{
+  "field_name": "示例值",
+  "field_name2": 123
+}
+```
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|:----:|------|
+| field_name | string | 是 | 参数说明 |
+| field_name2 | integer | 否 | 参数说明（默认值：0）|
+
+  → 成功响应（200）：
+```json
+{
+  "code": 200,
+  "data": {
+    "id": "xxx",
+    "created_at": "2026-06-22T10:30:00Z"
+  },
+  "message": "success"
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| code | integer | HTTP 状态码 |
+| data.id | string | 资源唯一标识 |
+| data.created_at | string | 创建时间（ISO 8601）|
+
   → 成功后：[下一步操作]
   → 失败时：[错误处理方式]
 
@@ -217,6 +247,18 @@ design-craft → api-design → frontend-api-guide（本 skill）
 
 ### 文档结构
 
+按场景拆分，每个场景一个独立 md 文档，外加一份 INDEX.md 总览文件汇总 API 清单和错误处理速查表。
+
+```
+frontend-guide/
+├── INDEX.md              # API 总览：清单 + 错误处理速查表 + 注意事项
+├── user-register.md      # 场景1：用户注册 调用流程 + 流程图
+├── order-create.md       # 场景2：订单创建 调用流程 + 流程图
+├── order-review.md       # 场景3：订单审核 调用流程 + 流程图
+```
+
+**INDEX.md（总览枢纽）**：
+
 ```markdown
 # 前端 API 集成指南：{功能名称}
 
@@ -225,44 +267,51 @@ design-craft → api-design → frontend-api-guide（本 skill）
 
 ## 1. API 清单
 
-| # | 接口 | 方法 | 路径 | 说明 |
-|---|------|------|------|------|
-| 1 | 用户注册 | POST | /auth/register | 创建新用户 |
-| 2 | 发送验证码 | POST | /auth/send-code | 发送邮箱验证码 |
-| ... | ... | ... | ... | ... |
+| # | 接口 | 方法 | 路径 | 说明 | 详细文档 |
+|---|------|------|------|------|----------|
+| 1 | 用户注册 | POST | /auth/register | 创建新用户 | [user-register.md](user-register.md) |
+| 2 | 发送验证码 | POST | /auth/send-code | 发送邮箱验证码 | [user-register.md](user-register.md) |
+| 3 | 创建订单 | POST | /orders | 创建新订单 | [order-create.md](order-create.md) |
 
-## 2. 调用流程
+## 2. 错误处理速查表
 
-### 2.1 [场景名称]
+（阶段 5 内容：通用错误 + 业务错误表格）
 
-[调用序列 + 流程图]
-
-### 2.2 [场景名称]
-
-...
-
-## 3. UI 映射（如有）
-
-### 3.1 [页面名称]
-
-[映射表格或线框图]
-
-## 4. 错误处理速查表
-
-[通用错误 + 业务错误表格]
-
-## 5. 注意事项
+## 3. 注意事项
 
 - 前端需要维护的本地状态（如 token、用户信息缓存）
 - 接口调用频率限制说明
 - 需要前端轮询或 WebSocket 的场景
 ```
 
+**{scene}.md（场景调用流程文档）**：
+
+```markdown
+# {场景名称}
+
+> 所属功能：{功能名称}
+> 角色：{角色名称}
+
+## 调用序列
+
+（阶段 3 内容：完整的调用步骤，含 JSON 示例 + 参数表格 + 响应表格）
+
+## 调用流程图
+
+（mermaid 流程图）
+
+## UI 映射（如有）
+
+（阶段 4 内容：映射表格或线框图）
+```
+
 ### 存储路径
 
 检查项目中是否已配置存储位置（`.requirements/config`）：
 
-- **已配置**：读取 `storage_path`，文档存放在 `{storage_path}/{feature}/frontend-guide/api-call-guide.md`
+- **已配置**：读取 `storage_path`，文档存放在 `{storage_path}/{feature}/frontend-guide/` 目录下
+  - `INDEX.md`：API 总览 + 错误处理速查表 + 注意事项
+  - `{scene}.md`：每个场景一个独立文件（如 `user-register.md`、`order-create.md`）
 - **未配置**：询问用户，给出默认建议 `.requirements/{feature}/frontend-guide/`
 
 ### 质量自检
@@ -281,6 +330,8 @@ design-craft → api-design → frontend-api-guide（本 skill）
 ☐ 每个错误码都有对应的前端行为
 ☐ UI 映射覆盖了所有 API 响应字段（如有 UI 设计稿）
 ☐ 调用流程图使用 mermaid 语法
+☐ 文档中不包含任何后端内部编号（B-03、S-01 等）
+☐ 请求参数和响应字段均有标准 JSON 示例 + 表格说明
 
 【需人工判断】
 ☐ 调用时序是否正确（前端是否能在该时机调用）
@@ -337,12 +388,13 @@ api-design 完成 API 设计后，在"后续行动选择"中推荐：
 
 ```bash
 req update {REQ-NNN} \
-  --docs add frontend-guide/api-call-guide.md,frontend_guide --changelog "完成前端集成指南"
+  --docs add frontend-guide/INDEX.md,frontend_guide --changelog "完成前端集成指南"
 ```
 
 | 产出物 | 存储路径 | docs 类型 |
 |--------|----------|-----------|
-| 前端集成指南 | `frontend-guide/api-call-guide.md` | `frontend_guide` |
+| 前端集成指南（总览） | `frontend-guide/INDEX.md` | `frontend_guide` |
+| 前端集成指南（场景） | `frontend-guide/{scene}.md` | `frontend_guide` |
 
 ---
 
@@ -362,3 +414,12 @@ req update {REQ-NNN} \
 ### 流程层面
 - ❌ **跳过场景提取**：直接从 API 列表生成文档，缺少业务流程上下文
 - ❌ **不确认直接输出**：场景提取后需用户确认，避免遗漏
+
+### 独立性层面
+- ❌ **引用后端内部编号**：文档中出现 "B-03"、"S-01" 等后端设计文档编号，前端根本不知道这些是什么。必须用自然语言直接说明
+- ❌ **依赖外部文档**：文档包含"详见设计文档第X节"等跳转引用，前端拿到的应是自包含的独立指南
+- ❌ **暴露后端内部概念**：不区分前端是否关心，如 "TAPD 回调接口 B-05 前端不直接调用" 应改为描述前端需要知道的事：OAuth 流程中前端只需跳转授权页，回调由后端处理
+
+### 边界层面
+- ❌ **包含前端代码**：文档中出现 JS/TS/React/Vue 等任何前端代码。只描述接口信息，不教前端怎么写代码
+- ❌ **指挥前端实现**：文档说"你应该用 useState 管理状态"、"用 axios 发请求"。前端团队有自己的技术选型和编码规范，只需告诉他们接口契约即可
