@@ -238,6 +238,8 @@ req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 | 代码审查 | `review/code-review.md,review` |
 | 质疑审查 | `review/challenge-report.md,review` |
 | 实现报告 | `report.md,report` |
+| API 设计 | `api/INDEX.md,design` |
+| API 模块 | `api/{module}.md,design` |
 | 场景推演 | `review/scenario-rehearsal.md,rehearsal` |
 
 ### Step U5：更新需求状态（如需要）
@@ -362,6 +364,10 @@ req delete {REQ-NNN} --force
 └── {date}-{功能名称}/
     ├── requirement.md              # 需求分析报告
     ├── report.md                   # 实现报告
+    ├── api/
+    │   ├── INDEX.md                # API 总览（接口清单+错误码+通用约定）
+    │   ├── users.md                # 用户模块 API
+    │   └── orders.md               # 订单模块 API
     ├── design/
     │   ├── DESIGN.md               # 技术设计文档
     │   ├── data-flow.md            # 数据流/数据模型
@@ -402,6 +408,8 @@ security/
 | 代码审查 | code-review | `review/code-review.md` |
 | 质疑审查 | challenger | `review/challenge-report.md` |
 | 实现报告 | 需求完成时 | `report.md` |
+| API 设计（索引） | api-design | `api/INDEX.md` |
+| API 设计（模块） | api-design | `api/{module}.md` |
 | 场景推演 | scenario-rehearsal | `review/scenario-rehearsal.md` |
 | 前端集成指南 | frontend-api-guide | `frontend-guide/api-call-guide.md` |
 
@@ -510,6 +518,7 @@ req list --no-color
 | challenger | P2 | 读写型 | `review/challenge-report.md` |
 | demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |
 | expert-panel | P2 | 读写型 | `review/expert-panel.md` |
+| api-design | P1 | 写入型 | `api/INDEX.md` + `api/{module}.md` |
 | scenario-rehearsal | P1 | 读写型 | `review/scenario-rehearsal.md` |
 
 **写入型**：skill 产出文档后自动调用 `req update --docs add` 注册并更新状态。

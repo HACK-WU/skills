@@ -431,52 +431,113 @@ interface ErrorResponse {
 
 ### 6.1 文档结构
 
+按模块拆分，每个接口模块一个独立 md 文档，外加一份索引文件汇总接口清单和错误码体系。
+
+```
+api/
+├── INDEX.md              # API 总览：接口清单 + 错误码 + 通用约定
+├── users.md              # 用户模块：API-01~03 契约 + 关键代码
+├── orders.md             # 订单模块：API-04~05 契约 + 关键代码
+```
+
+**INDEX.md（索引枢纽）**：
+
 ```markdown
-# API 设计：{功能名称}
+# API 总览：{功能名称}
 
 > 版本：v1
 > 状态：草案
 > 基础路径：/api/v1
 
 ## 1. 概述
-- 接口数量
-- 认证方式
+- 接口数量：X 个
+- 认证方式：{Bearer Token / API Key / 无}
 - 通用约定（分页、排序、过滤）
 
 ## 2. 接口清单
-（阶段 2 确认内容）
+| 编号 | 方法 | 路径 | 模块 | 文档 | 优先级 |
+|------|------|------|------|------|--------|
+| API-01 | POST | /api/v1/users | 用户 | [users.md](users.md) | P0 |
+| API-02 | GET | /api/v1/users/{id} | 用户 | [users.md](users.md) | P0 |
+| API-03 | PUT | /api/v1/users/{id} | 用户 | [users.md](users.md) | P1 |
+| API-04 | POST | /api/v1/orders | 订单 | [orders.md](orders.md) | P0 |
 
-## 3. 接口契约
-### 3.1 用户模块
-#### API-01：创建用户
-（完整契约）
-#### API-02：查询用户
-（完整契约）
+## 3. 错误码定义
+（阶段 5 统一错误码体系）
 
-### 3.2 订单模块
-...
-
-## 4. 关键代码设计
-### 4.1 API-01：创建用户
-（关键代码）
-### 4.2 API-02：查询用户
-（关键代码）
-
-## 5. 错误码定义
-（阶段 5 确认内容）
-
-## 6. 待确认事项
+## 4. 待确认事项
 | 编号 | 事项 | 影响范围 | 状态 |
 |------|------|----------|------|
-| ... | ... | ... | 待确认 |
+```
+
+**{module}.md（模块 API 文档）**：
+
+```markdown
+# {模块名称} API
+
+> 所属需求：{REQ-NNN}
+> 基础路径：/api/v1
+
+## API-XX：{接口名称}
+
+### 基本信息
+| 项目 | 值 |
+|------|-----|
+| 方法 | GET/POST/PUT/DELETE/PATCH |
+| 路径 | /api/v1/{resource} |
+| 认证 | Bearer Token / API Key / 无 |
+| 权限 | {required_role} |
+| 限流 | {rate_limit} |
+| 幂等 | 是/否 |
+
+### 请求参数
+
+#### Path Parameters
+| 参数 | 类型 | 必填 | 说明 | 示例 |
+|------|------|------|------|------|
+
+#### Query Parameters
+| 参数 | 类型 | 必填 | 默认值 | 说明 | 示例 |
+|------|------|------|--------|------|------|
+
+#### Request Body
+```typescript
+interface XxxRequest { ... }
+```
+
+### 响应
+
+#### 成功响应（200/201）
+```typescript
+interface XxxResponse { ... }
+```
+
+#### 错误响应
+| HTTP Status | 错误码 | 说明 | 触发条件 |
+|-------------|--------|------|----------|
+
+### Demo 请求示例
+```bash
+curl ...
+```
+
+### Demo 响应示例
+```json
+{ ... }
+```
+
+### 关键代码设计
+（阶段 4 内容：参数校验、业务逻辑、权限校验）
 ```
 
 ### 6.2 存储位置
 
 检查项目中是否已配置存储位置（`.requirements/config`）：
 
-- **已配置**：读取 `storage_path`，API 设计文档存放在 `{storage_path}/{feature}/design/api-design.md`
-- **未配置**：询问用户，给出默认建议 `.requirements/{feature}/design/`
+- **已配置**：读取 `storage_path`，API 设计文档存放在 `{storage_path}/{feature}/api/` 目录下
+  - `INDEX.md`：接口清单 + 错误码 + 通用约定
+  - `{module}.md`：每个模块一个独立文件（如 `users.md`、`orders.md`）
+- **未配置**：询问用户，给出默认建议 `.requirements/{feature}/api/`
 
 ### 6.3 质量自检
 

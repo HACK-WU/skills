@@ -354,14 +354,14 @@ description: 在技术设计完成后，通过模拟真实使用场景验证设�
 ```bash
 # 写入推演报告后，注册文档关联
 req update {REQ-NNN} \
-  --docs add design/scenario-rehearsal.md,rehearsal --changelog "完成场景推演"
+  --docs add review/scenario-rehearsal.md,rehearsal --changelog "完成场景推演"
 ```
 
 **存储路径映射**：
 
 | 产出物 | 存储路径 | docs 类型 |
 |--------|----------|-----------|
-| 场景推演报告 | `design/scenario-rehearsal.md` | `rehearsal` |
+| 场景推演报告 | `review/scenario-rehearsal.md` | `rehearsal` |
 
 ---
 
