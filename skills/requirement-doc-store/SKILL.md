@@ -242,7 +242,8 @@ req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 | API 模块 | `api/{module}.md,design` |
 | 场景推演 | `review/scenario-rehearsal.md,rehearsal` |
 | 前端集成指南（总览） | `frontend-guide/INDEX.md,frontend_guide` |
-| 前端集成指南（场景） | `frontend-guide/{scene}.md,frontend_guide` |
+| 前端 API 文档 | `frontend-guide/api/{module}.md,frontend_guide` |
+| 前端调用流程 | `frontend-guide/flow/{scene}.md,frontend_guide` |
 
 ### Step U5：更新需求状态（如需要）
 
@@ -385,9 +386,13 @@ req delete {REQ-NNN} --force
     │   ├── code-review.md          # 代码审查报告
     │   └── challenge-report.md     # 质疑/二次审查报告
     └── frontend-guide/
-        ├── INDEX.md                # API 清单 + 错误处理速查表
-        ├── user-register.md        # 场景：用户注册调用流程
-        └── order-create.md         # 场景：订单创建调用流程
+        ├── INDEX.md                # 总览
+        ├── api/
+        │   ├── user-api.md         # 用户模块 API 文档
+        │   └── order-api.md        # 订单模块 API 文档
+        └── flow/
+            ├── user-register.md    # 场景：用户注册调用流程
+            └── order-create.md     # 场景：订单创建调用流程
 ```
 
 **示例**：
@@ -418,7 +423,8 @@ security/
 | API 设计（模块） | api-design | `api/{module}.md` |
 | 场景推演 | scenario-rehearsal | `review/scenario-rehearsal.md` |
 | 前端集成指南（总览） | frontend-api-guide | `frontend-guide/INDEX.md` |
-| 前端集成指南（场景） | frontend-api-guide | `frontend-guide/{scene}.md` |
+| 前端 API 文档（模块） | frontend-api-guide | `frontend-guide/api/{module}.md` |
+| 前端调用流程（场景） | frontend-api-guide | `frontend-guide/flow/{scene}.md` |
 
 ## 需求生命周期状态流
 
@@ -527,7 +533,7 @@ req list --no-color
 | expert-panel | P2 | 读写型 | `review/expert-panel.md` |
 | api-design | P1 | 写入型 | `api/INDEX.md` + `api/{module}.md` |
 | scenario-rehearsal | P1 | 读写型 | `review/scenario-rehearsal.md` |
-| frontend-api-guide | P1 | 写入型 | `frontend-guide/INDEX.md` + `frontend-guide/{scene}.md` |
+| frontend-api-guide | P1 | 写入型 | `frontend-guide/INDEX.md` + `frontend-guide/api/{module}.md` + `frontend-guide/flow/{scene}.md` |
 
 **写入型**：skill 产出文档后自动调用 `req update --docs add` 注册并更新状态。
 **读写型**：skill 执行前自动调用 `req list` 获取需求上下文作为参照，完成后写入报告。
