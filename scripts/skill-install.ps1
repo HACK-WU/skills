@@ -286,6 +286,7 @@ function Install-Skills {
             "requirement-doc-store/SKILL.md",
             "requirement-mining/SKILL.md",
             "requirement-mining/references/example.md",
+            "request-guard/SKILL.md",
             "scenario-rehearsal/SKILL.md",
             "scenario-rehearsal/reference.md",
             "test-planner/SKILL.md",

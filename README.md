@@ -100,6 +100,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[demo-verify](./skills/demo-verify/SKILL.md)** | 针对设计中的风险点构建验证原型，确认可行后再投入开发（复杂需求自动触发） | "先做个 demo 验证"、"试试看" |
 | **[design-review](./skills/design-review/SKILL.md)** | 对设计文档进行结构化评审，产出分级问题清单 | "评审设计"、"review 设计文档" |
 | **[scenario-rehearsal](./skills/scenario-rehearsal/SKILL.md)** | 设计完成后模拟真实使用场景推演，验证数据走向和关键设计点可行性 | "推演一下这个设计"、"验证设计方案" |
+| **[request-guard](./skills/request-guard/SKILL.md)** | 在用户突然提出修改请求时快速检查合理性，防止被突发奇想带着跑 | "改一下"、"改成"、"优化一下" |
 | **[implementation-report](./skills/implementation-report/SKILL.md)** | 需求完成后生成实现总结报告，记录最终实现效果和偏差 | "生成实现报告"、"记录完成情况" |
 
 ### 代码质量
@@ -175,6 +176,7 @@ skills/
 ├── design-review/            # 设计评审
 ├── demo-verify/              # 验证原型
 ├── scenario-rehearsal/       # 场景推演
+├── request-guard/            # 请求守卫
 ├── implementation-report/    # 实现报告
 ├── code-review/              # 代码评审
 ├── challenger/               # 代码质疑
@@ -208,6 +210,7 @@ scripts/
 | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | 121k star，面向真实工程的技能集，涵盖 TDD、调试、架构改进、需求对齐 |
 | [anthropics/skills](https://github.com/anthropics/skills) | Anthropic | Anthropic 官方 Agent Skills 示例集，含文档处理、创意设计、开发技术等技能，附带 Agent Skills 规范 |
 | [obra/superpowers](https://github.com/obra/superpowers) | Jesse Vincent | Claude Code 增强技能集 |
+| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Addy Osmani | 开源 Agent Skills 合集，含多类工程实践技能 |
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
 
