@@ -302,6 +302,7 @@ install_skills() {
             "design-craft/reference.md"
             "design-review/SKILL.md"
             "design-review/reference.md"
+            "design-to-code/SKILL.md"
             "document-writer/SKILL.md"
             "document-writer/references/examples/README.md"
             "document-writer/references/examples/example-1-library.md"
