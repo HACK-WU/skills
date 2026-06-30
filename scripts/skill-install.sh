@@ -6,6 +6,7 @@
 #   bash skill-install.sh --skills -t /path/to/target -t /path/to/target2
 #   bash skill-install.sh --rules --file /path/to/targets.txt
 #   bash skill-install.sh --skills -n code-review,design-craft -t ~/projects/app
+#   bash skill-install.sh --skills -n code-review -n design-craft -t ~/projects/app
 #   bash skill-install.sh /path/to/target --skills   # 旧用法，兼容
 #
 #   或:
@@ -61,7 +62,7 @@ while [ $# -gt 0 ]; do
         -n)
             shift
             [ $# -eq 0 ] && { echo "错误：-n 需要参数"; exit 1; }
-            NAME_FILTER="$1"
+            NAME_FILTER="${NAME_FILTER:+$NAME_FILTER,}$1"
             ;;
         --file=*) CONFIG_FILE="${arg#*=}" ;;
         --all|--docs)
@@ -154,7 +155,7 @@ if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ ${#MODES[@]} -eq 0 ]; then
     echo ""
     echo "  --skills        安装 AI Skill 定义（skills/）"
     echo "  --rules         安装 AI 规则（rules/）"
-    echo "  -n <names>      指定要安装的 skill/rule 名称（逗号分隔，如 -n code-review,design-craft）"
+    echo "  -n <names>      指定要安装的 skill/rule 名称（逗号分隔或多次使用，如 -n code-review,design-craft 或 -n code-review -n design-craft）"
     echo "  -t <path>       指定目标目录（可多次使用，与 --file 互斥）"
     echo "  --file <path>   指定目标目录配置文件（与 -t 互斥）"
     echo ""
