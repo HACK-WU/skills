@@ -44,12 +44,21 @@
  └──────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │                          系 统 化 编 码                                   │
+ │                                                                          │
+ │       code-implement（批量编码，task-dispatch 并行，契约验证）                │
+ │                                                                          │
+ │              骨架契约注释 → 参考 code-survey + dependency-docs → 填充实现      │
+ └──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                               质 量 阶 段                                 │
 │                                                                          │
-│  design-review  →  coding  →  code-review  →  challenger  →  test-planner│
+│  design-review  →  code-review  →  challenger  →  test-planner            │
 │                                                                          │
-│   设计评审          代码实现         代码评审       二次质疑        测试验证   │
+│   设计评审          代码评审       二次质疑        测试验证                    │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -123,6 +132,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[dependency-docs](./skills/dependency-docs/SKILL.md)** | 设计前识别并整理第三方依赖文档，每个依赖独立成文，≥2 个时 task-dispatch 并行收集 | "整理第三方依赖"、"收集 API 文档" |
 | **[code-survey](./skills/code-survey/SKILL.md)** | 设计前对代码库按需调研 13 个维度，ki 优先，≥2 个维度时 task-dispatch 并行搜索 | "代码调研"、"了解现有代码" |
 | **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速 | "生成代码骨架"、"搭骨架" |
+| **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证 | "编码实施"、"填充骨架"、"实现代码" |
 
 ### 代码质量
 
@@ -197,6 +207,7 @@ skills/
 ├── code-survey/              # 代码现状调研
 ├── design-craft/             # 技术设计
 ├── design-to-code/           # 设计到代码骨架
+├── code-implement/           # 骨架编码实施
 ├── negative-requirement/     # 负向场景分析
 ├── api-design/               # API 设计
 ├── frontend-api-guide/       # 前端集成指南

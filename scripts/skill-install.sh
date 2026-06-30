@@ -287,6 +287,7 @@ install_skills() {
             "challenger/strategies/feature.md"
             "challenger/strategies/optimization.md"
             "challenger/templates/report.md"
+            "code-implement/SKILL.md"
             "code-review/SKILL.md"
             "code-survey/SKILL.md"
             "content-simplifier/SKILL.md"
