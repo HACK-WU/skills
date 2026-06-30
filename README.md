@@ -7,14 +7,23 @@
 这些技能可以串联使用，形成完整的设计-开发流程：
 
 ```
- ┌─────────────────────────────────────────────────────────────────────────┐
- │                          设 计 阶 段                                    │
- │                                                                         │
- │  requirement   interaction   work        data-flow    design           │
- │  -mining   →   -design   →   -breakdown  -model   →   -craft           │
- │                                                                         │
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │                          设 计 前 置                                     │
+ │                                                                          │
+ │  dependency-docs    code-survey                                          │
+ │                                                                          │
+ │    整理第三方依赖        代码现状调研                                        │
+ └──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │                          设 计 阶 段                                     │
+ │                                                                          │
+ │  requirement   interaction   work        data-flow    design            │
+ │  -mining   →   -design   →   -breakdown  -model   →   -craft            │
+ │                                                                          │
  │    理解需求      设计交互层     拆成独立切片   数据建模+流图   技术设计         │
- └─────────────────────────────────────────────────────────────────────────┘
+ └──────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
  ┌─────────────────────────────────────────────────────────────────────────┐
@@ -26,7 +35,16 @@
  └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
- ┌─────────────────────────────────────────────────────────────────────────┐
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │                          骨 架 生 成                                     │
+ │                                                                          │
+ │               design-to-code（同批顺序无关时调用 task-dispatch 并行）        │
+ │                                                                          │
+ │                  设计 → 代码骨架 + 契约级注释                                │
+ └──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
 │                               质 量 阶 段                                 │
 │                                                                          │
 │  design-review  →  coding  →  code-review  →  challenger  →  test-planner│
@@ -102,6 +120,9 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[scenario-rehearsal](./skills/scenario-rehearsal/SKILL.md)** | 设计完成后模拟真实使用场景推演，验证数据走向和关键设计点可行性 | "推演一下这个设计"、"验证设计方案" |
 | **[request-guard](./skills/request-guard/SKILL.md)** | 在用户突然提出修改请求时快速检查合理性，防止被突发奇想带着跑 | "改一下"、"改成"、"优化一下" |
 | **[implementation-report](./skills/implementation-report/SKILL.md)** | 需求完成后生成实现总结报告，记录最终实现效果和偏差 | "生成实现报告"、"记录完成情况" |
+| **[dependency-docs](./skills/dependency-docs/SKILL.md)** | 设计前识别并整理第三方依赖文档，每个依赖独立成文，≥2 个时 task-dispatch 并行收集 | "整理第三方依赖"、"收集 API 文档" |
+| **[code-survey](./skills/code-survey/SKILL.md)** | 设计前对代码库按需调研 13 个维度，ki 优先，≥2 个维度时 task-dispatch 并行搜索 | "代码调研"、"了解现有代码" |
+| **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速 | "生成代码骨架"、"搭骨架" |
 
 ### 代码质量
 
@@ -111,6 +132,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[challenger](./skills/challenger/SKILL.md)** | 代码质疑者，对 code-review 结果进行二次审查，支持三种质疑策略 | "质疑这个修复"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 根据需求文档自动生成结构化测试计划，覆盖功能/性能/安全等维度 | "生成测试计划"、"写测试用例" |
+| **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
 
 ### 工具
 
@@ -124,6 +146,8 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[memory-creator](./skills/memory-creator/SKILL.md)** | 指导 AI 生成简洁的记忆内容描述 | "记住这个"、"创建记忆" |
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
+| **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
+| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本中的静态文件列表 | "更新安装脚本"、"同步技能列表" |
 
 ### 规则
 
@@ -169,7 +193,10 @@ skills/
 ├── interaction-design/       # 交互设计
 ├── work-breakdown/          # 需求拆分
 ├── data-flow-model/          # 数据流模型
+├── dependency-docs/          # 第三方依赖整理
+├── code-survey/              # 代码现状调研
 ├── design-craft/             # 技术设计
+├── design-to-code/           # 设计到代码骨架
 ├── negative-requirement/     # 负向场景分析
 ├── api-design/               # API 设计
 ├── frontend-api-guide/       # 前端集成指南
@@ -181,11 +208,14 @@ skills/
 ├── code-review/              # 代码评审
 ├── challenger/               # 代码质疑
 ├── auto-review/              # 自动审查修复闭环
+├── bug-impact-analysis/      # Bug 影响分析
 ├── test-planner/             # 测试计划生成
 ├── expert-panel/             # 专家团
+├── task-dispatch/            # 任务并行调度
 ├── document-writer/          # 项目文档生成
 ├── create-rules/             # 创建规则
 ├── create-skill/             # 创建技能
+├── skill-updater/            # 安装脚本更新
 ├── content-simplifier/       # 内容精简
 ├── memory-creator/           # 记忆生成
 ├── migrate-to-codehub/       # 迁移工具
