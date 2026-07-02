@@ -256,12 +256,17 @@ install_skills() {
         FILES=("${SKILLS_FILES[@]}")
     elif [ "$GH_AUTH_OK" = true ]; then
         echo "🔍 正在通过 GitHub API 发现 skill 文件列表..." >&2
-        # 先列出 skill 目录
+        # 先列出 skill 目录；临时关闭 set -e 防止 gh api 失败导致脚本静默退出
         local SKILL_DIRS
+        set +e
         SKILL_DIRS=$(gh api "repos/${GITHUB_REPO}/contents/skills" \
             --jq '.[] | select(.type=="dir") | .name' 2>/dev/null)
+        local api_rc=$?
+        set -e
 
-        if [ -n "$SKILL_DIRS" ]; then
+        if [ $api_rc -ne 0 ] || [ -z "$SKILL_DIRS" ]; then
+            echo "   ⚠️ GitHub API 调用失败，将使用静态 skill 列表" >&2
+        else
             while IFS= read -r skill_name; do
                 [ -z "$skill_name" ] && continue
                 # 跳过内部维护工具
@@ -430,12 +435,22 @@ install_rules() {
         FILES=("${RULES_FILES[@]}")
     elif [ "$GH_AUTH_OK" = true ]; then
         echo "🔍 正在通过 GitHub API 发现规则文件列表..." >&2
-        while IFS= read -r name; do
-            [ -z "$name" ] && continue
-            FILES+=("$name")
-        done < <(gh api "repos/${GITHUB_REPO}/contents/rules" \
+        # 临时关闭 set -e 防止 gh api 失败导致脚本静默退出
+        set +e
+        local _rules_api_out
+        _rules_api_out=$(gh api "repos/${GITHUB_REPO}/contents/rules" \
             --jq '.[] | select(.name | endswith(".md")) | .name' 2>/dev/null)
-        echo "   已发现 ${#FILES[@]} 个规则文件" >&2
+        local api_rc=$?
+        set -e
+        if [ $api_rc -ne 0 ]; then
+            echo "   ⚠️ GitHub API 调用失败，将使用静态 rule 列表" >&2
+        else
+            while IFS= read -r name; do
+                [ -z "$name" ] && continue
+                FILES+=("$name")
+            done <<< "$_rules_api_out"
+            echo "   已发现 ${#FILES[@]} 个规则文件" >&2
+        fi
     fi
 
     if [ ${#FILES[@]} -eq 0 ]; then
