@@ -20,7 +20,7 @@ param(
 
     [string]$ConfigFile,
 
-    [string]$NameFilter,
+    [string[]]$NameFilter,
 
     [switch]$Skills,
     [switch]$Rules
@@ -54,7 +54,7 @@ if ($Modes.Count -eq 0) {
 
   -Skills          安装 AI Skill 定义（skills/）
   -Rules           安装 AI 规则（rules/）
-  -NameFilter <names> 指定要安装的 skill/rule 名称（逗号分隔，如 code-review,design-craft）
+  -NameFilter <names> 指定要安装的 skill/rule 名称（可多次使用，逗号分隔，如 -NameFilter code-review,design-craft 或 -NameFilter code-review -NameFilter design-craft）
   -Target <path>   指定目标目录（可多次使用，与 -ConfigFile 互斥）
   -ConfigFile <path> 指定目标目录配置文件（与 -Target 互斥）
 
@@ -79,11 +79,13 @@ if ($Modes.Count -eq 0) {
 }
 
 # ============================================================
-# 解析名称过滤
+# 解析名称过滤（支持多参数和逗号分隔：-NameFilter a -NameFilter b 或 -NameFilter "a,b"）
 # ============================================================
 $NameList = @()
 if ($NameFilter) {
-    $NameList = $NameFilter -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+    foreach ($filter in $NameFilter) {
+        $NameList += $filter -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+    }
 }
 
 function Test-NameMatches {
@@ -353,10 +355,11 @@ function Install-Rules {
 
     if ($files.Count -eq 0 -and -not $script:RulesDiscovered) {
         Write-Host "⚠️  GitHub API 不可用，使用静态 rule 列表（可能不是最新）" -ForegroundColor Yellow
-        $files = @(
-            "gitnexus-mcp-rules.md",
-            "writing-pipeline.md"
-        )
+$files = @(
+    "gitnexus-mcp-rules.md",
+    "writing-pipeline.md",
+    "solution-workflow.md"
+)
     }
 
     # 缓存首次发现的文件列表

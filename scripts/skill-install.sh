@@ -455,10 +455,11 @@ install_rules() {
 
     if [ ${#FILES[@]} -eq 0 ]; then
         echo "⚠️  gh 不可用，使用静态 rule 列表（可能不是最新）" >&2
-        FILES=(
-            "gitnexus-mcp-rules.md"
-            "writing-pipeline.md"
-        )
+FILES=(
+    "gitnexus-mcp-rules.md"
+    "writing-pipeline.md"
+    "solution-workflow.md"
+)
     elif [ "$RULES_DISCOVERED" = false ]; then
         # 缓存首次发现的文件列表，后续目标目录复用
         RULES_FILES=("${FILES[@]}")
