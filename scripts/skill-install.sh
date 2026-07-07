@@ -457,6 +457,7 @@ install_rules() {
         echo "⚠️  gh 不可用，使用静态 rule 列表（可能不是最新）" >&2
 FILES=(
     "gitnexus-mcp-rules.md"
+    "agents-memory.md"
     "writing-pipeline.md"
     "solution-workflow.md"
 )

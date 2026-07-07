@@ -357,6 +357,7 @@ function Install-Rules {
         Write-Host "⚠️  GitHub API 不可用，使用静态 rule 列表（可能不是最新）" -ForegroundColor Yellow
 $files = @(
     "gitnexus-mcp-rules.md",
+    "agents-memory.md",
     "writing-pipeline.md",
     "solution-workflow.md"
 )
