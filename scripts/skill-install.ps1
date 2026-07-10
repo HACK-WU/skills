@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Skills 安装器 — 从 GitHub 下载 Skills / Rules（PowerShell）
 #
 # 用法:
@@ -311,30 +311,37 @@ function Install-Skills {
     Write-Host "🧠 安装 AI Skills → $dest"
     Write-Host ""
 
-    $count = 0
-    $total = 0
-    $skipped = 0
+    # 以“目录(第一级)”为粒度统计 skill，而非按文件计数
+    $fileCount = 0
+    $fileTotal = 0
+    $skippedSkills = @{}
+    $matchedSkills = @{}
+    $installedSkills = @{}
     foreach ($f in $files) {
         # 提取 skill 名称用于过滤（取第一级目录名）
         $skillName = $f.Split('/')[0]
         if (-not (Test-NameMatches -Name $skillName)) {
-            $skipped++
+            $skippedSkills[$skillName] = $true
             continue
         }
-        $total++
+        $matchedSkills[$skillName] = $true
+        $fileTotal++
         $url  = "$RawBase/skills/$f"
         $destFile = Join-Path $dest $f
         if (Download-File -Url $url -Dest $destFile) {
             Write-Host "  [OK] $f"
-            $count++
+            $fileCount++
+            $installedSkills[$skillName] = $true
         } else {
             Write-Host "  [FAIL] $f"
         }
     }
-    if ($skipped -gt 0) { Write-Host "  跳过: $skipped 个未匹配的 skill" }
+    if ($skippedSkills.Count -gt 0) { Write-Host "  跳过: $($skippedSkills.Count) 个未匹配的 skill" }
     Write-Host ""
-    Write-Host "已安装: $count/$total 个 skill 文件"
-    if ($count -gt 0) { $script:AnyInstalled = $true }
+    $skillTotal = $matchedSkills.Count
+    $skillInstalled = $installedSkills.Count
+    Write-Host "已安装: $skillInstalled/$skillTotal 个 skill（$fileCount/$fileTotal 个文件）"
+    if ($skillInstalled -gt 0) { $script:AnyInstalled = $true }
 }
 
 function Install-Rules {
