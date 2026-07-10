@@ -26,6 +26,15 @@
  └──────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │                          设 计 评 审                                     │
+ │                                                                          │
+ │                                          design-review                   │
+ │                                                                          │
+ │                                     评审设计文档 → 返回修改 / 继续                   │
+ └──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
  ┌─────────────────────────────────────────────────────────────────────────┐
  │                      验 证 阶 段（复杂需求自动触发）                         │
  │                                                                         │
@@ -56,9 +65,9 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                               质 量 阶 段                                 │
 │                                                                          │
-│  design-review  →  code-review  →  challenger  →  test-planner            │
+│  code-review  →  challenger  →  test-planner            │
 │                                                                          │
-│   设计评审          代码评审       二次质疑        测试验证                    │
+│   代码评审       二次质疑        测试验证                    │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -104,6 +113,15 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 ### Windows（PowerShell）
 
 参数映射：`--skills` → `-Skills`，`--rules` → `-Rules`，`-t` → `-Target`，`--file` → `-ConfigFile`。
+
+一键下载并执行（用 curl 拉取脚本后直接运行；PowerShell 中 `curl` 是 `Invoke-WebRequest` 的别名，需使用 `curl.exe` 调用真正的 curl）：
+
+```powershell
+curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1 -o skill-install.ps1; .\skill-install.ps1 -Skills -Target C:\projects\my-app
+curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1 -o skill-install.ps1; .\skill-install.ps1 -Rules -Target C:\projects\my-app
+```
+
+若已下载脚本到本地，可直接执行：
 
 ```powershell
 .\skill-install.ps1 -Skills -Target C:\projects\my-app
