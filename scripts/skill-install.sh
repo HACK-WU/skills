@@ -286,6 +286,9 @@ install_skills() {
         echo "⚠️  gh 不可用，使用静态 skill 列表（可能不是最新）" >&2
         FILES=(
             "api-design/SKILL.md"
+            "api-testing/SKILL.md"
+            "api-testing/examples.md"
+            "api-testing/reference.md"
             "auto-review/SKILL.md"
             "bug-impact-analysis/SKILL.md"
             "challenger/SKILL.md"
@@ -331,6 +334,8 @@ install_skills() {
             "requirement-mining/references/example.md"
             "scenario-rehearsal/SKILL.md"
             "scenario-rehearsal/reference.md"
+            "solution-capture/SKILL.md"
+            "solution-lookup/SKILL.md"
             "task-dispatch/SKILL.md"
             "task-dispatch/reference.md"
             "test-planner/SKILL.md"

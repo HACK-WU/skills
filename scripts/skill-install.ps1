@@ -248,6 +248,9 @@ function Install-Skills {
         Write-Host "⚠️  GitHub API 不可用，使用静态 skill 列表（可能不是最新）" -ForegroundColor Yellow
         $files = @(
             "api-design/SKILL.md",
+            "api-testing/SKILL.md",
+            "api-testing/examples.md",
+            "api-testing/reference.md",
             "auto-review/SKILL.md",
             "bug-impact-analysis/SKILL.md",
             "challenger/SKILL.md",
@@ -293,6 +296,8 @@ function Install-Skills {
             "requirement-mining/references/example.md",
             "scenario-rehearsal/SKILL.md",
             "scenario-rehearsal/reference.md",
+            "solution-capture/SKILL.md",
+            "solution-lookup/SKILL.md",
             "task-dispatch/SKILL.md",
             "task-dispatch/reference.md",
             "test-planner/SKILL.md",
