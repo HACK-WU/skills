@@ -314,6 +314,8 @@ function Install-Skills {
             "test-planner/SKILL.md",
             "test-planner/references/examples/example-1-registration.md",
             "test-planner/references/test-strategies.md",
+            "test-planner/strategies/design.md",
+            "test-planner/strategies/api.md",
             "work-breakdown/SKILL.md"
         )
     }

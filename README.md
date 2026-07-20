@@ -159,7 +159,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度 | "review 这个提交"、"code review" |
 | **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档进行二次质疑，代码支持三种策略、设计文档支持设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
-| **[test-planner](./skills/test-planner/SKILL.md)** | 根据需求文档自动生成结构化测试计划，覆盖功能/性能/安全等维度 | "生成测试计划"、"写测试用例" |
+| **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
 | **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
 
 ### 工具
