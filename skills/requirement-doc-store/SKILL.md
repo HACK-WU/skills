@@ -530,7 +530,7 @@ req list --no-color
 | code-review | P2 | 读写型 | `review/code-review.md` |
 | challenger | P2 | 读写型 | `review/challenge-report.md` |
 | demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |
-| expert-panel | P2 | 读写型 | `review/expert-panel.md` |
+| review-panel | P2 | 读写型 | `review/review-panel.md` |
 | api-design | P1 | 写入型 | `api/INDEX.md` + `api/{module}.md` |
 | scenario-rehearsal | P1 | 读写型 | `review/scenario-rehearsal.md` |
 | frontend-api-guide | P1 | 写入型 | `frontend-guide/INDEX.md` + `frontend-guide/api/{module}.md` + `frontend-guide/flow/{scene}.md` |

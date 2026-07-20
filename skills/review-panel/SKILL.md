@@ -1,25 +1,25 @@
 ---
-name: expert-panel
+name: review-panel
 description: >-
-  启动多个子agent组成专家团，对方案/代码/设计进行多角色评审。
-  仅在用户**明确要求使用专家团**时启用，例如直接提到"专家团"、"expert panel"、
-  "用专家团评审"、"启动专家团"等表达。
-  支持评审专家团模式（双反叛者独立质疑 + 三评委评分讨论 + 主agent法官研判），
+  启动多个子agent组成评审团，对方案/代码/设计进行多角色评审。
+  仅在用户**明确要求使用评审团**时启用，例如直接提到"评审团"、"review panel"、
+  "用评审团评审"、"启动评审团"等表达。
+  支持评审团模式（双挑战者独立质疑 + 三评委评分讨论 + 主agent法官研判），
   产出包含原始方案、反对意见、评委评分及最终判断的完整评审报告。
 ---
 
-# Expert Panel（专家团）
+# Review Panel（评审团）
 
 通过多agent角色协作，对方案进行结构化评审，克服单AI决策的确认偏误和视角盲区。
 
 ## 核心设计理念
 
 - **角色分离**：主agent在"执行者"和"法官"之间切换，避免自我确认
-- **独立质疑**：两个反叛者相互隔离，确保质疑的独立性和多样性
+- **独立质疑**：两个挑战者相互隔离，确保质疑的独立性和多样性
 - **群体评分**：评委可讨论但独立打分，提供多维度量化参考
 - **过程透明**：最终报告包含所有原始材料，用户可见完整辩论过程
 - **文件持久化**：所有产出物以文件形式落盘，子agent按需读取，避免prompt膨胀
-- **Skill可组合**：专家团是协作框架，不排斥外部skill。主agent在执行阶段应主动发现并使用相关skill；用户明确指定skill时优先遵从
+- **Skill可组合**：评审团是协作框架，不排斥外部skill。主agent在执行阶段应主动发现并使用相关skill；用户明确指定skill时优先遵从
 
 ---
 
@@ -28,7 +28,7 @@ description: >-
 ### 目录结构
 
 ```
-.codebuddy/expert-panel/{task-name}/
+.codebuddy/review-panel/{task-name}/
 ├── scheme.md              # 方案全文（简单方案单文件）
 ├── scheme/                # 复杂方案拆分目录（与scheme.md二选一）
 │   ├── overview.md        # 方案总览（入口文件）
@@ -37,9 +37,9 @@ description: >-
 │   └── ...                # 按需拆分
 ├── code-context.md        # 代码上下文索引
 ├── design-decisions.md    # 设计决策记录
-├── rebel-output/          # 反叛者产出
-│   ├── rebel-a.md
-│   └── rebel-b.md
+├── challenger-output/          # 挑战者产出
+│   ├── challenger-a.md
+│   └── challenger-b.md
 ├── judge-output/          # 评委产出
 │   ├── judge-1.md
 │   ├── judge-2.md
@@ -71,7 +71,7 @@ description: >-
 
 ---
 
-## 评审专家团完整流程
+## 评审团完整流程
 
 ```
 用户提出任务
@@ -96,16 +96,16 @@ description: >-
     │
     ▼
 【阶段2：质疑】主agent角色转换 → 法官模式
-    │  创建团队，并行启动两个反叛者
+    │  创建团队，并行启动两个挑战者
     │  prompt只含文件路径列表
     │
-    ├─→ [反叛者A] 读取文件 → 独立质疑 → 写入 rebel-a.md
-    └─→ [反叛者B] 读取文件 → 独立质疑 → 写入 rebel-b.md
+    ├─→ [挑战者A] 读取文件 → 独立质疑 → 写入 challenger-a.md
+    └─→ [挑战者B] 读取文件 → 独立质疑 → 写入 challenger-b.md
         （两者相互隔离，看不到对方的输出）
     │
     ▼
 【阶段3：评分】主agent启动评委团
-    │  prompt含方案+索引+决策+反叛者产出的文件路径列表
+    │  prompt含方案+索引+决策+挑战者产出的文件路径列表
     │  评委需要打分 + 提出改进建议（复杂度、性能、正确性、合理性、安全、目标一致性）
     │
     ├─→ [评委1] 读取文件 → 打分 + 改进建议 → 写入 judge-1.md
@@ -115,13 +115,13 @@ description: >-
     ▼
 【阶段4：研判】主agent（法官模式）
     │  读取所有产出文件 → 判断是否需要迭代改进
-    │  ├── 需要修改 → 修改方案 → 创建反叛者重新评估 → 回到阶段2（最多3次）
+    │  ├── 需要修改 → 修改方案 → 创建挑战者重新评估 → 回到阶段2（最多3次）
     │  ├── 不需要修改 → 记录原因 → 进入阶段5
     │  └── 拿不定主意 → 记录原因 → 进入阶段5
     │
     ▼
 【阶段5：输出】完整评审报告交付用户（包含迭代记录）
-    │  文件保留在 .codebuddy/expert-panel/{task-name}/ 供查阅
+    │  文件保留在 .codebuddy/review-panel/{task-name}/ 供查阅
 ```
 
 ### 阶段0：Skill发现与选择（可选，阶段1前执行）
@@ -133,7 +133,7 @@ description: >-
     - **未检测到 `design-doc-generator`** → 忽略该默认规则，继续扫描当前可用skill列表（`<available_skills>` 中列出的skill），根据任务描述判断是否存在其他相关skill
       - **发现相关skill** → 调用 `use_skill` 加载，在其规范指导下产出方案
       - **无相关skill** → 正常进入阶段1
-- **注意**：此步骤仅主agent执行，子agent（反叛者/评委）不涉及skill调用
+- **注意**：此步骤仅主agent执行，子agent（挑战者/评委）不涉及skill调用
 
 ### 阶段1：执行——主agent自由产出方案V0
 
@@ -182,18 +182,18 @@ description: >-
 - 为什么不用OAuth2：[原因]
 ```
 
-### 阶段2：质疑——双反叛者独立审查
+### 阶段2：质疑——双挑战者独立审查
 
-**角色定位**：反叛者是"严谨的挑战者"，不是"杠精"。目标是找出方案的不合理之处，而非无差别攻击。
+**角色定位**：挑战者是"严谨的挑战者"，不是"杠精"。目标是找出方案的不合理之处，而非无差别攻击。
 
-**补充职责**：反叛者除了指出问题，也应主动补充自己认为值得纳入评审的**遗漏场景、边界情况、异常路径、运行环境差异、用户行为分支、兼容性约束**等内容。即使某点暂不足以构成反对意见，只要会影响方案完备性，也应明确提出。
+**补充职责**：挑战者除了指出问题，也应主动补充自己认为值得纳入评审的**遗漏场景、边界情况、异常路径、运行环境差异、用户行为分支、兼容性约束**等内容。即使某点暂不足以构成反对意见，只要会影响方案完备性，也应明确提出。
 
-**创建方式**：使用 `team_create` 创建评审团队，然后用 `Task` 并行启动两个反叛者子agent。
+**创建方式**：使用 `team_create` 创建评审团队，然后用 `Task` 并行启动两个挑战者子agent。
 
-**信息传递（主agent → 反叛者prompt）**：
+**信息传递（主agent → 挑战者prompt）**：
 
 ```
-你作为反叛者（Rebel Reviewer），你的职责是：
+你作为挑战者（Challenger Reviewer），你的职责是：
 1. 竭尽全力找出方案中的不合理之处、漏洞、风险
 2. 每条反对意见必须附带推理链条，说明"为什么不好"
 3. 每条反对意见必须给出对应的替代方案
@@ -203,17 +203,17 @@ description: >-
 
 | 文件 | 内容说明 | 优先级 |
 |------|----------|--------|
-| .codebuddy/expert-panel/{task-name}/scheme.md | 方案全文 | 必读 |
-| .codebuddy/expert-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
-| .codebuddy/expert-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
+| .codebuddy/review-panel/{task-name}/scheme.md | 方案全文 | 必读 |
+| .codebuddy/review-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
+| .codebuddy/review-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
 
 如方案拆分为目录，请先读取 scheme/overview.md 了解全貌，再按需深入各子文件。
 如需查看具体代码，根据 code-context.md 中的路径自行读取。
 
-请将审查结果写入：.codebuddy/expert-panel/{task-name}/rebel-output/rebel-a.md
+请将审查结果写入：.codebuddy/review-panel/{task-name}/challenger-output/challenger-a.md
 ```
 
-**反叛者产出格式（写入文件）**：
+**挑战者产出格式（写入文件）**：
 
 ```markdown
 ## 反对意见
@@ -239,7 +239,7 @@ description: >-
 ```
 
 **约束**：
-- 反叛者A和反叛者B相互完全隔离，不知道对方的存在和输出
+- 挑战者A和挑战者B相互完全隔离，不知道对方的存在和输出
 - 两条反对意见中如果出现了相同的点，说明问题严重，在最终报告中需高亮为"共识性反对"
 
 ### 阶段3：评分——三评委独立打分 + 讨论 + 改进建议
@@ -260,11 +260,11 @@ description: >-
 
 | 文件 | 内容说明 | 优先级 |
 |------|----------|--------|
-| .codebuddy/expert-panel/{task-name}/scheme.md | 原始方案全文 | 必读 |
-| .codebuddy/expert-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
-| .codebuddy/expert-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
-| .codebuddy/expert-panel/{task-name}/rebel-output/rebel-a.md | 反叛者A完整审查意见 | 必读 |
-| .codebuddy/expert-panel/{task-name}/rebel-output/rebel-b.md | 反叛者B完整审查意见 | 必读 |
+| .codebuddy/review-panel/{task-name}/scheme.md | 原始方案全文 | 必读 |
+| .codebuddy/review-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
+| .codebuddy/review-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
+| .codebuddy/review-panel/{task-name}/challenger-output/challenger-a.md | 挑战者A完整审查意见 | 必读 |
+| .codebuddy/review-panel/{task-name}/challenger-output/challenger-b.md | 挑战者B完整审查意见 | 必读 |
 
 如需查看具体代码，根据 code-context.md 中的路径自行读取。
 
@@ -272,7 +272,7 @@ description: >-
 - 可行性：方案在技术上是否可实现？（1=不可行，5=完全可行）
 - 风险覆盖：方案是否覆盖了主要风险点？（1=风险敞口大，5=风险可控）
 - 完整性：方案是否覆盖了所有场景和边界情况？（1=遗漏严重，5=覆盖全面）
-- 采纳度：方案对反叛者合理意见的采纳程度？（1=完全不采纳，5=充分采纳）
+- 采纳度：方案对挑战者合理意见的采纳程度？（1=完全不采纳，5=充分采纳）
 
 改进建议维度：
 - 复杂度：方案是否过于复杂？能否简化？
@@ -284,7 +284,7 @@ description: >-
 
 此外，请主动补充你认为还应纳入评审或方案设计的场景、情况和约束，并明确说明这些补充是否应影响评分。
 
-请将评分、理由和改进建议写入：.codebuddy/expert-panel/{task-name}/judge-output/judge-1.md
+请将评分、理由和改进建议写入：.codebuddy/review-panel/{task-name}/judge-output/judge-1.md
 ```
 
 **评委讨论机制**：
@@ -296,7 +296,7 @@ description: >-
 
 ### 阶段4：研判——主agent判断是否需要迭代改进
 
-主agent读取所有 `judge-output/` 和 `rebel-output/` 文件，执行以下步骤：
+主agent读取所有 `judge-output/` 和 `challenger-output/` 文件，执行以下步骤：
 
 #### 步骤4.1：评委讨论终止条件
 
@@ -317,7 +317,7 @@ description: >-
 
 **决策逻辑**：
 
-1. **评估改进建议与补充内容**：主agent分析评委和反叛者提出的改进建议、补充场景与补充情况，判断其合理性、必要性和纳入价值
+1. **评估改进建议与补充内容**：主agent分析评委和挑战者提出的改进建议、补充场景与补充情况，判断其合理性、必要性和纳入价值
 2. **判断是否需要修改**：
    - **需要修改**：改进建议或补充内容合理且必要，值得纳入方案，进入步骤4.3（迭代改进）
    - **不需要修改**：改进建议或补充内容不合理、不必要，或纳入收益不足，记录原因，进入阶段5
@@ -350,8 +350,8 @@ description: >-
 1. **修改方案**：主agent根据评委的改进建议，修改原始方案
 2. **更新文件**：将修改后的方案写入 `scheme.md`（或 `scheme/` 目录）
 3. **记录修改**：将修改记录写入 `design-decisions.md`
-4. **创建反叛者**：创建新的反叛者，对修改后的方案进行重新评估
-5. **回到阶段2**：反叛者重新评估后，再次进入阶段3、阶段4
+4. **创建挑战者**：创建新的挑战者，对修改后的方案进行重新评估
+5. **回到阶段2**：挑战者重新评估后，再次进入阶段3、阶段4
 
 **迭代限制**：最多迭代3次，超过3次自动终止，记录原因
 
@@ -372,9 +372,9 @@ description: >-
 - 原因2：[描述修改原因]
 - ...
 
-#### 反叛者重新评估
-- 反叛者A意见：[简要总结]
-- 反叛者B意见：[简要总结]
+#### 挑战者重新评估
+- 挑战者A意见：[简要总结]
+- 挑战者B意见：[简要总结]
 
 #### 主agent再次判断
 - [ ] 需要继续修改
@@ -400,7 +400,7 @@ description: >-
 主agent读取所有产出文件，汇总后按以下结构向用户交付最终报告：
 
 - 评审报告直接以对话形式输出给用户
-- 报告同时写入 `.codebuddy/expert-panel/{task-name}/final-report.md`
+- 报告同时写入 `.codebuddy/review-panel/{task-name}/final-report.md`
 - 用户可随时查看中间产物文件
 
 ```markdown
@@ -409,13 +409,13 @@ description: >-
 ## 一、原始方案
 （读取 scheme.md 或 scheme/overview.md 展示）
 
-## 二、反叛者审查意见
+## 二、挑战者审查意见
 
-### 反叛者A
-（读取 rebel-a.md 展示：反对意见 + 逐条替代方案 + 认可点）
+### 挑战者A
+（读取 challenger-a.md 展示：反对意见 + 逐条替代方案 + 认可点）
 
-### 反叛者B
-（读取 rebel-b.md 展示：反对意见 + 逐条替代方案 + 认可点）
+### 挑战者B
+（读取 challenger-b.md 展示：反对意见 + 逐条替代方案 + 认可点）
 
 ### 共识性反对
 （A和B独立发现的相同问题，需高亮标注，说明问题严重性）
@@ -432,8 +432,8 @@ description: >-
 
 ## 四、主agent最终判断
 
-- **采纳**：哪些反叛者意见或评委建议被采纳，为什么
-- **拒绝**：哪些反叛者意见或评委建议未被采纳，为什么
+- **采纳**：哪些挑战者意见或评委建议被采纳，为什么
+- **拒绝**：哪些挑战者意见或评委建议未被采纳，为什么
 - **补充纳入**：哪些新增场景、情况或约束值得加入方案，为什么
 - **补充搁置**：哪些新增场景、情况或约束暂不纳入，为什么
 - **存疑**：哪些问题需要用户最终决策
@@ -449,7 +449,7 @@ description: >-
 - **迭代轮次**：{n}/3
 - **修改内容**：（简要说明修改了什么）
 - **修改原因**：（简要说明为什么修改）
-- **反叛者重新评估**：（简要总结反叛者意见）
+- **挑战者重新评估**：（简要总结挑战者意见）
 - **主agent再次判断**：需要继续修改 / 不需要继续修改 / 拿不定主意
 - **决策原因**：（详细说明决策原因）
 
@@ -460,7 +460,7 @@ description: >-
 - **终止原因**：（详细说明终止原因）
 
 ## 六、评审过程文件
-所有中间产物保存在：`.codebuddy/expert-panel/{task-name}/`
+所有中间产物保存在：`.codebuddy/review-panel/{task-name}/`
 用户可直接查看各文件的完整内容。
 ```
 
@@ -468,7 +468,7 @@ description: >-
 
 ## 异常处理与边界情况
 
-- **子agent失败**：单个反叛者/评委失败时，主agent可选择重试或跳过该角色继续流程
+- **子agent失败**：单个挑战者/评委失败时，主agent可选择重试或跳过该角色继续流程
 - **产出为空**：子agent未产出内容时，主agent记录"该角色未响应"，不影响其他角色继续
 - **超时控制**：建议单个子agent执行时间不超过5分钟，超时由主agent主动终止
 - **用户中断**：用户随时可要求停止评审，主agent清理团队并输出当前阶段的中间结果
@@ -487,7 +487,7 @@ description: >-
 ### 迭代改进循环
 - 迭代最多进行3次
 - 主agent根据评委改进建议判断是否需要迭代改进
-- 需要迭代时，主agent修改方案，创建反叛者重新评估
+- 需要迭代时，主agent修改方案，创建挑战者重新评估
 - 迭代终止条件：
   1. 主agent判断不需要修改
   2. 主agent拿不定主意
@@ -498,7 +498,7 @@ description: >-
 
 ## 角色设计原则
 
-- **反叛者**：不指定侧重领域，两个反叛者全面审查。独立发现相同问题时标记为"共识性反对"；除挑出问题外，也应主动补充遗漏场景、边界情况和异常路径
+- **挑战者**：不指定侧重领域，两个挑战者全面审查。独立发现相同问题时标记为"共识性反对"；除挑出问题外，也应主动补充遗漏场景、边界情况和异常路径
 - **评委**：不指定侧重，每个评委从所有评分维度评估。通过讨论聚焦争议点；在评分同时也应主动补充值得纳入方案的场景、约束和实施注意事项
 - **主agent**：不仅汇总问题与分数，也要判断这些新增补充是否值得写回方案或最终报告
 - **理由**：独立重复是验证质量的手段，指定侧重可能创造新的盲区；主动补漏可以提升评审的完整性
@@ -512,7 +512,7 @@ description: >-
 | 工具 | 用途 |
 |------|------|
 | `team_create` | 创建评审团队（阶段2开始时） |
-| `Task`（team模式） | 启动反叛者和评委子agent |
+| `Task`（team模式） | 启动挑战者和评委子agent |
 | `send_message` | 评委间讨论、子agent回报结果 |
 | `team_delete` | 评审完成后清理团队 |
 | `write_to_file` | 主agent/子agent将产出写入文件 |
@@ -520,12 +520,12 @@ description: >-
 
 ### 关键规则
 
-1. **反叛者必须并行启动**：两个反叛者之间绝对不能有信息泄露
+1. **挑战者必须并行启动**：两个挑战者之间绝对不能有信息泄露
 2. **评委必须并行启动**：但允许启动后通过 send_message 相互讨论
 3. **文件持久化**：所有产出物必须写入文件，prompt中只传路径，不传内容
 4. **信息分层**：方案和决策完整落盘；代码只存索引（路径+摘要），子agent自行按需读取
 5. **方案拆分**：主agent根据复杂度自行决定单文件 or 目录拆分，子agent先读 overview
-6. **反叛者替代方案逐条绑定**：每条反对意见必须附带对应替代方案，而非笼统一个
+6. **挑战者替代方案逐条绑定**：每条反对意见必须附带对应替代方案，而非笼统一个
 7. **完成后清理**：调用 `team_delete` 清理团队，但文件保留供用户查阅
 8. **循环控制**：评委讨论最多3轮，每轮后检查终止条件
 9. **异常处理**：单个子agent失败不阻塞整体流程，可重试或跳过
@@ -533,13 +533,13 @@ description: >-
 11. **评委改进建议**：评委除了打分外，必须从复杂度、性能、正确性、合理性、安全、目标一致性等角度提出改进建议
 12. **迭代决策**：主agent根据评委改进建议判断是否需要修改，分为：需要修改、不需要修改、拿不定主意
 13. **迭代限制**：迭代最多3次，超过3次自动终止，记录原因
-14. **迭代闭环**：需要修改时，创建反叛者重新评估，形成"评估-改进-再评估"闭环
+14. **迭代闭环**：需要修改时，创建挑战者重新评估，形成"评估-改进-再评估"闭环
 
 ### 注意事项
 
 - 3评委配置是默认值，用户可覆盖
 - 评审流程中的阶段跳过或合并由主agent根据任务复杂度自行决策
-- 普通的"review"、"评审一下"、"帮我检查"等请求，不默认启用本skill；只有用户明确要求使用专家团时才启用
+- 普通的"review"、"评审一下"、"帮我检查"等请求，不默认启用本skill；只有用户明确要求使用评审团时才启用
 - task-name 从任务描述提取，英文小写+短横线，如 `jwt-auth-review`
 
 ---
@@ -548,36 +548,36 @@ description: >-
 
 ### 触发方式
 
-用户**明确提到要使用专家团**时，才触发评审专家团。例如：
+用户**明确提到要使用评审团**时，才触发评审团。例如：
 
-- "用专家团帮我评审一下这个设计方案"
-- "启动专家团 review 一下这个代码"
-- "请用 expert panel 看看这个架构"
-- "我想用专家团全面评估一下这个方案"
-- "用专家团看看有什么问题"
+- "用评审团帮我评审一下这个设计方案"
+- "启动评审团 review 一下这个代码"
+- "请用 review panel 看看这个架构"
+- "我想用评审团全面评估一下这个方案"
+- "用评审团看看有什么问题"
 
 ### 典型流程
 
 1. 用户：帮我评审一下 JWT 认证方案
 2. 主agent：用户未指定skill，识别为设计方案场景 → 检测到 `design-doc-generator` → 默认加载该skill
 3. 主agent：按 `design-doc-generator` 规范产出方案文件（`scheme.md`、`code-context.md`、`design-decisions.md`）
-4. 主agent：创建团队，启动两个反叛者
-5. 反叛者A/B：独立审查，产出 `rebel-a.md`、`rebel-b.md`
+4. 主agent：创建团队，启动两个挑战者
+5. 挑战者A/B：独立审查，产出 `challenger-a.md`、`challenger-b.md`
 6. 主agent：启动三个评委
 7. 评委：讨论评分 + 提出改进建议，产出 `judge-1.md`、`judge-2.md`、`judge-3.md`
 8. 主agent：研判是否需要迭代改进
    - 情况A：不需要修改 → 记录原因，输出最终报告
-   - 情况B：需要修改 → 修改方案，创建反叛者重新评估 → 再次研判
+   - 情况B：需要修改 → 修改方案，创建挑战者重新评估 → 再次研判
    - 情况C：拿不定主意 → 记录原因，输出最终报告
 9. 用户：收到完整评审报告（包含迭代记录），可查看所有中间文件
 
 ### 查看中间产物
 
-所有评审过程文件保存在：`.codebuddy/expert-panel/{task-name}/`
+所有评审过程文件保存在：`.codebuddy/review-panel/{task-name}/`
 
 用户可直接打开查看：
 - 原始方案：`scheme.md`
-- 反叛者意见：`rebel-output/rebel-a.md`、`rebel-output/rebel-b.md`
+- 挑战者意见：`challenger-output/challenger-a.md`、`challenger-output/challenger-b.md`
 - 评委评分：`judge-output/judge-1.md`、`judge-output/judge-2.md`、`judge-output/judge-3.md`
 - 最终报告：`final-report.md`
 
@@ -585,11 +585,11 @@ description: >-
 
 ## 参考文档
 
-- [references/review-panel.md](references/review-panel.md) — 评审专家团角色prompt模板和信息传递协议
+- [references/review-panel.md](references/review-panel.md) — 评审团角色prompt模板和信息传递协议
 
 ## 需求管理集成
 
-当项目配置了 `.requirements/config` 时，expert-panel 评审完成后自动执行以下集成操作：
+当项目配置了 `.requirements/config` 时，review-panel 评审完成后自动执行以下集成操作：
 
 ### 自动触发条件
 
@@ -607,7 +607,7 @@ req list --id {REQ-NNN} --deps
 
 ```bash
 req update {REQ-NNN} \
-  --docs add review/expert-panel.md,review --changelog "完成专家团评审"
+  --docs add review/review-panel.md,review --changelog "完成评审团评审"
 ```
 
 3. **错误处理**：
@@ -618,4 +618,4 @@ req update {REQ-NNN} \
 
 | 产出物 | 存储路径 | docs 类型 |
 |--------|----------|-----------|
-| 专家团评审报告 | `review/expert-panel.md` | `review` |
+| 评审团评审报告 | `review/review-panel.md` | `review` |

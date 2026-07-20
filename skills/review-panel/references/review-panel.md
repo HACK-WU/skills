@@ -1,18 +1,18 @@
-# 评审专家团 — 角色Prompt模板与信息传递协议
+# 评审团 — 角色Prompt模板与信息传递协议
 
-本文档提供评审专家团各阶段子agent的标准prompt模板和文件传递协议。
+本文档提供评审团各阶段子agent的标准prompt模板和文件传递协议。
 
 ---
 
-## 反叛者 Prompt 模板
+## 挑战者 Prompt 模板
 
-> 主agent启动反叛者时使用此模板。`{task-name}` 替换为实际任务目录名（英文小写+短横线）。
-> 反叛者A写入 `rebel-a.md`，反叛者B写入 `rebel-b.md`。
+> 主agent启动挑战者时使用此模板。`{task-name}` 替换为实际任务目录名（英文小写+短横线）。
+> 挑战者A写入 `challenger-a.md`，挑战者B写入 `challenger-b.md`。
 
 ```
 # 你的身份
 
-你是**反叛者（Rebel Reviewer）**——一个严谨的技术评审者。你的核心职责是：
+你是**挑战者（Challenger Reviewer）**——一个严谨的技术评审者。你的核心职责是：
 竭尽全力找出方案中的不合理之处、逻辑漏洞、技术风险和遗漏场景。
 
 # 你的行为准则
@@ -34,16 +34,16 @@
 
 | 文件 | 内容说明 | 优先级 |
 |------|----------|--------|
-| .codebuddy/expert-panel/{task-name}/scheme.md | 方案全文 | 必读 |
-| .codebuddy/expert-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
-| .codebuddy/expert-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
+| .codebuddy/review-panel/{task-name}/scheme.md | 方案全文 | 必读 |
+| .codebuddy/review-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
+| .codebuddy/review-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
 
 如方案拆分为目录，请先读取 scheme/overview.md 了解全貌，再按需深入各子文件。
 如需查看具体代码，根据 code-context.md 中的路径自行 read_file。
 
 # 输出格式
 
-请将审查结果写入：.codebuddy/expert-panel/{task-name}/rebel-output/rebel-{a|b}.md
+请将审查结果写入：.codebuddy/review-panel/{task-name}/challenger-output/challenger-{a|b}.md
 
 格式如下：
 
@@ -85,11 +85,11 @@
 
 | 文件 | 内容说明 | 优先级 |
 |------|----------|--------|
-| .codebuddy/expert-panel/{task-name}/scheme.md | 原始方案全文 | 必读 |
-| .codebuddy/expert-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
-| .codebuddy/expert-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
-| .codebuddy/expert-panel/{task-name}/rebel-output/rebel-a.md | 反叛者A完整审查意见 | 必读 |
-| .codebuddy/expert-panel/{task-name}/rebel-output/rebel-b.md | 反叛者B完整审查意见 | 必读 |
+| .codebuddy/review-panel/{task-name}/scheme.md | 原始方案全文 | 必读 |
+| .codebuddy/review-panel/{task-name}/code-context.md | 代码上下文索引 | 必读 |
+| .codebuddy/review-panel/{task-name}/design-decisions.md | 设计决策记录 | 必读 |
+| .codebuddy/review-panel/{task-name}/challenger-output/challenger-a.md | 挑战者A完整审查意见 | 必读 |
+| .codebuddy/review-panel/{task-name}/challenger-output/challenger-b.md | 挑战者B完整审查意见 | 必读 |
 
 如方案拆分为目录，请先读取 scheme/overview.md。
 如需查看具体代码，根据 code-context.md 中的路径自行 read_file。
@@ -101,7 +101,7 @@
 | 可行性 | 方案在技术上基本不可行 | 方案完全可行，依赖清晰 |
 | 风险覆盖 | 存在重大风险敞口 | 主要风险均被识别和应对 |
 | 完整性 | 遗漏关键场景和边界情况 | 覆盖所有场景和边界 |
-| 采纳度 | 对反叛者的合理意见完全忽视 | 充分吸收反叛者的合理意见 |
+| 采纳度 | 对挑战者的合理意见完全忽视 | 充分吸收挑战者的合理意见 |
 
 # 改进建议维度
 
@@ -116,7 +116,7 @@
 
 # 输出格式
 
-请将评分、理由和改进建议写入：.codebuddy/expert-panel/{task-name}/judge-output/judge-{1|2|3}.md
+请将评分、理由和改进建议写入：.codebuddy/review-panel/{task-name}/judge-output/judge-{1|2|3}.md
 
 格式如下：
 
@@ -170,13 +170,13 @@
 | 阶段 | 角色 | 读取文件 | 写入文件 |
 |------|------|----------|----------|
 | 阶段1 | 主agent | 代码文件（按需） | scheme.md, code-context.md, design-decisions.md |
-| 阶段2 | 反叛者A | scheme.md, code-context.md, design-decisions.md, 代码文件（按需） | rebel-a.md |
-| 阶段2 | 反叛者B | scheme.md, code-context.md, design-decisions.md, 代码文件（按需） | rebel-b.md |
-| 阶段3 | 评委1-3 | scheme.md, code-context.md, design-decisions.md, rebel-a.md, rebel-b.md, 代码文件（按需） | judge-{1-3}.md |
-| 阶段4 | 主agent | judge-output/*, rebel-output/* | 迭代决策记录、迭代记录 |
+| 阶段2 | 挑战者A | scheme.md, code-context.md, design-decisions.md, 代码文件（按需） | challenger-a.md |
+| 阶段2 | 挑战者B | scheme.md, code-context.md, design-decisions.md, 代码文件（按需） | challenger-b.md |
+| 阶段3 | 评委1-3 | scheme.md, code-context.md, design-decisions.md, challenger-a.md, challenger-b.md, 代码文件（按需） | judge-{1-3}.md |
+| 阶段4 | 主agent | judge-output/*, challenger-output/* | 迭代决策记录、迭代记录 |
 | 阶段4.3 | 主agent | 所有文件 | 更新 scheme.md, design-decisions.md |
-| 阶段4.3 | 反叛者A | 更新后的 scheme.md, code-context.md, design-decisions.md | rebel-a.md（迭代轮次） |
-| 阶段4.3 | 反叛者B | 更新后的 scheme.md, code-context.md, design-decisions.md | rebel-b.md（迭代轮次） |
+| 阶段4.3 | 挑战者A | 更新后的 scheme.md, code-context.md, design-decisions.md | challenger-a.md（迭代轮次） |
+| 阶段4.3 | 挑战者B | 更新后的 scheme.md, code-context.md, design-decisions.md | challenger-b.md（迭代轮次） |
 | 阶段5 | 主agent | 所有文件 | 最终报告（输出给用户，写入 final-report.md） |
 
 ### code-context.md 字段说明

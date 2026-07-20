@@ -157,7 +157,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度 | "review 这个提交"、"code review" |
-| **[challenger](./skills/challenger/SKILL.md)** | 代码质疑者，对 code-review 结果进行二次审查，支持三种质疑策略 | "质疑这个修复"、"二次审查" |
+| **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档进行二次质疑，代码支持三种策略、设计文档支持设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 根据需求文档自动生成结构化测试计划，覆盖功能/性能/安全等维度 | "生成测试计划"、"写测试用例" |
 | **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
@@ -166,7 +166,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
-| **[expert-panel](./skills/expert-panel/SKILL.md)** | 启动多角色专家团进行方案评审 | "专家团评审"、"expert panel" |
+| **[review-panel](./skills/review-panel/SKILL.md)** | 启动多角色评审团进行方案评审 | "评审团评审"、"review panel" |
 | **[document-writer](./skills/document-writer/SKILL.md)** | 为项目生成高质量 README 及子文档，根据项目类型自动选择策略 | "生成 README"、"写项目文档" |
 | **[create-rules](./skills/create-rules/SKILL.md)** | 引导创建符合规范的 AI 规则文件 | "创建规则"、"写一个规则" |
 | **[create-skill](./skills/create-skill/SKILL.md)** | 引导创建新的 Agent Skill | "创建 skill"、"写一个技能" |
@@ -235,11 +235,11 @@ skills/
 ├── request-guard/            # 请求守卫
 ├── implementation-report/    # 实现报告
 ├── code-review/              # 代码评审
-├── challenger/               # 代码质疑
+├── challenger/               # 质疑（代码/设计）
 ├── auto-review/              # 自动审查修复闭环
 ├── bug-impact-analysis/      # Bug 影响分析
 ├── test-planner/             # 测试计划生成
-├── expert-panel/             # 专家团
+├── review-panel/             # 评审团
 ├── task-dispatch/            # 任务并行调度
 ├── document-writer/          # 项目文档生成
 ├── create-rules/             # 创建规则
