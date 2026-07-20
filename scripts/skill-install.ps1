@@ -306,6 +306,7 @@ function Install-Skills {
             "scenario-rehearsal/strategies/realtime-messaging.md",
             "scenario-rehearsal/strategies/refactor-migration.md",
             "scenario-rehearsal/strategies/concurrency.md",
+            "scenario-rehearsal/strategies/requirement.md",
             "solution-capture/SKILL.md",
             "solution-lookup/SKILL.md",
             "task-dispatch/SKILL.md",
