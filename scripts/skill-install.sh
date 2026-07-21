@@ -370,13 +370,13 @@ install_skills() {
     local skill_names_ok=()    # SKILL.md 下载成功的 skill 目录（去重）
     local _sn_fail=()          # 每个 skill 的失败文件数（与 skill_names_all 索引对齐）
 
-    for f in "${FILES[@]}"; do
+    for f in ${FILES[@]+"${FILES[@]}"}; do
         # 提取 skill 名称用于过滤（取第一级目录名）
         local skill_name="${f%%/*}"
 
         # 记录 skill 目录（去重）并初始化失败计数
         local found=0 i=0
-        for sn in "${skill_names_all[@]}"; do
+        for sn in ${skill_names_all[@]+"${skill_names_all[@]}"}; do
             [ "$sn" = "$skill_name" ] && { found=1; break; }
             i=$((i + 1))
         done
@@ -397,7 +397,7 @@ install_skills() {
             # 记录 SKILL.md 下载成功的 skill 目录（去重）
             if [ "${f##*/}" = "SKILL.md" ]; then
                 local ok_found=0
-                for sn in "${skill_names_ok[@]}"; do
+                for sn in ${skill_names_ok[@]+"${skill_names_ok[@]}"}; do
                     [ "$sn" = "$skill_name" ] && { ok_found=1; break; }
                 done
                 [ "$ok_found" -eq 0 ] && skill_names_ok+=("$skill_name")
@@ -406,7 +406,7 @@ install_skills() {
             echo "  [FAIL] ${f}"
             # 找到 skill 在 skill_names_all 中的索引，增加失败计数
             local fi_idx=0
-            for sn in "${skill_names_all[@]}"; do
+            for sn in ${skill_names_all[@]+"${skill_names_all[@]}"}; do
                 [ "$sn" = "$skill_name" ] && { _sn_fail[$fi_idx]=$((${_sn_fail[$fi_idx]} + 1)); break; }
                 fi_idx=$((fi_idx + 1))
             done
@@ -414,7 +414,7 @@ install_skills() {
     done
 
     # 统计跳过的 skill 数（目录级）
-    for sn in "${skill_names_all[@]}"; do
+    for sn in ${skill_names_all[@]+"${skill_names_all[@]}"}; do
         name_matches "$sn" || skipped=$((skipped + 1))
     done
 
@@ -422,7 +422,7 @@ install_skills() {
 
     # 输出不完整 skill 的警告（存在下载失败文件的 skill）
     local _warned=0 _wi=0
-    for sn in "${skill_names_all[@]}"; do
+    for sn in ${skill_names_all[@]+"${skill_names_all[@]}"}; do
         if name_matches "$sn" && [ "${_sn_fail[$_wi]}" -gt 0 ]; then
             [ $_warned -eq 0 ] && echo "" && echo "⚠️ 以下 skill 存在下载失败的文件："
             echo "  - ${sn}: ${_sn_fail[$_wi]} 个文件失败"
@@ -489,7 +489,7 @@ FILES=(
     echo ""
 
     local count=0 total=0 skipped=0
-    for f in "${FILES[@]}"; do
+    for f in ${FILES[@]+"${FILES[@]}"}; do
         # 提取规则名称用于过滤（去掉 .md 后缀）
         local rule_name="${f%.md}"
         if ! name_matches "$rule_name"; then
