@@ -151,6 +151,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[code-survey](./skills/code-survey/SKILL.md)** | 设计前对代码库按需调研 13 个维度，ki 优先，≥2 个维度时 task-dispatch 并行搜索 | "代码调研"、"了解现有代码" |
 | **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速 | "生成代码骨架"、"搭骨架" |
 | **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证 | "编码实施"、"填充骨架"、"实现代码" |
+| **[module-teach](./skills/module-teach/SKILL.md)** | 按渐进流程分析讲解代码模块，区分通用与专用知识，产出含 Mermaid 图与 HTML 的学习材料 | "讲讲这个模块"、"学习代码"、"帮我搞懂这块代码" |
 
 ### 代码质量
 
@@ -161,6 +162,8 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
 | **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
+| **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
+| **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 
 ### 工具
 
@@ -176,6 +179,10 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
 | **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本中的静态文件列表 | "更新安装脚本"、"同步技能列表" |
+| **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
+| **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
+| **[solution-capture](./skills/solution-capture/SKILL.md)** | 将解决非平凡问题的过程沉淀为可复用的解决方案 skill，存入 .solutions/ | "记录这个方案"、"沉淀一下"、"保存解决方案" |
+| **[solution-lookup](./skills/solution-lookup/SKILL.md)** | 查找并复用已沉淀的解决方案 skill，通过关键词匹配定位 .solutions/ 中的方案 | "有没有类似方案"、"之前怎么解决的"、"查找方案" |
 
 ### 规则
 
@@ -248,7 +255,11 @@ skills/
 ├── content-simplifier/       # 内容精简
 ├── memory-creator/           # 记忆生成
 ├── migrate-to-codehub/       # 迁移工具
-└── requirement-doc-store/    # 需求文档存储规范
+├── requirement-doc-store/    # 需求文档存储规范
+├── expert-lookup/            # 业务专家查找
+├── expert-team/              # 专家团队并行深挖
+├── solution-capture/         # 解决方案沉淀
+└── solution-lookup/          # 解决方案查找
 
 rules/
 ├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则
