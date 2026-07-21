@@ -8,11 +8,12 @@
 
 ```yaml
 scenario: 用户注册并下单
+requirement_ref: REQ-register-order      # 绑定的需求/设计文档条目（见需求绑定）
 env:
   env_name: staging
-  base_url: "https://staging.api.x.com"
+  base_url: "${ENV.API_BASE_URL}"        # 真实值来自 .env.e2e（回退 .env），禁止硬编码
 credentials:
-  token: "Bearer eyJ…(脱敏)"
+  token: "${ENV.API_TOKEN}"              # 同上，运行时会话内解析为完整 token
 steps:
   - id: setup
     type: setup
@@ -127,6 +128,35 @@ steps:
   [7] teardown : DELETE orders,users WHERE user_id=${user_id}      ⚠️ 写操作
 确认无误后可去掉 dry-run 正式执行；写操作仍会在执行时逐个确认。
 ```
+
+## 示例 4：敏感信息外部化（.env.e2e）
+
+测试定义文件不含任何真实密钥/URL，全部走 `.env.e2e`：
+
+```yaml
+# tests/e2e/register_order.yaml（定义文件，无密）
+scenario: 用户注册并下单
+requirement_ref: REQ-register-order
+env:
+  env_name: staging
+  base_url: "${ENV.API_BASE_URL}"   # 来自 .env.e2e（回退 .env）
+credentials:
+  token: "${ENV.API_TOKEN}"         # 来自 .env.e2e（回退 .env）
+steps: [ ... ]                       # 同示例 1，但 URL/token 均为变量
+```
+
+```bash
+# .env.e2e 优先（不入库，gitignore）—— 真实值在此
+API_BASE_URL=https://staging.api.x.com
+API_TOKEN=Bearer eyJxxxxxxxxxxxxxxxx
+
+# 若不存在 .env.e2e，可回退使用项目根 .env（同样不入库，gitignore）
+# .env.e2e.example（入库模板，供他人复制为 .env.e2e 或 .env）
+API_BASE_URL=
+API_TOKEN=
+```
+
+> AI 在阶段 2 搭建 Context 时优先读取 `.env.e2e`（不存在则回退 `.env`），填入 `ctx.env.base_url` / `ctx.credentials.token`；定义文件始终保持无密。
 
 ## 报告示例（对应示例 1）
 

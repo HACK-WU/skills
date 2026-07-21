@@ -34,11 +34,14 @@ ctx:
   credentials: { token: "Bearer eyJ…", cookie: "session=abc…" }  # 运行时会话内可持完整值以发起请求；仅写入文件/展示用户时脱敏为前缀
   data:        { user_id: 123, order_id: 789, ... }
 ```
+> 🔐 **敏感信息入口**：`ctx.env` / `ctx.credentials` 的值在阶段 2 由 env 文件注入（首选 `.env.e2e`，若不存在回退 `.env`，见 SKILL.md「敏感信息外部化」）。**定义文件（scenario/脚本）中不得出现真实 URL/密钥字面值**，只写 `${ENV.XXX}` 引用。
+> 📌 **需求绑定**：Scenario 顶层携带 `requirement_ref` 指向需求/设计文档条目（见 SKILL.md「需求绑定」），断言判据来自规格而非代码内部实现。
 
 **取值语法**：
 - 完全限定：`${ctx.data.user_id}`、`${ctx.env.base_url}`、`${ctx.credentials.token}`。
 - 简写：在 `config` 中写 `${user_id}`，解析时优先匹配 `ctx.data`，再回退 `ctx.env` / `ctx.credentials`。
-- 解析时机：step **执行前**统一替换 `config` 中出现的所有占位符。
+- **`${ENV.XXX}` 先于 `${ctx.x}` 解析**：`${ENV.XXX}` 是来自 env 文件的环境变量占位符（首选 `.env.e2e`，回退 `.env`），在旅程启动（阶段 2 之前）即被解析为真实值并映射到 `ctx.env` / `ctx.credentials`（如 `ENV.API_BASE_URL` → `ctx.env.base_url`）；之后才进入下方 `${ctx.x}` 的统一解析。定义文件中只用 `${ENV.XXX}`，不直接写真实值。
+- 解析时机：step **执行前**统一替换 `config` 中出现的所有 `${ctx.x}` 占位符。
 - 未命中：标记为解析失败 → 该 step `abort`（除非 `on_fail: continue`）。
 
 **顺序约束（B 部分）**：`depends_on` 决定拓扑序；未被依赖且无依赖他人者可并行执行。
