@@ -83,13 +83,46 @@ REQ-20260611-001 已确认  standalone 用户认证模块       2026-06-11
 REQ-20260611-002 草案    child      JWT 鉴权          2026-06-11
 ```
 
+### `req archive`
+```bash
+$ req archive REQ-20260611-001 --reason "功能已完成"
+✓ 需求已归档
+  ID:        REQ-20260611-001
+  原目录:    security/2026-06-11-用户认证模块
+  归档位置:  archive/security/2026-06-11-用户认证模块
+  状态:      已归档
+  归档原因:  功能已完成
+```
+
 > 更多命令（`req update`、`req delete` 等）详见 [命令参考](./command-reference.md)
+
+## 测试运行
+
+项目包含完整的单元测试，可以验证所有命令和核心模块的功能。
+
+```bash
+# 运行所有测试
+cd scripts/requirement-mgr && python run_tests.py
+
+# 或者使用 pytest 直接运行
+cd scripts/requirement-mgr && python -m pytest tests/ -v
+
+# 运行特定模块的测试
+cd scripts/requirement-mgr && python -m pytest tests/test_archive.py -v
+cd scripts/requirement-mgr && python -m pytest tests/test_list.py -v
+cd scripts/requirement-mgr && python -m pytest tests/test_time_utils.py -v
+```
+
+测试覆盖内容：
+- **时间工具模块**：`now_cst_str()` 和 `today_cst_str()` 函数验证
+- **归档命令**：成功归档、二次归档拦截、不存在需求拦截、dry-run 模式、--force 跳过确认、目录冲突拦截
+- **列表命令**：`_normalize_ts()` 函数归一化验证、默认隐藏已归档需求、`--include-archived` 显示所有需求、`--id` 模式查询、状态筛选、排序归一化、日期范围筛选、搜索过滤
 
 ## 文档导航
 
 | 文档 | 内容 |
 |------|------|
-| [命令参考](./command-reference.md) | 5 个命令的完整参数、选项和输出示例 |
+| [命令参考](./command-reference.md) | 6 个命令的完整参数、选项和输出示例 |
 | [配置指南](./configuration.md) | 配置文件格式、9 个配置项详解、约束规则 |
 | [架构文档](./requirement-mgr-guide.md) | 系统架构、技术实现细节、数据模型 |
 | [故障排查](./troubleshooting.md) | 常见问题及解决方案 |

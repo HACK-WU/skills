@@ -4,7 +4,7 @@
 
 import argparse
 import sys
-from datetime import date
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +17,9 @@ from config_loader import ConfigLoader
 from meta_store import MetaStore
 from file_lock import FileLock
 from requirement_utils import find_req, has_circular_dep
+
+# 东八区时区
+CST = timezone(timedelta(hours=8))
 
 VALID_STATUSES = {"草案", "已确认", "设计中", "实施中", "已完成", "已取消"}
 
@@ -259,7 +262,7 @@ def main():
 
             # 版本 + 日期 + changelog
             req["version"] = req.get("version", 1) + 1
-            req["updated"] = date.today().isoformat()
+            req["updated"] = datetime.now(CST).strftime("%Y-%m-%d %H:%M:%S")
 
             if args.changelog:
                 req.setdefault("changelog", [])

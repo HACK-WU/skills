@@ -2,7 +2,6 @@
 """req create: 新建需求，创建目录 + 写入 meta.json。"""
 
 import sys
-from datetime import date
 from pathlib import Path
 
 from requirement_mgr.core.config_loader import ConfigLoader
@@ -10,6 +9,7 @@ from requirement_mgr.core.meta_store import MetaStore
 from requirement_mgr.core.file_lock import FileLock
 from requirement_mgr.core.id_generator import gen_next_id
 from requirement_mgr.core.requirement_utils import find_req
+from requirement_mgr.core.time_utils import now_cst_str, today_cst_str
 
 
 def cmd_create(args):
@@ -114,8 +114,9 @@ def cmd_create(args):
     # 提取功能分类标签
     category = category_tags[0] if category_tags else ""
 
-    # 生成目录名
-    today = date.today().isoformat()
+    # 生成目录名（仅日期）和时间戳（完整时间）
+    today = today_cst_str()
+    timestamp = now_cst_str()
     if args.dir_name:
         dir_name = args.dir_name.strip()
     else:
@@ -171,8 +172,8 @@ def cmd_create(args):
             entry = {
                 "id": req_id,
                 "feature": feature,
-                "created": today,
-                "updated": today,
+                "created": timestamp,
+                "updated": timestamp,
                 "status": status,
                 "tags": tags,
                 "version": 1,

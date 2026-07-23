@@ -47,11 +47,12 @@
 需求管理系统是一个 **零外部依赖** 的 Python 包，提供 `req` 命令行工具，专门用于管理项目需求文档的元数据。它通过集中式的 `meta.json` 文件，为 AI Agent 和开发者提供结构化、并发安全的需求 CRUD 操作。
 
 **核心组件**：
-- **Python 包**：`src/requirement_mgr/`（CLI 入口 + 5 个命令模块 + 6 个核心模块）
+- **Python 包**：`src/requirement_mgr/`（CLI 入口 + 6 个命令模块 + 6 个核心模块）
 - **CLI 入口**：`req` 命令（通过 `uv tool install` 注册）
 - **集中元数据存储**：`.requirements/meta.json` 文件
 - **配置管理**：`.requirements/config` 文件
 - **需求目录结构**：`{category}/{date}-{feature}/` 格式的需求文档目录
+- **单元测试**：`tests/` 目录，包含所有命令和核心模块的测试用例
 
 ### 1.2 核心价值
 
@@ -218,6 +219,7 @@ graph TB
         S3["req create<br/>新建需求"]
         S4["req update<br/>修改需求"]
         S5["req delete<br/>删除需求"]
+        S6["req archive<br/>归档需求"]
     end
     
     subgraph Core["核心层（业务逻辑）"]
@@ -234,7 +236,7 @@ graph TB
         DIR["需求目录"]
     end
     
-    REQ --> S1 & S2 & S3 & S4 & S5
+    REQ --> S1 & S2 & S3 & S4 & S5 & S6
     CLI --> Core
     Core --> Store
 ```
@@ -292,6 +294,12 @@ stateDiagram-v2
     已确认 --> 已取消 : 废弃
     设计中 --> 已取消 : 废弃
     实施中 --> 已取消 : 废弃
+    
+    草案 --> 已归档 : 归档
+    已确认 --> 已归档 : 归档
+    设计中 --> 已归档 : 归档
+    实施中 --> 已归档 : 归档
+    已完成 --> 已归档 : 归档
 ```
 
 **状态说明**：
@@ -301,6 +309,7 @@ stateDiagram-v2
 - `实施中`：开发编码阶段
 - `已完成`：开发与验收均通过（终态）
 - `已取消`：需求废弃，保留记录不删除（终态）
+- `已归档`：需求归档，移动到 `archive/` 目录（终态）
 
 ### 4.2 父子需求层级
 
@@ -681,17 +690,21 @@ flowchart LR
     User -->|新建| create["req create"]
     User -->|修改| update["req update"]
     User -->|删除| delete["req delete"]
+    User -->|归档| archive["req archive"]
     
     list -->|"R: 只读"| Meta["meta.json"]
     create -->|"C: 加锁 → TOCTOU → 创建目录 → 原子写"| Meta
     update -->|"U: 加锁 → TOCTOU → 原子写"| Meta
     delete -->|"D: 加锁 → TOCTOU → 删条目 → 删目录"| Meta
+    archive -->|"A: 加锁 → TOCTOU → 移动目录 → 更新状态 → 原子写"| Meta
     
     Meta -.->|映射| RequirementDir["{category}/{date}-{feature}/"]
     RequirementDir -.->|AI 创建| requirement_md["requirement.md"]
     RequirementDir -.->|AI 创建| data_flow["data-flow.md"]
     RequirementDir -.->|AI 创建| Design["design/"]
     RequirementDir -.->|AI 创建| Report["report.md"]
+    
+    Meta -.->|归档映射| ArchiveDir["archive/{category}/{date}-{feature}/"]
 ```
 
 ### 7.2 文件锁流程
@@ -802,30 +815,40 @@ flowchart TB
 ├── .requirements/
 │   ├── config                  # storage_path + feature_categories + requirement_tags 配置
 │   ├── meta.json               # 集中元数据（脚本管理）
-│   └── {category}/             # 功能分类目录（如 security/、performance/）
-│       └── {date}-{feature}/   # 单需求目录（AI 管理内容）
-│           ├── requirement.md
-│           ├── data-flow.md
-│           ├── design/
-│           └── report.md
+│   ├── {category}/             # 功能分类目录（如 security/、performance/）
+│   │   └── {date}-{feature}/   # 单需求目录（AI 管理内容）
+│   │       ├── requirement.md
+│   │       ├── data-flow.md
+│   │       ├── design/
+│   │       └── report.md
+│   └── archive/                # 归档目录（req archive 移动目标）
+│       └── {category}/         # 归档的需求目录（按原分类保留）
 └── scripts/
     └── requirement-mgr/        # Python 包
         ├── pyproject.toml      # 包定义（hatchling 构建）
-        └── src/requirement_mgr/
+        ├── run_tests.py        # 测试运行脚本
+        ├── src/requirement_mgr/
+        │   ├── __init__.py
+        │   ├── cli.py          # req 命令入口
+        │   ├── commands/       # 6 个子命令
+        │   │   ├── init.py
+        │   │   ├── create.py
+        │   │   ├── list.py
+        │   │   ├── update.py
+        │   │   ├── delete.py
+        │   │   └── archive.py
+        │   └── core/           # 6 个核心模块
+        │       ├── config_loader.py
+        │       ├── file_lock.py
+        │       ├── id_generator.py
+        │       ├── meta_store.py
+        │       ├── requirement_utils.py
+        │       └── time_utils.py
+        └── tests/              # 单元测试
             ├── __init__.py
-            ├── cli.py          # req 命令入口
-            ├── commands/       # 5 个子命令
-            │   ├── init.py
-            │   ├── create.py
-            │   ├── list.py
-            │   ├── update.py
-            │   └── delete.py
-            └── core/           # 6 个核心模块
-                ├── config_loader.py
-                ├── file_lock.py
-                ├── id_generator.py
-                ├── meta_store.py
-                └── requirement_utils.py
+            ├── test_time_utils.py
+            ├── test_archive.py
+            └── test_list.py
 ```
 
 **示例**：

@@ -15,6 +15,20 @@ ALL_COLUMNS = [
     "created", "updated", "parent_id", "depends_on", "docs", "commits",
 ]
 
+ARCHIVE_STATUS = "已归档"
+
+
+def _normalize_ts(ts: str) -> str:
+    """将旧格式时间戳（YYYY-MM-DD）归一化为完整格式（YYYY-MM-DD HH:MM:SS），用于排序。
+
+    新格式已为完整时间戳，直接返回。空字符串返回空。
+    """
+    if not ts:
+        return ""
+    if len(ts) <= 10:
+        return ts + " 00:00:00"
+    return ts
+
 
 def _widen(s: str, width: int) -> str:
     """CJK 字符占 2 列宽的对齐辅助。"""
@@ -189,9 +203,13 @@ def cmd_list(args):
     # 筛选
     results = []
     for dir_name, req in requirements.items():
-        # --id
+        # --id 模式不受归档过滤影响，始终可查到
         if args.id and req.get("id") != args.id:
             continue
+        # 默认隐藏已归档需求（除非 --include-archived 或显式 --status 或 --id 查询）
+        if not args.include_archived and not args.status and not args.id:
+            if req.get("status") == ARCHIVE_STATUS:
+                continue
         # --status
         if args.status and req.get("status") != args.status:
             continue
@@ -217,12 +235,17 @@ def cmd_list(args):
                 continue
             if parts[0] != args.category:
                 continue
-        # --from / --to
-        updated = req.get("updated", "")
-        if args.date_from and updated < args.date_from:
+        # --from / --to（归一化处理旧格式时间戳）
+        updated = _normalize_ts(req.get("updated", ""))
+        if args.date_from and updated < _normalize_ts(args.date_from):
             continue
-        if args.date_to and updated > args.date_to:
-            continue
+        if args.date_to:
+            # date_to 使用当天末尾时间进行比较
+            date_to = _normalize_ts(args.date_to)
+            if len(args.date_to) <= 10:  # 旧格式日期
+                date_to = args.date_to + " 23:59:59"
+            if updated > date_to:
+                continue
         # --search
         if args.search and args.search.lower() not in req.get("feature", "").lower():
             continue
@@ -242,8 +265,8 @@ def cmd_list(args):
             print(_format_detail(req, requirements, args))
         return
 
-    # 按 updated 降序
-    results.sort(key=lambda r: r.get("updated", ""), reverse=True)
+    # 按 updated 降序（归一化处理旧格式时间戳）
+    results.sort(key=lambda r: _normalize_ts(r.get("updated", "")), reverse=True)
 
     if not results:
         print("（无匹配需求）")

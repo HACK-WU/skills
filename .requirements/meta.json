@@ -1,0 +1,30 @@
+{
+  "requirements": {
+    "tool/2026-07-23-需求管理工具归档功能": {
+      "id": "REQ-20260723-001",
+      "feature": "需求管理工具归档功能",
+      "created": "2026-07-23",
+      "updated": "2026-07-23",
+      "status": "草案",
+      "tags": [
+        "feat",
+        "tool"
+      ],
+      "version": 2,
+      "depends_on": [],
+      "changelog": [
+        "初始创建"
+      ],
+      "commits": [],
+      "docs": [
+        {
+          "path": "requirement.md",
+          "type": "requirement"
+        }
+      ],
+      "role": "standalone",
+      "parent_id": null,
+      "child_ids": []
+    }
+  }
+}

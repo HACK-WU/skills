@@ -12,6 +12,7 @@ from requirement_mgr.commands.create import cmd_create
 from requirement_mgr.commands.list import cmd_list
 from requirement_mgr.commands.update import cmd_update
 from requirement_mgr.commands.delete import cmd_delete
+from requirement_mgr.commands.archive import cmd_archive
 
 
 def find_config_upward(max_depth: int = 2) -> Path | None:
@@ -72,6 +73,7 @@ def main():
     list_parser.add_argument("--json", dest="json_output", action="store_true")
     list_parser.add_argument("--columns", default=None)
     list_parser.add_argument("--no-color", action="store_true")
+    list_parser.add_argument("--include-archived", action="store_true", help="包含已归档需求（默认隐藏）")
 
     # req update
     update_parser = subparsers.add_parser("update", help="修改需求")
@@ -91,6 +93,13 @@ def main():
     delete_parser.add_argument("req_id", help="需求 ID")
     delete_parser.add_argument("--force", action="store_true")
     delete_parser.add_argument("--dry-run", action="store_true")
+
+    # req archive
+    archive_parser = subparsers.add_parser("archive", help="归档需求")
+    archive_parser.add_argument("req_id", help="需求 ID")
+    archive_parser.add_argument("--reason", default=None, help="归档原因")
+    archive_parser.add_argument("--dry-run", action="store_true", help="预览，不实际执行")
+    archive_parser.add_argument("--force", action="store_true", help="跳过交互确认（如归档有子需求的 parent）")
 
     args = parser.parse_args()
     if args.command is None:
@@ -123,5 +132,6 @@ def main():
         "list": cmd_list,
         "update": cmd_update,
         "delete": cmd_delete,
+        "archive": cmd_archive,
     }
     commands[args.command](args)

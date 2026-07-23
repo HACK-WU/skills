@@ -23,7 +23,7 @@ feature_categories=
 requirement_tags=
 
 # 需求状态（第一个值为默认初始状态）
-requirement_statuses=草案,已确认,设计中,实施中,已完成,已取消
+requirement_statuses=草案,已确认,设计中,实施中,已完成,已取消,已归档
 
 # 需求角色（第一个值为默认角色）
 requirement_roles=standalone,parent,child

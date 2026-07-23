@@ -4,7 +4,7 @@
 
 import argparse
 import sys
-from datetime import date
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +17,9 @@ from config_loader import ConfigLoader
 from meta_store import MetaStore
 from file_lock import FileLock
 from id_generator import gen_next_id
+
+# 东八区时区
+CST = timezone(timedelta(hours=8))
 
 VALID_STATUSES = {"草案", "已确认", "设计中", "实施中", "已完成", "已取消"}
 
@@ -96,8 +99,9 @@ def main():
     # 提取功能分类标签
     category = category_tags[0] if category_tags else ""
     
-    # 生成目录名
-    today = date.today().isoformat()
+    # 生成目录名（仅日期）和时间戳（完整时间）
+    today = datetime.now(CST).strftime("%Y-%m-%d")
+    timestamp = datetime.now(CST).strftime("%Y-%m-%d %H:%M:%S")
     if args.dir_name:
         dir_name = args.dir_name.strip()
     else:
@@ -147,8 +151,8 @@ def main():
             entry = {
                 "id": req_id,
                 "feature": feature,
-                "created": today,
-                "updated": today,
+                "created": timestamp,
+                "updated": timestamp,
                 "status": status,
                 "tags": tags,
                 "version": 1,

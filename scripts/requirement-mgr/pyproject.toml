@@ -9,6 +9,9 @@ description = "需求管理 CLI 工具"
 requires-python = ">=3.10"
 # 零外部依赖
 
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
 [project.scripts]
 req = "requirement_mgr.cli:main"
 

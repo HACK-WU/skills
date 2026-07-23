@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────
+# requirement-mgr 项目配置
+# 由 req init 自动生成
+# ──────────────────────────────────────────────
+
+# 存储路径（相对于项目根目录）
+storage_path=.requirements
+
+# 需求功能分类（为空表示不进行功能分类）
+feature_categories=tool
+
+# 需求标签（为空表示不限制标签）
+requirement_tags=feat,fix,refactor,tool,security
+
+# 需求状态（第一个值为默认初始状态）
+requirement_statuses=草案,已确认,设计中,实施中,已完成,已取消,已归档
+
+# 需求角色（第一个值为默认角色）
+requirement_roles=standalone,parent,child
+
+# ID 前缀
+id_prefix=REQ
+
+# ID 日期后序号位数
+id_digits=3
+
+# 文件锁超时秒数
+lock_timeout=5
+
+# 写入前备份 meta.json
+backup_enabled=false

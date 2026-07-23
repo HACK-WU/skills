@@ -2,7 +2,6 @@
 """req update: 修改需求元数据，支持字段增删改、循环依赖检测、role 变更、版号自增。"""
 
 import sys
-from datetime import date
 
 from requirement_mgr.core.config_loader import ConfigLoader
 from requirement_mgr.core.meta_store import MetaStore
@@ -12,6 +11,7 @@ from requirement_mgr.core.requirement_utils import (
     has_circular_dep,
     validate_parent_child_op,
 )
+from requirement_mgr.core.time_utils import now_cst_str
 
 
 def cmd_update(args):
@@ -297,7 +297,7 @@ def cmd_update(args):
 
             # 版本 + 日期 + changelog
             req["version"] = req.get("version", 1) + 1
-            req["updated"] = date.today().isoformat()
+            req["updated"] = now_cst_str()
 
             if args.changelog:
                 req.setdefault("changelog", [])
