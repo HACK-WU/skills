@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
-"""req archive: 归档需求，移动目录到 archive/ 并更新状态。"""
+"""req archive: 归档需求（整体）或文档（单个），移动到 archive/ 目录。
 
+模式：
+  - 整体归档（无 --doc）：移动整个需求目录到 .requirements/archive/，状态→已归档
+  - 文档级归档（--doc <path>）：移动单个文档到该需求目录下的 archive/ 子目录，不改需求状态
+"""
+
+import os
 import shutil
 import sys
 
@@ -37,6 +43,10 @@ def cmd_archive(args):
     if req is None:
         print(f"错误: 未找到需求 {req_id}", file=sys.stderr)
         sys.exit(1)
+
+    # 文档级归档分支：指定 --doc 时归档单个文档
+    if args.doc:
+        return _archive_doc(args, storage_root, dir_name, req, ms, lock_timeout)
 
     # 检查是否已归档
     if req.get("status") == ARCHIVE_STATUS:
@@ -197,4 +207,133 @@ def _cleanup_empty_archive_dirs(archive_base, target_parent):
             current = current.parent
     except OSError:
         pass
+
+
+def _archive_doc(args, storage_root, dir_name, req, ms, lock_timeout):
+    """文档级归档：移动单个文档到需求内 archive/ 子目录。
+
+    - 源：{需求目录}/{doc_path}
+    - 目标：{需求目录}/archive/{doc_path}
+    - 不改变需求状态，仅记录 changelog
+    - 若文档在 docs 列表中登记，归档后从 docs 移除（已不活跃）
+    """
+    req_id = args.req_id.strip()
+    doc_path = args.doc.strip()
+    # 仅去除前导 ./，不用 lstrip("./")（会把 ../.. 误处理）
+    if doc_path.startswith("./"):
+        doc_path = doc_path[2:]
+    doc_path = doc_path.rstrip("/")
+
+    if not doc_path:
+        print("错误: --doc 路径不能为空", file=sys.stderr)
+        sys.exit(1)
+
+    # 已归档需求不允许文档级归档
+    if req.get("status") == ARCHIVE_STATUS:
+        print(f"错误: 需求 {req_id} 已整体归档，不支持文档级归档", file=sys.stderr)
+        sys.exit(1)
+
+    req_dir = storage_root / dir_name
+    src_path = req_dir / doc_path
+    dst_path = req_dir / ARCHIVE_DIR / doc_path
+
+    # 路径穿越防护：确保源和目标都在需求目录内
+    try:
+        src_resolved = src_path.resolve()
+        req_dir_resolved = req_dir.resolve()
+        if not str(src_resolved).startswith(str(req_dir_resolved) + os.sep) \
+           and src_resolved != req_dir_resolved:
+            print(f"错误: --doc 路径不能超出需求目录范围", file=sys.stderr)
+            sys.exit(1)
+    except OSError as e:
+        print(f"错误: 路径解析失败: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # 检查源文件/目录存在
+    if not src_path.exists():
+        print(f"错误: 文档不存在: {src_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # 检查目标不冲突
+    if dst_path.exists():
+        print(f"错误: 归档目标已存在: {dst_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # dry-run 预览
+    if args.dry_run:
+        print(f"\n🔍 预归档检查（文档级）")
+        print(f"\n将执行：")
+        print(f"  ① 移动文档: {src_path}")
+        print(f"     → {dst_path}")
+        print(f"  ② 不改变需求状态（当前: {req.get('status', '')}）")
+        if args.reason:
+            print(f"  ③ 归档原因: {args.reason}")
+        print(f"\n⚠ --dry-run 模式，未做任何修改。")
+        return
+
+    # 加锁 + 归档
+    meta_path = storage_root / "meta.json"
+    try:
+        with FileLock(str(meta_path), timeout=lock_timeout):
+            data = ms.load()
+            requirements = data["requirements"]
+            dir_name2, req2 = find_req(requirements, req_id)
+            if req2 is None:
+                print(f"错误: 未找到需求 {req_id}（并发删除）", file=sys.stderr)
+                sys.exit(1)
+            if req2.get("status") == ARCHIVE_STATUS:
+                print(f"错误: 需求 {req_id} 已被整体归档（并发操作）", file=sys.stderr)
+                sys.exit(1)
+
+            # 二次检查源存在、目标不存在
+            if not src_path.exists():
+                print(f"错误: 文档不存在（并发操作）: {src_path}", file=sys.stderr)
+                sys.exit(1)
+            if dst_path.exists():
+                print(f"错误: 归档目标已存在（并发操作）: {dst_path}", file=sys.stderr)
+                sys.exit(1)
+
+            # 确保归档目录存在
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # 移动文件/目录
+            doc_archive_base = req_dir / ARCHIVE_DIR
+            try:
+                shutil.move(str(src_path), str(dst_path))
+            except OSError as e:
+                # 清理移动失败后遗留的空归档子目录
+                _cleanup_empty_archive_dirs(doc_archive_base, dst_path.parent)
+                print(f"错误: 文件移动失败: {e}", file=sys.stderr)
+                sys.exit(1)
+
+            # 更新 meta.json
+            timestamp = now_cst_str()
+            req2["updated"] = timestamp
+            req2["version"] = req2.get("version", 1) + 1
+
+            # 从 docs 列表移除已归档文档（若已登记）
+            docs = req2.get("docs", [])
+            new_docs = [d for d in docs if d.get("path") != doc_path]
+            if len(new_docs) != len(docs):
+                req2["docs"] = new_docs
+
+            # changelog
+            changelog_msg = f"归档文档: {doc_path}"
+            if args.reason:
+                changelog_msg += f"（{args.reason.strip()}）"
+            req2.setdefault("changelog", []).append(
+                f"{timestamp} v{req2['version']}: {changelog_msg}"
+            )
+            ms.save(data)
+
+    except TimeoutError as e:
+        print(f"错误: {e}", file=sys.stderr)
+        sys.exit(2)
+
+    print(f"✓ 文档已归档")
+    print(f"  ID:        {req_id}")
+    print(f"  原路径:    {src_path}")
+    print(f"  归档位置:  {dst_path}")
+    if args.reason:
+        print(f"  归档原因:  {args.reason.strip()}")
 

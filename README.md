@@ -206,7 +206,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/insta
 | `req create` | 新建需求，自动生成 REQ-NNN 全局 ID，原子写入 meta.json |
 | `req update` | 修改需求元数据（状态/标签/依赖/提交/变更记录），版本号自增 |
 | `req delete` | 安全删除需求，反向依赖检查，级联清理引用，支持 dry-run |
-| `req archive` | 归档需求，移动目录到 archive/ 并更新状态，支持 dry-run 和 --force |
+| `req archive` | 归档需求或单个文档到 archive/，整体归档更新状态，文档级归档（--doc）不改状态，支持 dry-run 和 --force |
 
 > 📖 完整文档：[docs/README.md](./docs/README.md)
 

@@ -681,12 +681,16 @@ req delete REQ-20260612-001 --force
 
 ---
 
-### 6.5 归档需求 (req archive)
+### 6.5 归档需求或文档 (req archive)
+
+支持两种归档模式：
+
+**整体归档**（不指定 `--doc`）：将整个需求目录移动到 `.requirements/archive/` 并更新状态为"已归档"。
 
 **职责**：子需求/反向依赖检查 → 确认 → 加锁 → 校验（状态/目标冲突）→ 移动目录 → 改键名 + 更新字段 → 原子写。
 
 ```bash
-# 基本归档（带原因）
+# 整体归档（带原因）
 req archive REQ-20260612-001 --reason "功能已完成"
 
 # 预览模式（仅检查，不实际执行）
@@ -699,11 +703,31 @@ req archive REQ-20260612-001 --force --reason "功能已完成"
 req archive REQ-20260612-001
 ```
 
-**关键行为**：
-- 需求目录整体移动到 `archive/{category}/` 下，并在 `meta.json` 中把键名加 `archive/` 前缀（如 `tool/20260612-foo` → `archive/tool/20260612-foo`）
+**整体归档关键行为**：
+- 需求目录整体移动到 `.requirements/archive/{category}/` 下，并在 `meta.json` 中把键名加 `archive/` 前缀（如 `tool/20260612-foo` → `archive/tool/20260612-foo`）
 - 状态置为"已归档"，`updated`/`archived_at` 刷新为当前东八区时间，版本号自增并追加 changelog
 - 归档 parent 若有活跃子需求会提示确认；反向依赖关系保留不清理
 - 已归档需求不可重复归档；目标目录冲突会报错并以退出码 1 退出
+
+**文档级归档**（指定 `--doc <path>`）：将需求内的单个文档移动到该需求目录下的 `archive/` 子目录，不改变需求状态。
+
+**职责**：加锁 → 校验（源存在/目标不冲突/非已归档）→ 移动文档 → changelog 记录 → 原子写。
+
+```bash
+# 归档单个文档（路径相对需求目录）
+req archive REQ-20260612-001 --doc design/old-design.md --reason "设计已废弃"
+# tool/20260712-测试需求/design/old-design.md
+# → tool/20260712-测试需求/archive/design/old-design.md
+
+# 文档级归档预览
+req archive REQ-20260612-001 --doc legacy-notes.md --dry-run
+```
+
+**文档级归档关键行为**：
+- 文档移动到该需求目录下的 `archive/` 子目录，保留相对路径结构（如 `design/old.md` → `archive/design/old.md`）
+- 不改变需求状态，版本号自增，changelog 追加归档记录
+- 若文档在 `docs` 列表中登记，归档后从 `docs` 移除（已不活跃）
+- 已整体归档的需求不支持文档级归档
 
 ---
 

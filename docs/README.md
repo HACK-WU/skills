@@ -85,6 +85,7 @@ REQ-20260611-002 草案    child      JWT 鉴权          2026-06-11
 
 ### `req archive`
 ```bash
+# 整体归档需求
 $ req archive REQ-20260611-001 --reason "功能已完成"
 ✓ 需求已归档
   ID:        REQ-20260611-001
@@ -92,6 +93,14 @@ $ req archive REQ-20260611-001 --reason "功能已完成"
   归档位置:  archive/security/2026-06-11-用户认证模块
   状态:      已归档
   归档原因:  功能已完成
+
+# 文档级归档（归档单个文档，不改需求状态）
+$ req archive REQ-20260611-001 --doc design/old-design.md --reason "设计已废弃"
+✓ 文档已归档
+  ID:        REQ-20260611-001
+  原路径:    security/2026-06-11-用户认证模块/design/old-design.md
+  归档位置:  security/2026-06-11-用户认证模块/archive/design/old-design.md
+  归档原因:  设计已废弃
 ```
 
 > 更多命令（`req update`、`req delete`、`req archive` 等）详见 [命令参考](./command-reference.md)

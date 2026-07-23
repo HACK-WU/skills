@@ -95,11 +95,12 @@ def main():
     delete_parser.add_argument("--dry-run", action="store_true")
 
     # req archive
-    archive_parser = subparsers.add_parser("archive", help="归档需求")
+    archive_parser = subparsers.add_parser("archive", help="归档需求或文档")
     archive_parser.add_argument("req_id", help="需求 ID")
     archive_parser.add_argument("--reason", default=None, help="归档原因")
     archive_parser.add_argument("--dry-run", action="store_true", help="预览，不实际执行")
     archive_parser.add_argument("--force", action="store_true", help="跳过交互确认（如归档有子需求的 parent）")
+    archive_parser.add_argument("--doc", default=None, help="归档单个文档（相对需求目录的路径，如 design/old.md）；不指定则归档整个需求")
 
     args = parser.parse_args()
     if args.command is None:
