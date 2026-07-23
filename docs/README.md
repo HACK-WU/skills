@@ -94,7 +94,7 @@ $ req archive REQ-20260611-001 --reason "功能已完成"
   归档原因:  功能已完成
 ```
 
-> 更多命令（`req update`、`req delete` 等）详见 [命令参考](./command-reference.md)
+> 更多命令（`req update`、`req delete`、`req archive` 等）详见 [命令参考](./command-reference.md)
 
 ## 测试运行
 

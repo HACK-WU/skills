@@ -115,8 +115,8 @@ design-craft → 开发实现 → implementation-report
 id: {REQ-NNN}
 feature: {功能名称}
 status: 已完成
-created: {YYYY-MM-DD}
-updated: {YYYY-MM-DD}
+created: {YYYY-MM-DD HH:mm:ss}
+updated: {YYYY-MM-DD HH:mm:ss}
 version: {N}
 tags: [{标签}]
 depends_on: [{依赖}]
