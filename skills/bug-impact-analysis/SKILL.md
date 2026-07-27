@@ -1,6 +1,6 @@
 ---
 name: bug-impact-analysis
-description: Bug 修复影响分析。当用户报告 Bug 或进行 Bug 修复后，分析修复的根因是否被真正解决、修复是否引入副作用、影响范围和回归风险。借鉴 requirement-mining 的根本性分析方法论，结合 code-review 的调用链、条件路径、语义一致性检查。触发短语包括：'分析这个bug的影响'、'这个修复会影响什么'、'修了这个会有什么副作用'、'bug impact analysis'、'评估修复风险'，或在用户描述 Bug 现象后要求自动分析时触发。
+description: Bug 修复影响分析。分析修复的根因是否被真正解决、修复是否引入副作用、影响范围和回归风险。触发短语：'分析这个bug的影响'、'这个修复会影响什么'、'bug impact analysis'、'评估修复风险'，或在用户描述 Bug 现象后要求自动分析时触发。
 ---
 
 # Bug Impact Analysis（Bug 修复影响分析）

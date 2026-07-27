@@ -1,6 +1,6 @@
 ---
 name: api-design
-description: 基于需求文档和设计文档，生成详细的 API 设计文档。输入设计文档中的 demo 接口参考，输出包含完整接口契约、关键代码设计、错误码定义的 API 设计文档。适用于：(1) design-craft 完成后补充 API 设计细节，(2) "设计 API"、"API 文档"、"接口设计"、"api design"、(3) 需要从 demo 级别升级为可实施的 API 设计时。
+description: 基于需求文档和设计文档，生成包含接口契约、关键代码设计、错误码定义的 API 设计文档。适用于"设计 API"、"接口设计"、"api design"等场景，或 design-craft 完成后需补充 API 设计细节时。
 ---
 
 # API Design（API 接口设计）

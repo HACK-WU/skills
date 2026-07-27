@@ -1,6 +1,6 @@
 ---
 name: document-writer
-description: 为项目生成高质量 README 及子文档。根据项目类型（库/SDK、CLI 工具、Web 应用、插件）自动选择编写策略，README 作为索引枢纽，详细内容拆分到子文档。强制要求每个对外接口附输入输出示例，杜绝空洞占位符。子文档 ≥ 2 个时自动调用 task-dispatch 并行生成以加速。适用于"生成 README"、"写项目文档"、"补文档"、"document this project"、"write docs"、"write readme"、"给我写文档" 等场景。
+description: 为项目生成高质量 README 及子文档。根据项目类型自动选择编写策略，README 作为索引枢纽，详细内容拆分到子文档。适用于"生成 README"、"写项目文档"、"补文档"、"write docs"、"write readme" 等场景。
 ---
 
 # 项目文档生成器
