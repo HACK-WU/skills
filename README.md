@@ -282,6 +282,8 @@ scripts/
 | [anthropics/skills](https://github.com/anthropics/skills) | Anthropic | Anthropic 官方 Agent Skills 示例集，含文档处理、创意设计、开发技术等技能，附带 Agent Skills 规范 |
 | [obra/superpowers](https://github.com/obra/superpowers) | Jesse Vincent | Claude Code 增强技能集 |
 | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Addy Osmani | 开源 Agent Skills 合集，含多类工程实践技能 |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | Leonxlnx | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量（68.4k star） |
+| [greensock/gsap-skills](https://github.com/greensock/gsap-skills) | GreenSock | GSAP 动画平台的官方 AI 技能集，教 AI 正确使用 GSAP 动画库（12.5k star） |
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
 
