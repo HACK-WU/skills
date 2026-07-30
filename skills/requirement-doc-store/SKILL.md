@@ -3,6 +3,21 @@ name: requirement-doc-store
 description: 需求相关文档的通用存储规范。根据文档类型自动决定存储路径，确保各 skill 产出文档统一归位到需求目录下的正确子目录。适用场景：任何 skill 生成需求相关文档后需要落盘时（如设计文档、数据流图、验证报告、审查报告、实现报告等）。
 ---
 
+## 概述
+
+**目的**：将需求相关的各类文档存入需求管理系统的正确路径，确保目录结构统一、可追溯
+
+**功能**：
+- 按文档类型自动决定存储路径，统一各 skill 产出文档的落盘位置
+- 区分创建/更新/删除三类场景，给出对应的 `req` 命令操作流程
+- 落盘后强制用 `req list --id` 验证添加/更新成功，失败必须修正重试
+- 维护需求生命周期状态、文档关联、标签与依赖关系
+
+**使用场景**：
+- 任何 skill 生成需求相关文档后需要落盘时（设计文档、数据流图、验证报告、审查报告、实现报告等）
+- 需要创建新需求目录并注册到 meta.json 时
+- 需要更新需求状态、文档关联或废弃清理需求时
+
 # Requirement Doc Store（需求文档存储）
 
 指导 AI 将需求相关的各类文档存入需求管理系统的正确路径，确保目录结构统一、可追溯。
@@ -161,11 +176,26 @@ document_type: requirement             # 文档类型枚举（见下方文档类
 | `test` | 测试相关文档 |
 | `report` | 实现总结报告 |
 
-### Step C4：验证创建结果
+### Step C4：验证创建结果（必须执行）
+
+需求落盘后，**必须使用 `req` 命令检查是否添加成功**，不能只看 `req create` 的输出就认定完成：
 
 ```bash
 req list --id {REQ-NNN}
 ```
+
+**验证要点**：
+- 命令退出码为 0，且能查到该需求条目
+- `id`、`feature`、`status`、`tags` 与创建时传入的参数一致
+- 需求目录 `{storage_path}/{feature_category}/{目录名}/` 已生成，`requirement.md` 已写入其中
+
+脚本/自动化场景建议用 JSON 输出做机器校验：
+
+```bash
+req list --id {REQ-NNN} --json
+```
+
+**验证失败处理**：如果查不到条目或字段不符，说明创建未成功（常见原因：标签不在 `requirement_tags` 中、缺少功能分类标签、config 未初始化）。根据 `req create` 的错误信息修正后重新执行，**禁止在验证未通过的情况下继续后续步骤或宣告落盘完成**。
 
 ### Step C5：注册文档关联（可选）
 
@@ -174,6 +204,8 @@ req list --id {REQ-NNN}
 ```bash
 req update {REQ-NNN} --docs add data-flow.md,data_flow
 ```
+
+注册后再次执行 `req list --id {REQ-NNN}`，确认 `docs` 字段已包含新增文档。
 
 ---
 
@@ -309,11 +341,20 @@ req update {REQ-NNN} --depends-on remove REQ-XXX
 req update {REQ-NNN} --depends-on set REQ-XXX,REQ-YYY
 ```
 
-### Step U8：验证更新
+### Step U8：验证更新（必须执行）
+
+任何更新操作（状态、文档关联、标签、依赖、commit 等）完成后，**必须使用 `req` 命令检查是否生效**：
 
 ```bash
 req list --id {REQ-NNN}
 ```
+
+**验证要点**：
+- 状态、标签、依赖与本次更新内容一致
+- `--docs add` 注册的文档出现在 `docs` 列表中
+- `version` 已递增、`changelog` 含本次变更记录（如提供了 `--changelog`）
+
+**验证失败处理**：字段与预期不符时，根据 `req update` 的错误信息修正后重试，不得跳过验证直接宣告更新完成。
 
 ---
 
@@ -502,7 +543,7 @@ req list --no-color
 - **命令操作元数据**：frontmatter 和 meta.json 必须通过 `req` 命令操作，禁止手动拼接路径写入
 - **不创建需求目录**：需求目录由 `req create` 命令创建
 - **只处理已存在的需求**：必须有对应的 meta.json 条目
-- **持久化后验证**：任何创建或更新操作后，必须用 `req list --id {REQ-NNN}` 验证结果
+- **持久化后验证**：任何创建或更新操作后，必须用 `req list --id {REQ-NNN}` 检查是否添加/更新成功（条目存在、字段与预期一致）；验证失败时必须修正重试，禁止未验证通过就宣告落盘完成
 
 ## 参考
 

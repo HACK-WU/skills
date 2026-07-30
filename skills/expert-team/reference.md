@@ -1,10 +1,10 @@
 # 模块专家团 · 切面调研清单与 code-to-wiki 格式模板
 
-> 子 agent 加载本文件，按所属切面执行调研并按模板产出 `.module-experts/{中文专家名}/implementation/{NN-切面中文}.md`（code-to-wiki 风格 Wiki 页）。`agent.md` 由主 agent 在 Step 4 合成，子 agent 不产出，也不套 Wiki 格式。契约层文档（`contracts/`）由主 agent 在 Step 3.5 提炼，子 agent 不产出。
+> 子 agent 加载本文件，按所属切面执行调研并按模板产出 `.module-experts/{中文专家名}/implementation/{NN-切面中文}.md`（code-to-wiki 风格 Wiki 页）。`agent.md` 由主 agent 在 Step 4 合成，子 agent 不产出，也不套 Wiki 格式。契约层文档（`C0`~`C3`，放专家根目录）由主 agent 在 Step 3.5 提炼，子 agent 不产出。
 
 ## 通用格式要求（遵循 code-to-wiki，不跑工具）
 
-每篇切面文档**必须**遵守以下格式（R1–R7 由 AI 在 Step 6 手动自检）：
+每篇切面文档**必须**遵守以下格式（R1–R7 由 AI 在 Step 5 校验阶段手动自检）：
 
 - 顶部 `**本文引用的文件**` cite 块，列出本篇真正用到的源文件，`[名称](file://相对仓库根目录的路径)`，**无需行号**
 - `## 目录` 条目与 `##` 章节一一对应，锚点用中文（如 `[核心组件](#核心组件)`）
@@ -571,7 +571,7 @@ stateDiagram-v2
 
 ### 拆分规则
 - **仅一级**：`sub-experts/` 下的专家不可再含 `sub-experts/`
-- 每个子专家结构同父专家：`agent.md` + `contracts/` + `implementation/` + `CHANGELOG.md`
+- 每个子专家结构同父专家：`agent.md` + 契约层文档（`C0`~`C3`，子专家根目录）+ `implementation/` + `CHANGELOG.md`
 - 父专家的 `C0-使用总览.md` 含「子专家导航」小节，列出子专家名 + 职责 + 覆盖功能子域
 - 父专家的 `implementation/01-架构.md` 含子专家划分说明（为何如此拆、各子专家边界）
 - 父专家的契约层覆盖系统级公开能力；子专家的契约层覆盖该子域的公开能力
@@ -579,8 +579,8 @@ stateDiagram-v2
 
 ### 子专家产出方式
 - 各子专家的 `implementation/` 可由独立子 agent 并行产出
-- 各子专家的 `contracts/` 由主 agent 分别提炼
-- 父专家的 `contracts/` + `implementation/` 由主 agent 在子专家产出后汇总提炼系统级视角
+- 各子专家的契约层文档（`C0`~`C3`）由主 agent 分别提炼
+- 父专家的契约层文档 + `implementation/` 由主 agent 在子专家产出后汇总提炼系统级视角
 
 ---
 

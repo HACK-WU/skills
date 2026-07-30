@@ -5,7 +5,7 @@ description: 派出多专家子 agent 并行深挖单个业务模块，产出含
 
 # 模块专家团
 
-## 概述
+## AI 说明层
 
 **目的**：把单个业务模块深度消化成一个"业务专家"资产包（契约层 + 实现层），供后续设计 / 排查 / 重构 / **直接使用**时取用，避免每次重摸代码。大型模块可拆分为子专家，各司其职。超大模块可创建专题，形成三级结构。大模块支持分批创建。
 
@@ -241,7 +241,7 @@ description: 派出多专家子 agent 并行深挖单个业务模块，产出含
 | code-survey | 轻量、按需、跨多维度、一次性；本 skill 是单业务模块深挖、持久落盘 |
 | codekb-skill | 本 skill 可选地把知识原子写入 ki KB；专家文档存深度参考，KB 存可查询原子，互补 |
 | solution-capture | 沉淀"问题解法"；本 skill 沉淀"业务模块全景知识"，复用其包 + INDEX 范式 |
-| **code-to-wiki** | **本 skill 的实现层文档对齐其格式规范**，但**不套用其单一 7 节骨架**、不调用其校验工具 |
+| **code-to-wiki** | **本 skill 的实现层文档对齐其格式规范**，但**不套用其单一 7 节骨架**、不调用其校验工具。该 skill 不在本技能库中，所需格式规则已全部内嵌为 R1–R7，不依赖外部文档 |
 | **expert-lookup** | **本 skill 生成专家资产（含契约层 + 实现层）和专题；expert-lookup 查找并复用，且可对契约层做受限增量更新。专题的查找也由 expert-lookup 支持** |
 
 ## 核心原则
@@ -623,5 +623,5 @@ Step 5 自检通过后，调用 [auto-review](../auto-review/SKILL.md) skill 对
 ## 更多资源
 
 - 各切面调研清单与 code-to-wiki 格式产出模板 + 契约层文档模板（C0/C1/C2/C3）+ 子专家创建指引，参见 [reference.md](reference.md)
-- 文档格式权威定义参考 `code-to-wiki` skill（本 skill 仅采用其格式，不调用其工具）
+- 实现层格式源自 `code-to-wiki` skill 的规范（该 skill 不在本技能库中）；本 skill 已将所需规则完整内嵌为 R1–R7，自检不依赖外部文档与工具
 - 查找并复用本 skill 生成的专家资产（含多专家加载 + 增量更新），参见 [expert-lookup](../expert-lookup/SKILL.md)

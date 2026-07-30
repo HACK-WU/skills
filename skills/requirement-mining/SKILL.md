@@ -672,7 +672,7 @@ req archive REQ-20260723-001 --doc design/old-design.md --reason "设计已重�
 1. 确认落盘：提示用户落盘内容为需求挖掘报告（`requirement.md`），确认后继续
 2. 创建需求：使用 `req create` 命令创建目录并注册到 meta.json
 3. 写入文档：使用 `write_to_file` 按 frontmatter 模板写入 `requirement.md`
-4. 验证：使用 `req list --id {REQ-NNN}` 确认
+4. 验证添加成功（必须执行）：落盘后使用 `req list --id {REQ-NNN}` 检查需求是否添加成功——确认条目存在、`feature`/`status`/`tags` 与创建参数一致、需求目录下 `requirement.md` 已写入。验证失败时根据错误信息修正后重试，禁止未验证通过就宣告落盘完成
 
 > 详细步骤、frontmatter 模板和命令参数见 `requirement-doc-store` skill。
 
@@ -1009,7 +1009,7 @@ demo-verify 技能输出验证报告后，提示用户：
 - **探索性需求引导**：当用户提出探索性需求时，必须先引导用户聚焦方向，再进行深入分析
 - **迭代限制**：假设验证迭代不超过 3 次，超过后建议用户重新描述需求
 - **元数据管理**：需求文档的 frontmatter 和 meta.json 必须通过 `req` 命令操作（`req create` / `req update`），禁止手动拼接路径写入。命令保证原子性与并发安全
-- **持久化后验证**：任何创建或更新操作后，必须用 `req list --id {REQ-NNN}` 验证结果
+- **持久化后验证**：需求落盘以及任何创建或更新操作后，必须用 `req list --id {REQ-NNN}` 检查是否添加成功（条目存在、字段与预期一致）；验证失败时必须修正重试，禁止未验证通过就宣告落盘完成
 - **索引文件维护**：每次生成报告或更新文档后，应同步更新 `index.md` 索引文件，列出需求目录下所有文件和目录结构（不含 `archive/` 目录下的文件）
 - **过时文档归档**：发现过时文档时，使用 `req archive {REQ-NNN} --doc {path}` 归档到需求目录下的 `archive/` 子目录，归档后更新索引文件
 - **归档目录忽略**：AI 在阅读需求文档时，**必须自动忽略 `archive/` 目录下的文档**，归档目录中的文档已过时或废弃，不应作为需求分析的依据
