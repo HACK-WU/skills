@@ -144,7 +144,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[frontend-api-guide](./skills/frontend-api-guide/SKILL.md)** | 将 API 设计转化为前端可直接编码的调用流程文档，含 UI 映射和错误处理速查 | "生成前端 API 文档"、"API 调用流程" |
 | **[demo-verify](./skills/demo-verify/SKILL.md)** | 针对设计中的风险点构建验证原型，确认可行后再投入开发（复杂需求自动触发） | "先做个 demo 验证"、"试试看" |
 | **[design-review](./skills/design-review/SKILL.md)** | 对设计文档进行结构化评审，产出分级问题清单 | "评审设计"、"review 设计文档" |
-| **[scenario-rehearsal](./skills/scenario-rehearsal/SKILL.md)** | 模拟真实使用场景推演，支持设计文档（验证设计点可行性）与需求文档（验证需求完整性/一致性/验收可达）两种模式 | "推演一下这个设计"、"推演一下这个需求"、"验证设计方案" |
+| **[scenario-rehearsal](./skills/scenario-rehearsal/SKILL.md)** | 模拟真实使用场景推演，支持设计文档（验证设计点可行性）、需求文档（验证需求完整性/一致性/验收可达）与 Skill（验证触发准确性等质量维度）三种模式 | "推演一下这个设计"、"推演一下这个需求"、"推演一下这个 skill" |
 | **[request-guard](./skills/request-guard/SKILL.md)** | 在用户突然提出修改请求时快速检查合理性，防止被突发奇想带着跑 | "改一下"、"改成"、"优化一下" |
 | **[implementation-report](./skills/implementation-report/SKILL.md)** | 需求完成后生成实现总结报告，记录最终实现效果和偏差 | "生成实现报告"、"记录完成情况" |
 | **[dependency-docs](./skills/dependency-docs/SKILL.md)** | 设计前识别并整理第三方依赖文档，每个依赖独立成文，≥2 个时 task-dispatch 并行收集 | "整理第三方依赖"、"收集 API 文档" |
@@ -158,7 +158,8 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度 | "review 这个提交"、"code review" |
-| **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档进行二次质疑，代码支持三种策略、设计文档支持设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
+| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环，修复后可接力 bug-impact-analysis 质检 | "排查这个 bug"、"debug 一下"、"为什么会报错" |
+| **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档/分析报告进行二次质疑，代码支持三种策略、设计文档与报告复用设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
 | **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
@@ -181,8 +182,11 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本中的静态文件列表 | "更新安装脚本"、"同步技能列表" |
 | **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
 | **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
+| **[loop-discovery](./skills/loop-discovery/SKILL.md)** | 沉淀路由门：新建 skill/rule/solution/memory 前先过证据门→覆盖阶梯→载体选择三步检查，避免重复建设与载体过重 | "要不要沉淀"、"建个 skill 吧"、"loop discovery" |
 | **[solution-capture](./skills/solution-capture/SKILL.md)** | 将解决非平凡问题的过程沉淀为可复用的解决方案 skill，存入 .solutions/ | "记录这个方案"、"沉淀一下"、"保存解决方案" |
 | **[solution-lookup](./skills/solution-lookup/SKILL.md)** | 查找并复用已沉淀的解决方案 skill，通过关键词匹配定位 .solutions/ 中的方案 | "有没有类似方案"、"之前怎么解决的"、"查找方案" |
+| **[artifact-optimizer](./skills/artifact-optimizer/SKILL.md)** | 对代码、设计文档、Skill 文件进行系统化优化分析，根据用户意图调用对应的优化子流程 | "优化代码"、"优化设计文档"、"优化 skill" |
+| **[harness-review](./skills/harness-review/SKILL.md)** | 对项目 AI 工作流配置做五维轻量体检，按证据状态阶梯评分（存在≠被用≠有效），零依赖纯 Markdown | "体检一下工作流"、"harness review"、"评估 AI 配置" |
 
 ### 规则
 
@@ -243,7 +247,8 @@ skills/
 ├── request-guard/            # 请求守卫
 ├── implementation-report/    # 实现报告
 ├── code-review/              # 代码评审
-├── challenger/               # 质疑（代码/设计）
+├── debug/                    # 系统化排错
+├── challenger/               # 质疑（代码/设计/报告）
 ├── auto-review/              # 自动审查修复闭环
 ├── bug-impact-analysis/      # Bug 影响分析
 ├── test-planner/             # 测试计划生成
@@ -259,8 +264,11 @@ skills/
 ├── requirement-doc-store/    # 需求文档存储规范
 ├── expert-lookup/            # 业务专家查找
 ├── expert-team/              # 专家团队并行深挖
+├── loop-discovery/           # 沉淀路由门
 ├── solution-capture/         # 解决方案沉淀
-└── solution-lookup/          # 解决方案查找
+├── solution-lookup/          # 解决方案查找
+├── harness-review/           # AI 工作流体检
+└── artifact-optimizer/       # 工件优化
 
 rules/
 ├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则
@@ -284,6 +292,7 @@ scripts/
 | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Addy Osmani | 开源 Agent Skills 合集，含多类工程实践技能 |
 | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | Leonxlnx | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量（68.4k star） |
 | [greensock/gsap-skills](https://github.com/greensock/gsap-skills) | GreenSock | GSAP 动画平台的官方 AI 技能集，教 AI 正确使用 GSAP 动画库（12.5k star） |
+| [QoderAI/better-harness](https://github.com/QoderAI/better-harness) | Qoder | 审查与改进 AI 编码工作流（Harness）的工具，基于五维 Agent Work Loop 模型评估，本项目的 loop-discovery / harness-review 技能及证据状态纪律即借鉴自此 |
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
 
