@@ -179,7 +179,8 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
-| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本中的静态文件列表 | "更新安装脚本"、"同步技能列表" |
+| **[skill-amplifier](./skills/skill-amplifier/SKILL.md)** | 执行模式增强器，将目标 skill 能力拆成多个评估维度交子 Agent 并行深调研，汇总后主 Agent 交叉复核再出结论 | "放大执行"、"拆维度并行审查"、"深度模式跑一遍" |
+| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本静态列表与 README 技能一览/项目结构 | "更新安装脚本"、"同步技能列表" |
 | **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
 | **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
 | **[loop-discovery](./skills/loop-discovery/SKILL.md)** | 沉淀路由门：新建 skill/rule/solution/memory 前先过证据门→覆盖阶梯→载体选择三步检查，避免重复建设与载体过重 | "要不要沉淀"、"建个 skill 吧"、"loop discovery" |
@@ -238,6 +239,7 @@ skills/
 ├── design-craft/             # 技术设计
 ├── design-to-code/           # 设计到代码骨架
 ├── code-implement/           # 骨架编码实施
+├── module-teach/             # 模块讲解
 ├── negative-requirement/     # 负向场景分析
 ├── api-design/               # API 设计
 ├── frontend-api-guide/       # 前端集成指南
@@ -251,13 +253,16 @@ skills/
 ├── challenger/               # 质疑（代码/设计/报告）
 ├── auto-review/              # 自动审查修复闭环
 ├── bug-impact-analysis/      # Bug 影响分析
+├── api-testing/              # HTTP API 自主测试
+├── e2e-testing/              # 端到端验证
 ├── test-planner/             # 测试计划生成
 ├── review-panel/             # 评审团
 ├── task-dispatch/            # 任务并行调度
+├── skill-amplifier/          # 执行模式放大
 ├── document-writer/          # 项目文档生成
 ├── create-rules/             # 创建规则
 ├── create-skill/             # 创建技能
-├── skill-updater/            # 安装脚本更新
+├── skill-updater/            # 技能列表同步
 ├── content-simplifier/       # 内容精简
 ├── memory-creator/           # 记忆生成
 ├── migrate-to-codehub/       # 迁移工具

@@ -394,7 +394,7 @@ install_skills() {
             "scenario-rehearsal/strategies/requirement.md"
             "scenario-rehearsal/strategies/skill.md"
             "scenario-rehearsal/strategies/transaction-state-machine.md"
-            "skill-updater/SKILL.md"
+            "skill-amplifier/SKILL.md"
             "solution-capture/SKILL.md"
             "solution-lookup/SKILL.md"
             "task-dispatch/SKILL.md"
