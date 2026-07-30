@@ -32,6 +32,9 @@
   - [6.3 修改需求 (req update)](#63-修改需求-req-update)
   - [6.4 删除需求 (req delete)](#64-删除需求-req-delete)
   - [6.5 归档需求 (req archive)](#65-归档需求-req-archive)
+  - [6.6 反归档需求 (req unarchive)](#66-反归档需求-req-unarchive)
+  - [6.7 一致性体检 (req doctor)](#67-一致性体检-req-doctor)
+  - [6.8 结构化输出与退出码契约 (--json)](#68-结构化输出与退出码契约---json)
 - [7. 技术实现细节](#7-技术实现细节)
   - [7.1 数据流图](#71-数据流图)
   - [7.2 文件锁流程](#72-文件锁流程)
@@ -547,11 +550,15 @@ req list --id REQ-20260611-001 --rev-deps
 | `--to` | 更新日期止 | `--to 2026-12-31` |
 | `--search` | 模糊搜索功能名称 | `--search "用户认证"` |
 
+> `--from`/`--to` 校验格式 `YYYY-MM-DD` 或 `YYYY-MM-DD HH:MM:SS`，非法格式报错退出 1；`--from > --to`（区间为空）报错退出 1。`--to` 为纯日期时自动补为当天末尾 `23:59:59`（含当日全部记录）。
+
 **输出控制**：
 | 参数 | 说明 |
 |------|------|
 | `--json` | JSON 格式输出 |
-| `--columns` | 自定义显示列 |
+| `--columns` | 自定义显示列（逗号分隔，无效列名报错并列出有效列） |
+
+> 有效列名：`id, feature, status, role, tags, branch, version, created, updated, parent_id, depends_on, docs, commits`。`--columns` 传入无效或空列名报错退出 1（避免静默输出空列）。
 
 ### 6.2 新建需求 (req create)
 
@@ -579,6 +586,8 @@ req create \
 req create \
   --feature "自定义目录" --tags feat,security --dir-name "custom-dir-name"
 ```
+
+> `--depends-on` 自动去重（保序）；若依赖的需求已归档，输出警告但**不阻断**创建（人类模式打印到 stderr，`--json` 模式并入 `warnings` 数组）。
 
 **自动填充字段**：
 | 字段 | 值 |
@@ -712,7 +721,7 @@ req archive REQ-20260612-001
 
 **整体归档关键行为**：
 - 需求目录整体移动到 `.requirements/archive/{category}/` 下，并在 `meta.json` 中把键名加 `archive/` 前缀（如 `tool/20260612-foo` → `archive/tool/20260612-foo`）
-- 状态置为"已归档"，`updated`/`archived_at` 刷新为当前东八区时间，版本号自增并追加 changelog
+- 状态置为"已归档"，归档前状态结构化记录到 `pre_archive_status` 字段（供 `req unarchive` 恢复），`updated`/`archived_at` 刷新为当前东八区时间，版本号自增并追加 changelog
 - 归档 parent 若有活跃子需求会提示确认；反向依赖关系保留不清理
 - 已归档需求不可重复归档；目标目录冲突会报错并以退出码 1 退出
 
@@ -735,6 +744,90 @@ req archive REQ-20260612-001 --doc legacy-notes.md --dry-run
 - 不改变需求状态，版本号自增，changelog 追加归档记录
 - 若文档在 `docs` 列表中登记，归档后从 `docs` 移除（已不活跃）
 - 已整体归档的需求不支持文档级归档
+
+---
+
+### 6.6 反归档需求 (req unarchive)
+
+`req archive`（整体归档）的逆操作：把已归档需求从 `archive/` 目录移回原分类目录，并恢复归档前状态。避免误归档后手工改 meta + 挪目录。
+
+**职责**：加锁 → 校验（仅已归档可恢复/目标不冲突/源目录存在）→ meta 去 `archive/` 前缀 + 恢复状态 → 移动目录（失败回滚 meta）→ 清理空归档子目录。
+
+```bash
+# 反归档（恢复为归档前状态）
+req unarchive REQ-20260612-001
+
+# 预览模式（仅展示将执行的操作，不实际修改）
+req unarchive REQ-20260612-001 --dry-run
+
+# 跳过回退状态确认（存量归档需求需回退默认状态时）
+req unarchive REQ-20260612-001 --force
+```
+
+**关键行为**：
+- 目录从 `.requirements/archive/{category}/` 移回 `.requirements/{category}/`，`meta.json` 键名去掉 `archive/` 前缀
+- 状态优先恢复为归档时记录的 `pre_archive_status`；若为存量归档需求（无该字段）则回退为默认状态“已完成”，交互确认后才执行（`--force` 跳过）
+- 恢复后清理 `pre_archive_status`/`archived_at`/`archive_reason` 字段，版本号自增并追加 changelog
+- 不改动 `role`/`parent_id`/`child_ids`，父子关系恢复原样
+- 目标分类目录下已存在同名目录时报错退出不移动（退出码 1）
+
+---
+
+### 6.7 一致性体检 (req doctor)
+
+只读扫描 `meta.json` 与 `storage` 目录的一致性问题，可选自动修复低风险项。用于排查手工误操作或历史漂移。
+
+**检测项**：重复 ID、meta 指向的目录缺失、status/role/tags 白名单外、悬空引用（depends_on/parent_id/child_ids 指向不存在的 ID）、孤儿目录（storage 有但 meta 未登记）。
+
+```bash
+# 只读体检（发现问题时退出码 1，适合 CI 门禁）
+req doctor
+
+# 自动修复低风险项（持锁）
+req doctor --fix
+```
+
+**关键行为**：
+- 默认只读：无问题时输出✓并退出 0；有问题时列出全部并以退出码 1 退出，不修改任何数据
+- `--fix` 只修复低风险悬空引用：移除悬空 `depends_on`/`child_ids` 项；悬空 `parent_id` 置空并将 `role` 降级为 `standalone`
+- 重复 ID、目录缺失、白名单外值、孤儿目录仅报告不自动修复（需人工确认）；仅剩不可修复项时 `--fix` 仍以退出码 1 退出
+
+---
+
+### 6.8 结构化输出与退出码契约 (--json)
+
+写命令（`create`/`update`/`delete`/`archive`/`unarchive`/`restore`）支持 `--json`，为 AI/脚本调用方提供稳定契约，替代对人类文案的正则解析。`list` 一直有独立的 `--json`（读命令），行为不变。
+
+**输出契约**：
+- 成功：stdout 输出一行 `{"ok": true, ...payload}`，可被 `json.loads` 直接解析。
+- 失败：stdout 输出 `{"ok": false, "error": "..."}`（错误信息由 stderr 文本提炼、剥离 `错误:` 前缀）。
+- `--dry-run --json`：输出 `{"ok": true, "dry_run": true, ...}`，不做任何变更。
+
+**退出码契约**（人类模式与 `--json` 模式一致）：
+
+| 退出码 | 含义 |
+|--------|------|
+| 0 | 成功（含 dry-run） |
+| 1 | 校验失败 / 业务错误（如依赖不存在、需交互确认却未带 --force） |
+| 2 | 锁超时（`lock_timeout` 内未获得 meta.json 文件锁） |
+
+**非交互约定**：`--json` 隐含非交互。需要交互确认的命令（`delete`、`archive` 有活跃子需求的父需求、`unarchive` 无归档前状态的回退、`restore`）若未带 `--force`，立即输出 `{"ok": false, "error": "...需确认（--json 为非交互模式，请加 --force）"}` 并以退出码 1 退出，**不挂起等待 `input()`**。
+
+```bash
+# 成功：{"ok": true, "id": "REQ-...", "meta_key": "...", "dir": "...", "warnings": []}
+req create --feature "登录" --tags feat --json
+
+# 失败：{"ok": false, "error": "依赖需求 REQ-NOPE 不存在"}，退出码 1
+req create --feature X --tags feat --depends-on REQ-NOPE --json
+
+# 非交互：{"ok": false, "error": "删除 REQ-... 需确认（--json 为非交互模式，请加 --force）"}，退出码 1
+req delete REQ-20260730-001 --json
+
+# 带 --force 直接删除：{"ok": true, "id": "...", "orphaned": 0, "cleaned": 0}
+req delete REQ-20260730-001 --force --json
+```
+
+> `delete` 的 `orphaned`/`cleaned` 在成功与 dry-run 输出中统一为计数（整数）；dry-run 额外提供 `orphaned_ids`/`cleaned_ids` 预测明细。`create` 的 `warnings` 数组承载非阻断提示（如依赖已归档需求）——`--json` 模式下并入 payload，人类模式下打印到 stderr。
 
 ---
 

@@ -8,6 +8,18 @@ import tempfile
 from pathlib import Path
 
 
+class MetaCorruptedError(Exception):
+    """meta.json 损坏（JSON 解析失败）。
+
+    由 cli 入口统一捕获，输出友好提示与恢复指引，避免裸 traceback。
+    """
+
+    def __init__(self, meta_path, cause: Exception):
+        self.meta_path = meta_path
+        self.cause = cause
+        super().__init__(f"meta.json 损坏: {cause}")
+
+
 class MetaStore:
     """管理 meta.json 的加载与原子写入。
 
@@ -19,6 +31,14 @@ class MetaStore:
         self._meta_path = storage_root / "meta.json"
         self._backup_enabled = backup_enabled
 
+    @property
+    def meta_path(self) -> Path:
+        return self._meta_path
+
+    @property
+    def backup_path(self) -> Path:
+        return Path(str(self._meta_path) + ".bak")
+
     def load(self) -> dict:
         """读取 meta.json，返回完整字典。
 
@@ -27,14 +47,36 @@ class MetaStore:
             若文件不存在返回 {"requirements": {}}
 
         Raises:
-            json.JSONDecodeError: JSON 格式损坏
+            MetaCorruptedError: JSON 格式损坏
         """
         if not self._meta_path.exists():
             return {"requirements": {}}
 
-        with open(self._meta_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            with open(self._meta_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            raise MetaCorruptedError(self._meta_path, e) from e
 
+        if "requirements" not in data:
+            data["requirements"] = {}
+        return data
+
+    def load_backup(self) -> dict:
+        """读取 meta.json.bak，供 req restore 使用。
+
+        Raises:
+            FileNotFoundError: 备份不存在
+            MetaCorruptedError: 备份本身也损坏
+        """
+        backup_path = self.backup_path
+        if not backup_path.exists():
+            raise FileNotFoundError(f"备份文件不存在: {backup_path}")
+        try:
+            with open(backup_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            raise MetaCorruptedError(backup_path, e) from e
         if "requirements" not in data:
             data["requirements"] = {}
         return data

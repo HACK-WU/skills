@@ -20,6 +20,7 @@ def make_create_args(**kw):
         parent_id=kw.get("parent_id"),
         depends_on=kw.get("depends_on", ""),
         dir_name=kw.get("dir_name", ""),
+        branch=kw.get("branch"),
     )
 
 
@@ -33,6 +34,7 @@ def make_update_args(req_id, **kw):
         tag=kw.get("tag"),
         depends_on_ops=kw.get("depends_on_ops"),
         commit=kw.get("commit"),
+        branch=kw.get("branch"),
         docs_ops=kw.get("docs_ops"),
         changelog=kw.get("changelog"),
     )

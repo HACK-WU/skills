@@ -12,6 +12,7 @@ from requirement_mgr.core.file_lock import FileLock
 from requirement_mgr.core.id_generator import gen_next_id
 from requirement_mgr.core.requirement_utils import ARCHIVED_STATUS, find_req
 from requirement_mgr.core.time_utils import now_cst_str, today_cst_str
+from requirement_mgr.core.output import emit_success, is_json
 
 
 # 目录名中禁止的字符（路径分隔符 / 空字符）
@@ -47,6 +48,12 @@ def cmd_create(args):
         sys.exit(1)
 
     depends_on = [d.strip() for d in args.depends_on.split(",") if d.strip()]
+    # O-10：去重且保序（避免重复依赖写入 meta）
+    depends_on = list(dict.fromkeys(depends_on))
+
+    # branch：可选单值，空/纯空白视为未指定（存为 None，展示时显示 —）
+    branch = args.branch.strip() if args.branch else None
+    branch = branch or None
 
     # 加载配置
     try:
@@ -119,11 +126,15 @@ def cmd_create(args):
     requirements = data["requirements"]
 
     # 检查依赖 ID
+    warnings = []
     for rid in depends_on:
-        found = any(req.get("id") == rid for req in requirements.values())
-        if not found:
+        found_req = next((req for req in requirements.values() if req.get("id") == rid), None)
+        if found_req is None:
             print(f"错误: 依赖需求 {rid} 不存在", file=sys.stderr)
             sys.exit(1)
+        # O-10：依赖已归档需求时警告（不阻断）
+        if found_req.get("status") == ARCHIVED_STATUS:
+            warnings.append(f"依赖需求 {rid} 已归档")
 
     # 检查 parent_id
     if parent_id:
@@ -210,8 +221,14 @@ def cmd_create(args):
                     print(f"错误: 目标需求 {parent_id} 的角色为 {parent_req.get('role')}（并发变更），不能作为父需求", file=sys.stderr)
                     sys.exit(1)
 
-            # 生成 ID
-            req_id = gen_next_id(requirements, prefix=id_prefix, digits=id_digits)
+            # 生成 ID（id_counters 为 meta 顶层只增不减计数器，防删除后 ID 复用）
+            id_counters = data.setdefault("id_counters", {})
+            try:
+                req_id = gen_next_id(requirements, prefix=id_prefix, digits=id_digits,
+                                     id_counters=id_counters)
+            except ValueError as e:
+                print(f"错误: {e}", file=sys.stderr)
+                sys.exit(1)
 
             # ① 先创建目录
             dir_path.mkdir(parents=True, exist_ok=False)
@@ -228,6 +245,7 @@ def cmd_create(args):
                 "depends_on": depends_on,
                 "changelog": ["初始创建"],
                 "commits": [],
+                "branch": branch,
                 "docs": [],
                 "role": role,
                 "parent_id": parent_id if parent_id else None,
@@ -265,10 +283,28 @@ def cmd_create(args):
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(2)
 
-    print(f"✓ 需求已创建")
-    print(f"  ID:      {req_id}")
-    print(f"  角色:    {role}")
+    # O-10：归档依赖警告（非阻断），人类模式打印到 stderr，json 模式并入 payload
+    if not is_json(args):
+        for w in warnings:
+            print(f"⚠ 警告: {w}", file=sys.stderr)
+
+    human_lines = [
+        "✓ 需求已创建",
+        f"  ID:      {req_id}",
+        f"  角色:    {role}",
+    ]
+    if branch:
+        human_lines.append(f"  分支:    {branch}")
     if parent_id:
-        print(f"  父需求:  {parent_id}")
-    print(f"  目录:    {dir_path}")
-    print(f"  元数据:  {meta_path}")
+        human_lines.append(f"  父需求:  {parent_id}")
+    human_lines.append(f"  目录:    {dir_path}")
+    human_lines.append(f"  元数据:  {meta_path}")
+    emit_success(args, {
+        "id": req_id,
+        "meta_key": meta_key,
+        "dir": str(dir_path),
+        "role": role,
+        "branch": branch,
+        "parent_id": parent_id if parent_id else None,
+        "warnings": warnings,
+    }, human_lines)

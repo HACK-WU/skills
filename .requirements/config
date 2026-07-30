@@ -27,5 +27,5 @@ id_digits=3
 # 文件锁超时秒数
 lock_timeout=5
 
-# 写入前备份 meta.json
-backup_enabled=false
+# 写入前备份 meta.json（req restore 依赖此备份恢复）
+backup_enabled=true

@@ -97,8 +97,23 @@ class TestListCommand:
             deps=False,
             deps_depth=1,
             rev_deps=False,
-            no_color=False
+            no_color=False,
+            limit=0
         )
+
+    @staticmethod
+    def _stub_config(mock_config_loader_instance):
+        """为 mock ConfigLoader 配置白名单 getter，供筛选值校验使用。"""
+        mock_config_loader_instance.get_requirement_statuses.return_value = [
+            "草案", "已确认", "设计中", "实施中", "已完成", "已取消", "已归档"
+        ]
+        mock_config_loader_instance.get_requirement_roles.return_value = [
+            "standalone", "parent", "child"
+        ]
+        mock_config_loader_instance.get_feature_categories.return_value = ["tool"]
+        mock_config_loader_instance.get_requirement_tags.return_value = [
+            "feat", "fix", "refactor", "tool", "security"
+        ]
     
     @patch('requirement_mgr.commands.list.MetaStore')
     @patch('requirement_mgr.commands.list.ConfigLoader')
@@ -188,6 +203,7 @@ class TestListCommand:
         # 模拟 ConfigLoader
         mock_config_loader_instance = MagicMock()
         mock_config_loader_instance.read.return_value = MagicMock()
+        self._stub_config(mock_config_loader_instance)
         mock_config_loader.return_value = mock_config_loader_instance
         
         # 模拟 MetaStore
@@ -301,3 +317,96 @@ class TestListStatusConstant:
     def test_archive_status_value(self):
         """测试归档状态值是否正确。"""
         assert ARCHIVE_STATUS == "已归档"
+
+
+class TestListFilterValidation:
+    """测试筛选值校验与 --limit（O-04 / O-01）。"""
+
+    def setup_method(self):
+        self.mock_data = {"requirements": {
+            "tool/2026-07-23-A": {
+                "id": "REQ-001", "feature": "A", "status": "草案",
+                "created": "2026-07-23 10:00:00", "updated": "2026-07-23 10:00:00", "version": 1
+            }
+        }}
+        self.base_args = Namespace(
+            id=None, status=None, tag=None, role=None, parent_id=None,
+            category=None, date_from=None, date_to=None, search=None,
+            include_archived=False, json_output=False, columns=None,
+            deps=False, deps_depth=1, rev_deps=False, no_color=False, limit=0
+        )
+
+    def _stub(self, mock_config_loader, mock_meta_store):
+        ci = MagicMock()
+        ci.read.return_value = MagicMock()
+        ci.get_requirement_statuses.return_value = ["草案", "已完成", "已归档"]
+        ci.get_requirement_roles.return_value = ["standalone", "parent", "child"]
+        ci.get_feature_categories.return_value = ["tool"]
+        ci.get_requirement_tags.return_value = ["feat", "fix"]
+        mock_config_loader.return_value = ci
+        mi = MagicMock()
+        mi.load.return_value = self.mock_data
+        mock_meta_store.return_value = mi
+        return ci
+
+    @patch('requirement_mgr.commands.list.MetaStore')
+    @patch('requirement_mgr.commands.list.ConfigLoader')
+    def test_invalid_status_errors(self, mock_config_loader, mock_meta_store):
+        """无效状态报错退出而非静默空结果。"""
+        self._stub(mock_config_loader, mock_meta_store)
+        self.base_args.status = "sjaksa"
+        with pytest.raises(SystemExit) as exc:
+            cmd_list(self.base_args)
+        assert exc.value.code == 1
+
+    @patch('requirement_mgr.commands.list.MetaStore')
+    @patch('requirement_mgr.commands.list.ConfigLoader')
+    def test_archived_status_is_valid_query(self, mock_config_loader, mock_meta_store):
+        """list --status 已归档 是正当查询，不报错。"""
+        self._stub(mock_config_loader, mock_meta_store)
+        self.base_args.status = "已归档"
+        # 不应抛 SystemExit（无匹配但正常返回）
+        import io
+        with patch('sys.stdout', io.StringIO()):
+            cmd_list(self.base_args)
+
+    @patch('requirement_mgr.commands.list.MetaStore')
+    @patch('requirement_mgr.commands.list.ConfigLoader')
+    def test_empty_whitelist_skips_tag_validation(self, mock_config_loader, mock_meta_store):
+        """白名单为空（不限制）时 --tag 不校验。"""
+        ci = self._stub(mock_config_loader, mock_meta_store)
+        ci.get_requirement_tags.return_value = []
+        self.base_args.tag = ["anything"]
+        import io
+        with patch('sys.stdout', io.StringIO()):
+            cmd_list(self.base_args)  # 不应报错
+
+    @patch('requirement_mgr.commands.list.MetaStore')
+    @patch('requirement_mgr.commands.list.ConfigLoader')
+    def test_negative_limit_errors(self, mock_config_loader, mock_meta_store):
+        """--limit 负值报错退出。"""
+        self._stub(mock_config_loader, mock_meta_store)
+        self.base_args.limit = -1
+        with pytest.raises(SystemExit) as exc:
+            cmd_list(self.base_args)
+        assert exc.value.code == 1
+
+    @patch('requirement_mgr.commands.list.MetaStore')
+    @patch('requirement_mgr.commands.list.ConfigLoader')
+    def test_limit_truncates_and_hints(self, mock_config_loader, mock_meta_store):
+        """--limit 截断并提示总量。"""
+        # 构造 3 条数据
+        self.mock_data = {"requirements": {
+            f"tool/2026-07-2{i}-X{i}": {
+                "id": f"REQ-00{i}", "feature": f"X{i}", "status": "草案",
+                "created": f"2026-07-2{i} 10:00:00", "updated": f"2026-07-2{i} 10:00:00", "version": 1
+            } for i in (1, 2, 3)
+        }}
+        self._stub(mock_config_loader, mock_meta_store)
+        self.base_args.limit = 2
+        import io
+        out = io.StringIO()
+        with patch('sys.stdout', out):
+            cmd_list(self.base_args)
+        text = out.getvalue()
+        assert "共 3 个需求，显示最近 2 个" in text

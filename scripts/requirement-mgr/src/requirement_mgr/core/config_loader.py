@@ -23,7 +23,7 @@ class ConfigLoader:
         self._id_prefix: str = "REQ"
         self._id_digits: int = 3
         self._lock_timeout: int = 5
-        self._backup_enabled: bool = False
+        self._backup_enabled: bool = True
         self._config_loaded: bool = False
 
     def read(self) -> Path:

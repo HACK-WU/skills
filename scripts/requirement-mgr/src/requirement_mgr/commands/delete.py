@@ -11,6 +11,9 @@ from requirement_mgr.core.file_lock import FileLock
 from requirement_mgr.core.requirement_utils import find_req, find_rev_deps, find_children
 
 
+from requirement_mgr.core.output import emit_success, guard_interactive
+
+
 def _show_preview(dir_name: str, req: dict, rev_deps: list[dict], children: list[dict]):
     """展示删除预览。"""
     print(f"\n{'─' * 50}")
@@ -73,22 +76,32 @@ def cmd_delete(args):
 
     # dry-run
     if args.dry_run:
-        print(f"\n🔍 预删除检查")
-        print(f"\n将执行：")
-        print(f"  ① 从 meta.json 删除 {req_id} 条目")
-        if children:
-            ids = ", ".join(c["id"] for c in children)
-            print(f"  ② 子需求 {ids} 变为 standalone（role=standalone, parent_id=null）")
-        if cleaned_count:
-            ids = ", ".join(r["id"] for r in rev_deps)
-            print(f"  ③ 从 {ids} 的 depends_on 中移除 {req_id}")
         dir_path = storage_root / dir_name
-        print(f"  ④ 删除目录: {dir_path}")
-        print(f"\n⚠ --dry-run 模式，未做任何修改。")
+        orphan_ids = [c["id"] for c in children]
+        cleaned_ids = [r["id"] for r in rev_deps]
+        human = [
+            "\n🔍 预删除检查",
+            "\n将执行：",
+            f"  ① 从 meta.json 删除 {req_id} 条目",
+        ]
+        if children:
+            human.append(f"  ② 子需求 {', '.join(orphan_ids)} 变为 standalone（role=standalone, parent_id=null）")
+        if cleaned_count:
+            human.append(f"  ③ 从 {', '.join(cleaned_ids)} 的 depends_on 中移除 {req_id}")
+        human.append(f"  ④ 删除目录: {dir_path}")
+        human.append("\n⚠ --dry-run 模式，未做任何修改。")
+        emit_success(args, {
+            "dry_run": True, "id": req_id, "dir": str(dir_path),
+            # orphaned/cleaned 统一为计数（与成功输出同类型），_ids 提供预测明细
+            "orphaned": len(orphan_ids), "cleaned": len(cleaned_ids),
+            "orphaned_ids": orphan_ids, "cleaned_ids": cleaned_ids,
+        }, human)
         return
 
     # 交互确认
     if not args.force:
+        # --json 隐含非交互：未带 --force 时直接报错退出（避免挂起等待 input）
+        guard_interactive(args, f"删除 {req_id} 需确认")
         _show_preview(dir_name, req, rev_deps, children)
         if children:
             print(f"⚠ 警告: 有 {len(children)} 个子需求将变为 standalone")
@@ -166,9 +179,21 @@ def cmd_delete(args):
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(2)
 
-    print(f"\n✓ 已删除需求 {req_id}")
-    print(f"  目录:    {storage_root / dir_name}")
-    if actual_orphaned:
-        print(f"  子需求:  {actual_orphaned} 个需求已变为 standalone")
-    if actual_cleaned:
-        print(f"  清理引用: {actual_cleaned} 个需求的 depends_on")
+    emit_success(args, {
+        "id": req_id,
+        "dir": str(storage_root / dir_name),
+        "orphaned": actual_orphaned,
+        "cleaned": actual_cleaned,
+    }, _delete_result_lines(req_id, storage_root / dir_name, actual_orphaned, actual_cleaned))
+
+
+def _delete_result_lines(req_id, dir_path, orphaned, cleaned):
+    lines = [
+        f"\n✓ 已删除需求 {req_id}",
+        f"  目录:    {dir_path}",
+    ]
+    if orphaned:
+        lines.append(f"  子需求:  {orphaned} 个需求已变为 standalone")
+    if cleaned:
+        lines.append(f"  清理引用: {cleaned} 个需求的 depends_on")
+    return lines

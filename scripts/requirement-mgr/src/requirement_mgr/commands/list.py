@@ -2,21 +2,26 @@
 """req list: 列出需求，支持筛选、依赖展开、反向依赖查询、角色筛选。"""
 
 import json
+import re
 import sys
+from datetime import datetime
 
 from requirement_mgr.core.config_loader import ConfigLoader
 from requirement_mgr.core.meta_store import MetaStore
 from requirement_mgr.core.requirement_utils import ARCHIVED_STATUS, find_req, find_rev_deps
 
 
-DEFAULT_COLUMNS = ["id", "feature", "status", "role", "tags", "version", "updated"]
+DEFAULT_COLUMNS = ["id", "feature", "status", "role", "tags", "branch", "commits", "version", "updated"]
 ALL_COLUMNS = [
-    "id", "feature", "status", "role", "tags", "version",
+    "id", "feature", "status", "role", "tags", "branch", "version",
     "created", "updated", "parent_id", "depends_on", "docs", "commits",
 ]
 
 ARCHIVE_STATUS = ARCHIVED_STATUS  # 兼容别名，常量收敛在 requirement_utils
 ARCHIVE_PREFIX = "archive/"
+
+# O-10：--from/--to 日期格式校验（YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS）
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$")
 
 
 def _normalize_ts(ts: str) -> str:
@@ -45,6 +50,7 @@ def _build_table(rows: list[dict], columns: list[str]) -> str:
         "status": "状态",
         "role": "角色",
         "tags": "标签",
+        "branch": "分支",
         "version": "版本",
         "created": "创建日期",
         "updated": "更新日期",
@@ -137,6 +143,7 @@ def _format_detail(req: dict, requirements: dict, args) -> str:
         ("父需求", parent_id or "—"),
         ("子需求", ", ".join(child_ids) if child_ids else "—"),
         ("标签", ", ".join(req.get("tags", []))),
+        ("分支", req.get("branch") or "—"),
         ("版本", str(req.get("version", ""))),
         ("创建日期", req.get("created", "")),
         ("更新日期", req.get("updated", "")),
@@ -156,6 +163,15 @@ def _format_detail(req: dict, requirements: dict, args) -> str:
             dt = d.get("type", "?")
             dp = d.get("path", "")
             lines.append(f"│   [{_widen(dt, 12)}] {_widen(dp[:40], 40)} │")
+
+    # 关联提交（完整 hash 列表仅在详情视图展示，默认列只显示数量）
+    commits = req.get("commits", [])
+    if commits:
+        title = f"关联提交（{len(commits)} 项）："
+        title_w = sum(2 if ord(c) > 127 else 1 for c in title)
+        lines.append(f"│ {title}{' ' * max(0, 56 - title_w)} │")
+        for c in commits:
+            lines.append(f"│   - {_widen(str(c)[:54], 54)} │")
 
     # 变更记录
     changelog = req.get("changelog", [])
@@ -196,6 +212,69 @@ def cmd_list(args):
     except (FileNotFoundError, ValueError) as e:
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # 筛选值校验：无效值直接报错，避免静默返回空结果被误读为"无匹配"。
+    # 白名单为空的配置项表示"不限制"，此时跳过校验。
+    if args.status:
+        valid_statuses = list(cl.get_requirement_statuses())
+        # 兼容未含系统保留状态的旧自定义 config（list --status 已归档 是正当查询）
+        if ARCHIVED_STATUS not in valid_statuses:
+            valid_statuses.append(ARCHIVED_STATUS)
+        if args.status not in valid_statuses:
+            print(f"错误: 无效状态 '{args.status}'，有效值: {', '.join(valid_statuses)}", file=sys.stderr)
+            sys.exit(1)
+    if args.role:
+        valid_roles = cl.get_requirement_roles()
+        if args.role not in valid_roles:
+            print(f"错误: 无效角色 '{args.role}'，有效值: {', '.join(valid_roles)}", file=sys.stderr)
+            sys.exit(1)
+    if args.category:
+        feature_categories = cl.get_feature_categories()
+        if feature_categories and args.category not in feature_categories:
+            print(f"错误: 无效分类 '{args.category}'，有效值: {', '.join(feature_categories)}", file=sys.stderr)
+            sys.exit(1)
+    if args.tag:
+        requirement_tags = cl.get_requirement_tags()
+        if requirement_tags:
+            invalid = [t for t in args.tag if t not in requirement_tags]
+            if invalid:
+                print(f"错误: 无效标签 {invalid}，有效值: {', '.join(requirement_tags)}", file=sys.stderr)
+                sys.exit(1)
+    # --limit 校验：负值非法
+    if args.limit is not None and args.limit < 0:
+        print(f"错误: --limit 不能为负值（{args.limit}），0 表示全部", file=sys.stderr)
+        sys.exit(1)
+    # O-10：--columns 无效列名报错（避免静默输出空列）
+    if args.columns:
+        cols = [c.strip() for c in args.columns.split(",") if c.strip()]
+        if not cols:
+            print(f"错误: --columns 不能为空，有效列: {', '.join(ALL_COLUMNS)}", file=sys.stderr)
+            sys.exit(1)
+        invalid_cols = [c for c in cols if c not in ALL_COLUMNS]
+        if invalid_cols:
+            print(f"错误: 无效列名 {invalid_cols}，有效列: {', '.join(ALL_COLUMNS)}", file=sys.stderr)
+            sys.exit(1)
+    # O-10：--from/--to 日期格式校验（正则验格式 + strptime 验日历合法性）+ 区间合法性
+    for _flag, _val in (("--from", args.date_from), ("--to", args.date_to)):
+        if not _val:
+            continue
+        if not _DATE_RE.match(_val):
+            print(f"错误: {_flag} 日期格式非法 '{_val}'，应为 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS", file=sys.stderr)
+            sys.exit(1)
+        _fmt = "%Y-%m-%d %H:%M:%S" if len(_val) > 10 else "%Y-%m-%d"
+        try:
+            datetime.strptime(_val, _fmt)
+        except ValueError:
+            print(f"错误: {_flag} 日期非法 '{_val}'，不是有效的日历日期/时间", file=sys.stderr)
+            sys.exit(1)
+    if args.date_from and args.date_to:
+        from_norm = _normalize_ts(args.date_from)
+        to_norm = _normalize_ts(args.date_to)
+        if len(args.date_to) <= 10:
+            to_norm = args.date_to + " 23:59:59"
+        if from_norm > to_norm:
+            print(f"错误: --from '{args.date_from}' 晚于 --to '{args.date_to}'，区间为空", file=sys.stderr)
+            sys.exit(1)
 
     ms = MetaStore(storage_root)
     data = ms.load()
@@ -276,20 +355,36 @@ def cmd_list(args):
         print("（无匹配需求）")
         return
 
+    # --limit 截断（0 表示全部）；对表格与 --json 一致生效，行为可预测
+    total = len(results)
+    limit = args.limit if args.limit is not None else 0
+    truncated = limit > 0 and total > limit
+    if truncated:
+        display_results = results[:limit]
+    else:
+        display_results = results
+
     if args.json_output:
-        print(json.dumps(results, ensure_ascii=False, indent=2))
+        print(json.dumps(display_results, ensure_ascii=False, indent=2))
     else:
         columns_str = args.columns or ",".join(DEFAULT_COLUMNS)
         columns = [c.strip() for c in columns_str.split(",") if c.strip()]
         # 复制一份再格式化
         display_rows = []
-        for r in results:
+        for r in display_results:
             row = dict(r)
             if "tags" in row and isinstance(row["tags"], list):
                 row["tags"] = ", ".join(row["tags"])
             # 兼容旧数据：无 role 字段时默认 standalone
             if "role" not in row:
                 row["role"] = "standalone"
+            # 旧数据无 branch 字段展示 —
+            row["branch"] = row.get("branch") or "—"
+            # commits 默认列仅展示数量，完整 hash 列表在 --id 详情查看
+            row["commits"] = str(len(row.get("commits", []) or []))
             display_rows.append(row)
         print(_build_table(display_rows, columns))
-        print(f"共 {len(results)} 个需求")
+        if truncated:
+            print(f"共 {total} 个需求，显示最近 {limit} 个（--limit 0 查看全部）")
+        else:
+            print(f"共 {total} 个需求")

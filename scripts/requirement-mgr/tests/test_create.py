@@ -20,6 +20,7 @@ def make_args(**kw):
         parent_id=kw.get("parent_id"),
         depends_on=kw.get("depends_on", ""),
         dir_name=kw.get("dir_name", ""),
+        branch=kw.get("branch"),
     )
 
 

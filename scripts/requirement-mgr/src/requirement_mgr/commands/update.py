@@ -17,6 +17,7 @@ from requirement_mgr.core.requirement_utils import (
     validate_parent_child_op,
 )
 from requirement_mgr.core.time_utils import now_cst_str
+from requirement_mgr.core.output import emit_success
 
 
 def _simulate_tag_ops(current_tags, tag_ops, requirement_tags):
@@ -94,6 +95,10 @@ def _validate_update(requirements, req_id, args, new_role, new_parent_id,
     # feature 不能更新为空白
     if args.feature is not None and not args.feature.strip():
         errors.append("--feature 不能为空")
+
+    # branch：空字符串表示显式清除，纯空白（如 "  "）拒绝
+    if args.branch is not None and args.branch != "" and not args.branch.strip():
+        errors.append("--branch 不能为纯空白（清除请用 --branch \"\"）")
 
     # status
     if args.status:
@@ -300,6 +305,13 @@ def cmd_update(args):
                     req["commits"].append(args.commit)
                     changes += 1
 
+            # branch：空字符串清除（置 None），非空值写入
+            if args.branch is not None:
+                new_branch = args.branch.strip() or None
+                if new_branch != req.get("branch"):
+                    req["branch"] = new_branch
+                    changes += 1
+
             # docs add/remove/set
             if args.docs_ops:
                 req.setdefault("docs", [])
@@ -346,7 +358,13 @@ def cmd_update(args):
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(2)
 
-    print(f"✓ 需求已更新")
-    print(f"  ID:      {req_id}")
-    print(f"  版本:    v{req['version']}")
-    print(f"  变更数:  {changes}")
+    emit_success(args, {
+        "id": req_id,
+        "version": req["version"],
+        "changes": changes,
+    }, [
+        "✓ 需求已更新",
+        f"  ID:      {req_id}",
+        f"  版本:    v{req['version']}",
+        f"  变更数:  {changes}",
+    ])

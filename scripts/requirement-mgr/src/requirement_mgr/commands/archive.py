@@ -21,6 +21,7 @@ from requirement_mgr.core.requirement_utils import (
     find_children,
 )
 from requirement_mgr.core.time_utils import now_cst_str
+from requirement_mgr.core.output import emit_success, guard_interactive
 
 
 ARCHIVE_DIR = "archive"
@@ -67,6 +68,8 @@ def cmd_archive(args):
 
     # 归档 parent 时，若有活跃子需求，需交互确认（除非 --force 或 --dry-run）
     if active_children and not args.dry_run and not args.force:
+        # --json 隐含非交互：有活跃子需求且未带 --force 时直接报错
+        guard_interactive(args, f"归档 {req_id} 有活跃子需求需确认")
         child_ids = ", ".join(c["id"] for c in active_children)
         print(f"⚠ 警告: 需求 {req_id} 有 {len(active_children)} 个活跃子需求（{child_ids}）", file=sys.stderr)
         print(f"  归档后子需求仍引用此父需求，可能导致语义混淆", file=sys.stderr)
@@ -89,23 +92,32 @@ def cmd_archive(args):
 
     # dry-run 预览
     if args.dry_run:
-        print(f"\n🔍 预归档检查")
-        print(f"\n将执行：")
-        print(f"  ① 移动目录: {src_path}")
-        print(f"     → {dst_path}")
-        print(f"  ② 更新状态: {req.get('status', '')} → {ARCHIVE_STATUS}")
-        print(f"  ③ 更新 meta.json 键: {dir_name} → {ARCHIVE_DIR}/{dir_name}")
+        human = [
+            "\n🔍 预归档检查",
+            "\n将执行：",
+            f"  ① 移动目录: {src_path}",
+            f"     → {dst_path}",
+            f"  ② 更新状态: {req.get('status', '')} → {ARCHIVE_STATUS}",
+            f"  ③ 更新 meta.json 键: {dir_name} → {ARCHIVE_DIR}/{dir_name}",
+        ]
         if args.reason:
-            print(f"  ④ 归档原因: {args.reason}")
+            human.append(f"  ④ 归档原因: {args.reason}")
         if active_children:
-            child_ids = ", ".join(c["id"] for c in active_children)
-            print(f"\n⚠ 警告: 有 {len(active_children)} 个活跃子需求（{child_ids}）仍引用此父需求")
+            cids = ", ".join(c["id"] for c in active_children)
+            human.append(f"\n⚠ 警告: 有 {len(active_children)} 个活跃子需求（{cids}）仍引用此父需求")
         if children and not active_children:
-            print(f"\nℹ 提示: 有 {len(children)} 个子需求（均已归档），无活跃子需求")
+            human.append(f"\nℹ 提示: 有 {len(children)} 个子需求（均已归档），无活跃子需求")
         if rev_deps:
-            rev_ids = ", ".join(r["id"] for r in rev_deps)
-            print(f"⚠ 警告: 被 {len(rev_deps)} 个需求依赖（{rev_ids}），依赖关系仍保留")
-        print(f"\n⚠ --dry-run 模式，未做任何修改。")
+            rids = ", ".join(r["id"] for r in rev_deps)
+            human.append(f"⚠ 警告: 被 {len(rev_deps)} 个需求依赖（{rids}），依赖关系仍保留")
+        human.append("\n⚠ --dry-run 模式，未做任何修改。")
+        emit_success(args, {
+            "dry_run": True, "id": req_id, "src": str(src_path), "dst": str(dst_path),
+            "from_status": req.get("status", ""), "to_status": ARCHIVE_STATUS,
+            "meta_key": f"{ARCHIVE_DIR}/{dir_name}",
+            "active_children": [c["id"] for c in active_children],
+            "rev_deps": [r["id"] for r in rev_deps],
+        }, human)
         return
 
     # 检查源目录是否存在
@@ -135,9 +147,20 @@ def cmd_archive(args):
                 print(f"错误: 需求 {req_id} 已被归档（并发操作）", file=sys.stderr)
                 sys.exit(1)
 
+            # 连带修复（O-08）：锁内基于重读后的 dir_name 重算源/目标路径。
+            # 加入 unarchive 后，并发改键会使锁外计算的陈旧路径指向错误目录，
+            # 故所有路径必须在持锁、重读 dir_name 之后重算。
+            src_path = storage_root / dir_name
+            dst_path = archive_base / dir_name
+
             # 二次检查目标冲突
             if dst_path.exists():
                 print(f"错误: 归档目标目录已存在（并发操作）: {dst_path}", file=sys.stderr)
+                sys.exit(1)
+
+            # 二次检查源目录存在（锁内复验，防并发删除/移动）
+            if not src_path.exists():
+                print(f"错误: 需求目录不存在（并发操作）: {src_path}", file=sys.stderr)
                 sys.exit(1)
 
             # 确保归档基目录存在
@@ -151,6 +174,8 @@ def cmd_archive(args):
             old_entry = requirements.pop(dir_name)
 
             timestamp = now_cst_str()
+            # 结构化记录归档前状态（O-08：unarchive 据此恢复；仅首次归档时写入）
+            old_entry["pre_archive_status"] = old_entry.get("status")
             old_entry["status"] = ARCHIVE_STATUS
             old_entry["updated"] = timestamp
             old_entry["archived_at"] = timestamp
@@ -199,13 +224,20 @@ def cmd_archive(args):
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(2)
 
-    print(f"✓ 需求已归档")
-    print(f"  ID:        {req_id}")
-    print(f"  原目录:    {src_path}")
-    print(f"  归档位置:  {dst_path}")
-    print(f"  状态:      {ARCHIVE_STATUS}")
-    if args.reason:
-        print(f"  归档原因:  {args.reason.strip()}")
+    emit_success(args, {
+        "id": req_id,
+        "meta_key": f"{ARCHIVE_DIR}/{dir_name}",
+        "src": str(src_path),
+        "dst": str(dst_path),
+        "status": ARCHIVE_STATUS,
+        "reason": args.reason.strip() if args.reason else None,
+    }, [
+        "✓ 需求已归档",
+        f"  ID:        {req_id}",
+        f"  原目录:    {src_path}",
+        f"  归档位置:  {dst_path}",
+        f"  状态:      {ARCHIVE_STATUS}",
+    ] + ([f"  归档原因:  {args.reason.strip()}"] if args.reason else []))
 
 
 def _cleanup_empty_archive_dirs(archive_base, target_parent):
@@ -274,14 +306,20 @@ def _archive_doc(args, storage_root, dir_name, req, ms, lock_timeout):
 
     # dry-run 预览
     if args.dry_run:
-        print(f"\n🔍 预归档检查（文档级）")
-        print(f"\n将执行：")
-        print(f"  ① 移动文档: {src_path}")
-        print(f"     → {dst_path}")
-        print(f"  ② 不改变需求状态（当前: {req.get('status', '')}）")
+        human = [
+            "\n🔍 预归档检查（文档级）",
+            "\n将执行：",
+            f"  ① 移动文档: {src_path}",
+            f"     → {dst_path}",
+            f"  ② 不改变需求状态（当前: {req.get('status', '')}）",
+        ]
         if args.reason:
-            print(f"  ③ 归档原因: {args.reason}")
-        print(f"\n⚠ --dry-run 模式，未做任何修改。")
+            human.append(f"  ③ 归档原因: {args.reason}")
+        human.append("\n⚠ --dry-run 模式，未做任何修改。")
+        emit_success(args, {
+            "dry_run": True, "id": req_id, "doc": doc_path,
+            "src": str(src_path), "dst": str(dst_path),
+        }, human)
         return
 
     # 加锁 + 归档
@@ -349,10 +387,15 @@ def _archive_doc(args, storage_root, dir_name, req, ms, lock_timeout):
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(2)
 
-    print(f"✓ 文档已归档")
-    print(f"  ID:        {req_id}")
-    print(f"  原路径:    {src_path}")
-    print(f"  归档位置:  {dst_path}")
-    if args.reason:
-        print(f"  归档原因:  {args.reason.strip()}")
+    emit_success(args, {
+        "id": req_id,
+        "doc": doc_path,
+        "src": str(src_path),
+        "dst": str(dst_path),
+    }, [
+        "✓ 文档已归档",
+        f"  ID:        {req_id}",
+        f"  原路径:    {src_path}",
+        f"  归档位置:  {dst_path}",
+    ] + ([f"  归档原因:  {args.reason.strip()}"] if args.reason else []))
 
