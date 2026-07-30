@@ -183,11 +183,44 @@ exit 1
 fi
 
 # ============================================================
+# 下载缓存：多目标时先下载到临时目录，后续目标直接 cp 覆盖
+# ============================================================
+USE_CACHE=false
+CACHE_DIR=""
+if [ ${#TARGET_DIRS[@]} -gt 1 ]; then
+    CACHE_DIR="$(mktemp -d)" || { echo "错误：无法创建临时缓存目录"; exit 1; }
+    # 临时目录必须为空，否则可能拷贝到脏数据
+    if [ -n "$(ls -A "$CACHE_DIR" 2>/dev/null)" ]; then
+        echo "错误：临时缓存目录非空: $CACHE_DIR"
+        exit 1
+    fi
+    USE_CACHE=true
+    trap 'rm -rf "$CACHE_DIR"' EXIT
+fi
+
+# ============================================================
 # 通用函数
 # ============================================================
 download() {
     local url="$1" dest="$2"
     mkdir -p "$(dirname "$dest")"
+
+    # 多目标：先查缓存，未命中才下载到缓存，再 cp -f 覆盖到目标
+    if [ "$USE_CACHE" = true ]; then
+        local rel="${url#"${RAW_BASE}"/}"
+        local cached="${CACHE_DIR}/${rel}"
+        if [ ! -f "$cached" ]; then
+            mkdir -p "$(dirname "$cached")"
+            if ! curl -fsSL "$url" -o "$cached" 2>/dev/null; then
+                rm -f "$cached" 2>/dev/null
+                return 1
+            fi
+        fi
+        cp -f "$cached" "$dest" || return 1
+        return 0
+    fi
+
+    # 单目标：直接下载
     if curl -fsSL "$url" -o "$dest" 2>/dev/null; then
         return 0
     else
