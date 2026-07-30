@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """配置加载器，读取 .requirements/config 提供存储路径和各项配置。"""
 
+import os
 from pathlib import Path
 
 
@@ -76,7 +77,16 @@ class ConfigLoader:
         return self._id_digits
 
     def get_lock_timeout(self) -> int:
-        """获取文件锁超时秒数。"""
+        """获取文件锁超时秒数。
+
+        优先级：环境变量 REQ_LOCK_TIMEOUT > config 的 lock_timeout > 默认 5。
+        """
+        env_timeout = os.environ.get("REQ_LOCK_TIMEOUT")
+        if env_timeout:
+            try:
+                return int(env_timeout)
+            except ValueError:
+                pass  # 非法值回退到 config
         if not self._config_loaded:
             self._load_config()
         return self._lock_timeout
@@ -160,7 +170,7 @@ class ConfigLoader:
         if self._requirement_statuses is not None and len(self._requirement_statuses) == 0:
             raise ValueError(
                 "requirement_statuses 不能为空。请在 .requirements/config 中配置状态列表，"
-                "或删除该行使用默认值（草案,已确认,设计中,实施中,已完成,已取消）"
+                "或删除该行使用默认值（草案,已确认,设计中,实施中,已完成,已取消,已归档）"
             )
         if self._requirement_roles is not None and len(self._requirement_roles) == 0:
             raise ValueError(
@@ -174,7 +184,8 @@ class ConfigLoader:
         if self._requirement_tags is None:
             self._requirement_tags = []
         if self._requirement_statuses is None:
-            self._requirement_statuses = ["草案", "已确认", "设计中", "实施中", "已完成", "已取消"]
+            # 与 init.py 生成的默认模板保持一致（含系统保留状态“已归档”）
+            self._requirement_statuses = ["草案", "已确认", "设计中", "实施中", "已完成", "已取消", "已归档"]
         if self._requirement_roles is None:
             self._requirement_roles = ["standalone", "parent", "child"]
 

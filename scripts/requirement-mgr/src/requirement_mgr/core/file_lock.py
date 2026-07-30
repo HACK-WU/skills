@@ -21,7 +21,7 @@ class FileLock:
 
         Args:
             filepath: 被锁文件路径（实际锁的是 filepath.lock）
-            timeout: 超时秒数。None 时依次检查环境变量 REQ_LOCK_TIMEOUT，再兑底 5
+            timeout: 超时秒数。None 时依次检查环境变量 REQ_LOCK_TIMEOUT，再兜底 5
         """
         if timeout is None:
             env_timeout = os.environ.get("REQ_LOCK_TIMEOUT")
@@ -57,7 +57,12 @@ class FileLock:
         return False
 
     def release(self) -> None:
-        """释放锁并删除 .lock 文件。"""
+        """释放锁。
+
+        注意：故意不删除 .lock 文件。unlink 会引入 inode 竞态
+        （A 删文件后 B 重建新 inode，C 锁旧 inode → B/C 双持锁）。
+        保留 0 字节锁文件是 flock 的标准用法，进程退出时内核会自动释放锁。
+        """
         if self._fd:
             try:
                 if os.name == "nt":
@@ -71,10 +76,6 @@ class FileLock:
                 pass
             finally:
                 self._fd = None
-            try:
-                os.unlink(self._lockfile)
-            except OSError:
-                pass
 
     def __enter__(self):
         if not self.acquire():

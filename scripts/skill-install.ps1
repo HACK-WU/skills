@@ -251,6 +251,7 @@ function Install-Skills {
             "api-testing/SKILL.md",
             "api-testing/examples.md",
             "api-testing/reference.md",
+            "artifact-optimizer/SKILL.md",
             "auto-review/SKILL.md",
             "bug-impact-analysis/SKILL.md",
             "challenger/SKILL.md",

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""req update: 修改需求元数据，支持字段增删改、循环依赖检测、role 变更、版号自增。"""
+"""req update: 修改需求元数据，支持字段增删改、循环依赖检测、role 变更、版号自增。
+
+校验策略：所有校验收敛在 _validate_update() 中，锁外调用一次快速失败，
+加锁重读后再调用一次（TOCTOU 复验），通过后才应用变更。
+"""
 
 import sys
 
@@ -7,6 +11,7 @@ from requirement_mgr.core.config_loader import ConfigLoader
 from requirement_mgr.core.meta_store import MetaStore
 from requirement_mgr.core.file_lock import FileLock
 from requirement_mgr.core.requirement_utils import (
+    ARCHIVED_STATUS,
     find_req,
     has_circular_dep,
     validate_parent_child_op,
@@ -14,11 +19,165 @@ from requirement_mgr.core.requirement_utils import (
 from requirement_mgr.core.time_utils import now_cst_str
 
 
+def _simulate_tag_ops(current_tags, tag_ops, requirement_tags):
+    """按顺序模拟应用 tag 操作，返回 (最终标签列表, 错误列表)。
+
+    校验组合操作的最终结果（而非逐项独立判断），
+    避免 "--tag remove a --tag remove b" 之类组合绕过约束。
+    """
+    errors = []
+    sim = list(current_tags)
+    for op, value in tag_ops:
+        if op == "add":
+            if requirement_tags and value not in requirement_tags:
+                errors.append(
+                    f"标签 '{value}' 不在 requirement_tags 配置中（允许: {', '.join(requirement_tags)}）"
+                )
+                continue
+            if value not in sim:
+                sim.append(value)
+        elif op == "remove":
+            if value in sim:
+                sim.remove(value)
+        elif op == "set":
+            new_tags = [t.strip() for t in value.split(",") if t.strip()]
+            if not new_tags:
+                errors.append("--tag set 不能设置为空")
+                continue
+            if requirement_tags:
+                invalid = [t for t in new_tags if t not in requirement_tags]
+                if invalid:
+                    errors.append(
+                        f"标签 {invalid} 不在 requirement_tags 配置中（允许: {', '.join(requirement_tags)}）"
+                    )
+                    continue
+            sim = new_tags
+        else:
+            errors.append(f"未知的 tag 操作 '{op}'，支持 add/remove/set")
+    return sim, errors
+
+
+def _simulate_deps_ops(current_deps, deps_ops):
+    """按顺序模拟应用 depends_on 操作，返回 (最终依赖列表, 错误列表)。"""
+    errors = []
+    sim = list(current_deps)
+    for op, ids_str in deps_ops:
+        ids = [i.strip() for i in ids_str.split(",") if i.strip()]
+        if op == "add":
+            for rid in ids:
+                if rid not in sim:
+                    sim.append(rid)
+        elif op == "remove":
+            sim = [d for d in sim if d not in ids]
+        elif op == "set":
+            sim = ids
+        else:
+            errors.append(f"未知的 depends-on 操作 '{op}'，支持 add/remove/set")
+    return sim, errors
+
+
+def _validate_update(requirements, req_id, args, new_role, new_parent_id,
+                     valid_statuses, valid_roles, feature_categories, requirement_tags):
+    """校验本次 update 的全部变更，返回错误列表。
+
+    锁外与锁内各调用一次：锁内基于重读后的最新数据复验，防止 TOCTOU。
+    """
+    errors = []
+    _, req = find_req(requirements, req_id)
+    if req is None:
+        return [f"未找到需求 {req_id}"]
+
+    # 已归档需求只读
+    if req.get("status") == ARCHIVED_STATUS:
+        return [f"需求 {req_id} 已归档，不允许修改"]
+
+    # feature 不能更新为空白
+    if args.feature is not None and not args.feature.strip():
+        errors.append("--feature 不能为空")
+
+    # status
+    if args.status:
+        if args.status == ARCHIVED_STATUS:
+            errors.append(f"不能通过 update 设置状态为 '{ARCHIVED_STATUS}'，请使用 req archive")
+        elif args.status not in valid_statuses:
+            errors.append(f"无效状态 '{args.status}'，有效值: {', '.join(valid_statuses)}")
+
+    # role / parent_id
+    if new_role:
+        if new_role not in valid_roles:
+            errors.append(f"无效角色 '{new_role}'，有效值: {', '.join(valid_roles)}")
+        else:
+            errors.extend(validate_parent_child_op(requirements, req_id, new_role, new_parent_id))
+    if new_parent_id:
+        _, parent_req = find_req(requirements, new_parent_id)
+        if parent_req is not None and parent_req.get("status") == ARCHIVED_STATUS:
+            errors.append(f"父需求 {new_parent_id} 已归档，不能挂载子需求")
+
+    # tags：模拟顺序应用后校验最终状态
+    if args.tag:
+        current_tags = list(req.get("tags", []))
+        final_tags, tag_errors = _simulate_tag_ops(current_tags, args.tag, requirement_tags)
+        errors.extend(tag_errors)
+        if not tag_errors:
+            if not final_tags:
+                errors.append("操作后标签为空，至少需要保留一个标签")
+            if feature_categories:
+                current_cat = next((t for t in current_tags if t in feature_categories), None)
+                final_cats = [t for t in final_tags if t in feature_categories]
+                if len(final_cats) > 1:
+                    errors.append(f"功能分类标签只能有一个，操作后有: {', '.join(final_cats)}")
+                elif current_cat and not final_cats:
+                    errors.append(
+                        f"不能删除功能分类标签 '{current_cat}'，目录位置依赖此标签"
+                        f"（如需更改分类，请删除并重新创建需求）"
+                    )
+                elif current_cat and final_cats and final_cats[0] != current_cat:
+                    errors.append(
+                        f"不能更改功能分类标签（'{current_cat}' → '{final_cats[0]}'），目录位置依赖此标签"
+                        f"（如需更改分类，请删除并重新创建需求）"
+                    )
+
+    # docs 格式校验
+    if args.docs_ops:
+        for op, value in args.docs_ops:
+            if op == "add":
+                parts = value.split(",")
+                if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
+                    errors.append("--docs add 格式: PATH,TYPE（两者均不可为空）")
+            elif op == "remove":
+                if not value.strip():
+                    errors.append("--docs remove 需要指定路径")
+            elif op == "set":
+                for spec in [s.strip() for s in value.split(";") if s.strip()]:
+                    parts = spec.split(",")
+                    if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
+                        errors.append(f"--docs set 格式错误: {spec}（应为 PATH,TYPE，两者不可为空）")
+            else:
+                errors.append(f"未知的 docs 操作 '{op}'，支持 add/remove/set")
+
+    # depends_on：模拟最终依赖集后逐项校验（add/set 同等约束）
+    if args.depends_on_ops:
+        final_deps, dep_errors = _simulate_deps_ops(req.get("depends_on", []), args.depends_on_ops)
+        errors.extend(dep_errors)
+        if not dep_errors:
+            for rid in final_deps:
+                if rid == req_id:
+                    errors.append("不能依赖自身")
+                    continue
+                _, target = find_req(requirements, rid)
+                if target is None:
+                    errors.append(f"依赖需求 {rid} 不存在")
+                elif has_circular_dep(requirements, req_id, rid):
+                    errors.append(f"添加 {rid} 会形成循环依赖")
+
+    return errors
+
+
 def cmd_update(args):
     """执行 req update 命令。"""
     req_id = args.req_id.strip()
 
-    # 加载
+    # 加载配置
     try:
         cl = ConfigLoader()
         storage_root = cl.read()
@@ -32,144 +191,45 @@ def cmd_update(args):
         print(f"错误: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # 如果只指定了 --parent-id 但没指定 --role，推断为 child
+    new_role = args.role
+    new_parent_id = args.parent_id.strip() if args.parent_id else None
+    if new_parent_id and not new_role:
+        new_role = "child"
+
     ms = MetaStore(storage_root, backup_enabled=backup_enabled)
 
-    # 前置校验
+    # 锁外校验（快速失败）
     data = ms.load()
-    requirements = data["requirements"]
-    dir_name, req = find_req(requirements, req_id)
-    if req is None:
-        print(f"错误: 未找到需求 {req_id}", file=sys.stderr)
+    errors = _validate_update(
+        data["requirements"], req_id, args, new_role, new_parent_id,
+        valid_statuses, valid_roles, feature_categories, requirement_tags,
+    )
+    if errors:
+        for err in errors:
+            print(f"错误: {err}", file=sys.stderr)
         sys.exit(1)
 
     changes = 0
 
-    # ---- 前置校验 ----
-    # status
-    if args.status and args.status not in valid_statuses:
-        print(f"错误: 无效状态 '{args.status}'，有效值: {', '.join(valid_statuses)}", file=sys.stderr)
-        sys.exit(1)
-
-    # role 校验
-    new_role = args.role
-    new_parent_id = args.parent_id
-    if new_role:
-        if new_role not in valid_roles:
-            print(f"错误: 无效角色 '{new_role}'，有效值: {', '.join(valid_roles)}", file=sys.stderr)
-            sys.exit(1)
-        errors = validate_parent_child_op(requirements, req_id, new_role, new_parent_id, valid_roles)
-        if errors:
-            for err in errors:
-                print(f"错误: {err}", file=sys.stderr)
-            sys.exit(1)
-
-    # 如果只指定了 --parent-id 但没指定 --role，推断为 child
-    if new_parent_id and not new_role:
-        new_role = "child"
-        errors = validate_parent_child_op(requirements, req_id, new_role, new_parent_id, valid_roles)
-        if errors:
-            for err in errors:
-                print(f"错误: {err}", file=sys.stderr)
-            sys.exit(1)
-
-    # tag 操作校验
-    current_tags = list(req.get("tags", []))
-    current_category_tag = next((t for t in current_tags if t in feature_categories), None) if feature_categories else None
-    if args.tag:
-        for op, value in args.tag:
-            if op == "remove":
-                if len(current_tags) <= 1:
-                    print("错误: 不能删除最后一个标签", file=sys.stderr)
-                    sys.exit(1)
-                if feature_categories and value in feature_categories:
-                    print(f"错误: 不能删除功能分类标签 '{value}'，目录位置依赖此标签", file=sys.stderr)
-                    print(f"  如需更改分类，请删除并重新创建需求", file=sys.stderr)
-                    sys.exit(1)
-            elif op == "add":
-                if requirement_tags and value not in requirement_tags:
-                    print(f"错误: 标签 '{value}' 不在 requirement_tags 配置中", file=sys.stderr)
-                    print(f"  允许的标签: {', '.join(requirement_tags)}", file=sys.stderr)
-                    sys.exit(1)
-                if feature_categories and value in feature_categories:
-                    if any(t in feature_categories for t in current_tags):
-                        print(f"错误: 已存在功能分类标签，不能添加另一个功能分类标签 '{value}'", file=sys.stderr)
-                        sys.exit(1)
-            elif op == "set":
-                new_tags = [t.strip() for t in value.split(",") if t.strip()]
-                if not new_tags:
-                    print("错误: --tag set 不能设置为空", file=sys.stderr)
-                    sys.exit(1)
-                if requirement_tags:
-                    invalid_tags = [t for t in new_tags if t not in requirement_tags]
-                    if invalid_tags:
-                        print(f"错误: 标签 {invalid_tags} 不在 requirement_tags 配置中", file=sys.stderr)
-                        print(f"  允许的标签: {', '.join(requirement_tags)}", file=sys.stderr)
-                        sys.exit(1)
-                if feature_categories:
-                    new_category_tags = [t for t in new_tags if t in feature_categories]
-                    if len(new_category_tags) == 0:
-                        print(f"错误: 必须包含一个功能分类标签", file=sys.stderr)
-                        print(f"  功能分类标签: {', '.join(feature_categories)}", file=sys.stderr)
-                        sys.exit(1)
-                    elif len(new_category_tags) > 1:
-                        print(f"错误: 功能分类标签只能有一个，当前有: {', '.join(new_category_tags)}", file=sys.stderr)
-                        sys.exit(1)
-                    new_category = new_category_tags[0]
-                    if current_category_tag and new_category != current_category_tag:
-                        print(f"错误: 不能更改功能分类标签（'{current_category_tag}' → '{new_category}'），目录位置依赖此标签", file=sys.stderr)
-                        print(f"  如需更改分类，请删除并重新创建需求", file=sys.stderr)
-                        sys.exit(1)
-
-    # docs 操作校验
-    if args.docs_ops:
-        for op, value in args.docs_ops:
-            if op == "add":
-                parts = value.split(",")
-                if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
-                    print("错误: --docs add 格式: PATH,TYPE（两者均不可为空）", file=sys.stderr)
-                    sys.exit(1)
-            elif op == "remove":
-                if not value.strip():
-                    print("错误: --docs remove 需要指定路径", file=sys.stderr)
-                    sys.exit(1)
-            elif op == "set":
-                docs_specs = [s.strip() for s in value.split(";") if s.strip()]
-                for spec in docs_specs:
-                    parts = spec.split(",")
-                    if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
-                        print(f"错误: --docs set 格式错误: {spec}（应为 PATH,TYPE，两者不可为空）", file=sys.stderr)
-                        sys.exit(1)
-            else:
-                print(f"错误: 未知的 docs 操作 '{op}'，支持 add/remove/set", file=sys.stderr)
-                sys.exit(1)
-
-    # depends_on 校验
-    if args.depends_on_ops:
-        for op, ids_str in args.depends_on_ops:
-            ids = [i.strip() for i in ids_str.split(",") if i.strip()]
-            if op == "add":
-                for rid in ids:
-                    _, target = find_req(requirements, rid)
-                    if target is None:
-                        print(f"错误: 依赖需求 {rid} 不存在", file=sys.stderr)
-                        sys.exit(1)
-                    if rid == req_id:
-                        print("错误: 不能依赖自身", file=sys.stderr)
-                        sys.exit(1)
-                    if has_circular_dep(requirements, req_id, rid):
-                        print(f"错误: 添加 {rid} 会形成循环依赖", file=sys.stderr)
-                        sys.exit(1)
-
-    # ---- 加锁 + 应用变更 ----
+    # ---- 加锁 + 复验 + 应用变更 ----
     meta_path = storage_root / "meta.json"
     try:
         with FileLock(str(meta_path), timeout=lock_timeout):
             data = ms.load()
             requirements = data["requirements"]
-            dir_name, req = find_req(requirements, req_id)
-            if req is None:
-                print(f"错误: 未找到需求 {req_id}（并发删除）", file=sys.stderr)
+
+            # TOCTOU 复验：基于重读后的最新数据重新校验
+            errors = _validate_update(
+                requirements, req_id, args, new_role, new_parent_id,
+                valid_statuses, valid_roles, feature_categories, requirement_tags,
+            )
+            if errors:
+                for err in errors:
+                    print(f"错误: {err}（可能由并发变更引起）", file=sys.stderr)
                 sys.exit(1)
+
+            dir_name, req = find_req(requirements, req_id)
 
             # status
             if args.status:
@@ -211,52 +271,27 @@ def cmd_update(args):
                             if req_id not in new_parent["child_ids"]:
                                 new_parent["child_ids"].append(req_id)
 
-                    # 如果从 child 变为 standalone，清空 parent_id
-                    if new_role == "standalone":
-                        req["parent_id"] = None
-
-                    # 如果变为 parent，也不应有 parent_id
-                    if new_role == "parent":
+                    # standalone / parent 均不应有 parent_id
+                    if new_role in ("standalone", "parent"):
                         req["parent_id"] = None
 
                     changes += 1
 
-            # tag add/remove/set
+            # tags：应用模拟结果（与校验同一份逻辑）
             if args.tag:
-                for op, value in args.tag:
-                    if op == "add":
-                        if value not in req["tags"]:
-                            req["tags"].append(value)
-                            changes += 1
-                    elif op == "remove":
-                        if value in req["tags"]:
-                            req["tags"].remove(value)
-                            changes += 1
-                    elif op == "set":
-                        new_tags = [t.strip() for t in value.split(",") if t.strip()]
-                        if new_tags:
-                            req["tags"] = new_tags
-                            changes += 1
+                final_tags, _ = _simulate_tag_ops(
+                    list(req.get("tags", [])), args.tag, requirement_tags
+                )
+                if final_tags != req.get("tags", []):
+                    req["tags"] = final_tags
+                    changes += 1
 
-            # depends_on add/remove/set
+            # depends_on：应用模拟结果
             if args.depends_on_ops:
-                for op, ids_str in args.depends_on_ops:
-                    ids = [i.strip() for i in ids_str.split(",") if i.strip()]
-                    if op == "add":
-                        for rid in ids:
-                            if rid not in req.get("depends_on", []):
-                                req.setdefault("depends_on", [])
-                                req["depends_on"].append(rid)
-                                changes += 1
-                    elif op == "remove":
-                        deps = req.get("depends_on", [])
-                        for rid in ids:
-                            if rid in deps:
-                                deps.remove(rid)
-                                changes += 1
-                    elif op == "set":
-                        req["depends_on"] = ids
-                        changes += 1
+                final_deps, _ = _simulate_deps_ops(req.get("depends_on", []), args.depends_on_ops)
+                if final_deps != req.get("depends_on", []):
+                    req["depends_on"] = final_deps
+                    changes += 1
 
             # commit
             if args.commit:

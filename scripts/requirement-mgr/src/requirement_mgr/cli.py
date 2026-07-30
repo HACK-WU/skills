@@ -15,25 +15,21 @@ from requirement_mgr.commands.delete import cmd_delete
 from requirement_mgr.commands.archive import cmd_archive
 
 
-def find_config_upward(max_depth: int = 2) -> Path | None:
-    """从当前目录向上查找 .requirements/config。
-
-    Args:
-        max_depth: 最大向上查找层数（默认 2）
+def find_config_upward() -> Path | None:
+    """从当前目录逐级向上查找 .requirements/config，直到文件系统根目录。
 
     Returns:
         Path: config 文件路径，未找到返回 None
     """
     current = Path.cwd()
-    for _ in range(max_depth):
+    while True:
         config_path = current / ".requirements" / "config"
         if config_path.exists():
             return config_path
         parent = current.parent
         if parent == current:  # 到达根目录
-            break
+            return None
         current = parent
-    return None
 
 
 def main():
@@ -72,7 +68,6 @@ def main():
     list_parser.add_argument("--deps-depth", type=int, default=1)
     list_parser.add_argument("--json", dest="json_output", action="store_true")
     list_parser.add_argument("--columns", default=None)
-    list_parser.add_argument("--no-color", action="store_true")
     list_parser.add_argument("--include-archived", action="store_true", help="包含已归档需求（默认隐藏）")
 
     # req update

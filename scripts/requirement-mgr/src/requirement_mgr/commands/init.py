@@ -42,17 +42,14 @@ backup_enabled=false
 """
 
 
-def _find_project_root(max_depth: int = 2) -> Path:
-    """从当前目录向上查找项目根目录（包含 .requirements 或 .git 的目录）。
-
-    Args:
-        max_depth: 最大向上查找层数（默认 2）
+def _find_project_root() -> Path:
+    """从当前目录逐级向上查找项目根目录（包含 .requirements 或 .git 的目录）。
 
     Returns:
-        Path: 项目根目录，兜底返回当前目录
+        Path: 项目根目录，直到文件系统根仍未找到则兜底返回当前目录
     """
     current = Path.cwd()
-    for _ in range(max_depth):
+    while True:
         if (current / ".requirements").is_dir() or (current / ".git").is_dir():
             return current
         parent = current.parent

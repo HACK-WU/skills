@@ -6,6 +6,7 @@
   - 文档级归档（--doc <path>）：移动单个文档到该需求目录下的 archive/ 子目录，不改需求状态
 """
 
+import copy
 import os
 import shutil
 import sys
@@ -13,12 +14,17 @@ import sys
 from requirement_mgr.core.config_loader import ConfigLoader
 from requirement_mgr.core.meta_store import MetaStore
 from requirement_mgr.core.file_lock import FileLock
-from requirement_mgr.core.requirement_utils import find_req, find_rev_deps, find_children
+from requirement_mgr.core.requirement_utils import (
+    ARCHIVED_STATUS,
+    find_req,
+    find_rev_deps,
+    find_children,
+)
 from requirement_mgr.core.time_utils import now_cst_str
 
 
 ARCHIVE_DIR = "archive"
-ARCHIVE_STATUS = "已归档"
+ARCHIVE_STATUS = ARCHIVED_STATUS  # 兼容别名，常量收敛在 requirement_utils
 
 
 def cmd_archive(args):
@@ -139,27 +145,9 @@ def cmd_archive(args):
             # 如果原目录有分类前缀（如 tool/），创建对应的子目录
             dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # ① 移动目录
-            try:
-                shutil.move(str(src_path), str(dst_path))
-            except OSError as e:
-                # 清理移动失败后遗留的空归档目录
-                _cleanup_empty_archive_dirs(archive_base, dst_path.parent)
-                print(f"错误: 目录移动失败: {e}", file=sys.stderr)
-                sys.exit(1)
-
-            # 清理空的分类目录（如 tool/ 空了就删）
-            if "/" in dir_name:
-                category_dir = src_path.parent
-                if category_dir != storage_root and category_dir.exists():
-                    try:
-                        if not any(category_dir.iterdir()):
-                            category_dir.rmdir()
-                    except OSError:
-                        pass
-
-            # ② 更新 meta.json：改键名 + 更新字段
+            # ① 先更新 meta.json（meta 是唯一可信源，与 delete 命令保持同序）
             new_dir_name = f"{ARCHIVE_DIR}/{dir_name}"
+            snapshot = copy.deepcopy(req)
             old_entry = requirements.pop(dir_name)
 
             timestamp = now_cst_str()
@@ -181,6 +169,31 @@ def cmd_archive(args):
 
             requirements[new_dir_name] = old_entry
             ms.save(data)
+
+            # ② 再移动目录，失败则回滚 meta
+            try:
+                shutil.move(str(src_path), str(dst_path))
+            except OSError as e:
+                requirements.pop(new_dir_name, None)
+                requirements[dir_name] = snapshot
+                try:
+                    ms.save(data)
+                except Exception as rollback_err:
+                    print(f"严重: meta 回滚失败，请手工检查 meta.json: {rollback_err}", file=sys.stderr)
+                # 清理遗留的空归档目录
+                _cleanup_empty_archive_dirs(archive_base, dst_path.parent)
+                print(f"错误: 目录移动失败，已回滚归档状态: {e}", file=sys.stderr)
+                sys.exit(1)
+
+            # 清理空的分类目录（如 tool/ 空了就删）
+            if "/" in dir_name:
+                category_dir = src_path.parent
+                if category_dir != storage_root and category_dir.exists():
+                    try:
+                        if not any(category_dir.iterdir()):
+                            category_dir.rmdir()
+                    except OSError:
+                        pass
 
     except TimeoutError as e:
         print(f"错误: {e}", file=sys.stderr)
@@ -296,17 +309,8 @@ def _archive_doc(args, storage_root, dir_name, req, ms, lock_timeout):
             # 确保归档目录存在
             dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # 移动文件/目录
-            doc_archive_base = req_dir / ARCHIVE_DIR
-            try:
-                shutil.move(str(src_path), str(dst_path))
-            except OSError as e:
-                # 清理移动失败后遗留的空归档子目录
-                _cleanup_empty_archive_dirs(doc_archive_base, dst_path.parent)
-                print(f"错误: 文件移动失败: {e}", file=sys.stderr)
-                sys.exit(1)
-
-            # 更新 meta.json
+            # ① 先更新 meta.json（meta 是唯一可信源）
+            snapshot = copy.deepcopy(req2)
             timestamp = now_cst_str()
             req2["updated"] = timestamp
             req2["version"] = req2.get("version", 1) + 1
@@ -325,6 +329,21 @@ def _archive_doc(args, storage_root, dir_name, req, ms, lock_timeout):
                 f"{timestamp} v{req2['version']}: {changelog_msg}"
             )
             ms.save(data)
+
+            # ② 再移动文件/目录，失败则回滚 meta
+            doc_archive_base = req_dir / ARCHIVE_DIR
+            try:
+                shutil.move(str(src_path), str(dst_path))
+            except OSError as e:
+                requirements[dir_name2] = snapshot
+                try:
+                    ms.save(data)
+                except Exception as rollback_err:
+                    print(f"严重: meta 回滚失败，请手工检查 meta.json: {rollback_err}", file=sys.stderr)
+                # 清理移动失败后遗留的空归档子目录
+                _cleanup_empty_archive_dirs(doc_archive_base, dst_path.parent)
+                print(f"错误: 文件移动失败，已回滚归档记录: {e}", file=sys.stderr)
+                sys.exit(1)
 
     except TimeoutError as e:
         print(f"错误: {e}", file=sys.stderr)

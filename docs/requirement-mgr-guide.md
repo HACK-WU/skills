@@ -162,7 +162,7 @@ requirement_tags=feat,fix,refactor,tool,integration,security,performance,ux,infr
 | `storage_path` | 需求文档存储路径 | （必填） |
 | `feature_categories` | 功能分类配置，多个分类用逗号分隔 | 空 |
 | `requirement_tags` | 需求标签配置，tags 字段必须从此配置中选取 | 空 |
-| `requirement_statuses` | 需求状态列表 | `草案,已确认,设计中,实施中,已完成,已取消` |
+| `requirement_statuses` | 需求状态列表 | `草案,已确认,设计中,实施中,已完成,已取消,已归档` |
 | `requirement_roles` | 需求角色列表 | `standalone,parent,child` |
 | `id_prefix` | ID 前缀 | `REQ` |
 | `id_digits` | ID 日期后序号位数 | `3` |
@@ -310,7 +310,7 @@ stateDiagram-v2
 - `实施中`：开发编码阶段
 - `已完成`：开发与验收均通过（终态）
 - `已取消`：需求废弃，保留记录不删除（终态）
-- `已归档`：需求归档，移动到 `archive/` 目录（终态）
+- `已归档`：需求归档，移动到 `archive/` 目录（终态；仅能通过 `req archive` 设置，已归档需求不可再 update）
 
 ### 4.2 父子需求层级
 
@@ -387,7 +387,7 @@ flowchart LR
     end
     
     subgraph 解锁
-        Unlock["释放锁 + 删 .lock"]
+        Unlock["释放锁（保留 .lock 文件）"]
     end
     
     Lock --> Read --> Modify --> Atomic --> Unlock
@@ -397,7 +397,8 @@ flowchart LR
 - **锁粒度**：对 `meta.json` 整体加排他锁
 - **锁模式**：`LOCK_EX`（Unix）/ `LK_NBLCK`（Windows）
 - **超时机制**：5s 超时 + 0.1s 重试间隔
-- **TOCTOU 防护**：加锁后重新读取 meta.json
+- **锁文件保留**：释放时不删除 `.lock` 文件（删除会引入 inode 竞态导致双持锁），0 字节锁文件常驻是正常现象
+- **TOCTOU 防护**：加锁后重新读取 meta.json 并重新校验
 - **list 无锁**：只读操作，读取的是完整快照
 
 ### 4.4 原子写入保障
@@ -551,7 +552,6 @@ req list --id REQ-20260611-001 --rev-deps
 |------|------|
 | `--json` | JSON 格式输出 |
 | `--columns` | 自定义显示列 |
-| `--no-color` | 禁用 ANSI 颜色 |
 
 ### 6.2 新建需求 (req create)
 
@@ -583,16 +583,19 @@ req create \
 **自动填充字段**：
 | 字段 | 值 |
 |------|-----|
-| `id` | `REQ-YYYYMMDD-NNN`（日期+序号） |
-| `created` | 当前日期 |
-| `updated` | 当前日期 |
+| `id` | `REQ-YYYYMMDD-NNN`（日期+序号，东八区） |
+| `created` | 当前时间戳（`YYYY-MM-DD HH:MM:SS`，东八区） |
+| `updated` | 当前时间戳（同 `created`） |
 | `version` | 1 |
 | `changelog` | `["初始创建"]` |
 | `commits` | `[]` |
 
 ### 6.3 修改需求 (req update)
 
-**职责**：加锁 → 校验（循环依赖 / 标签下限）→ 字段合并 → 版号自增 → 原子写入。
+**职责**：预校验（循环依赖 / 标签约束 / 角色合法性）→ 加锁 → 重读并复验 → 字段合并 → 版号自增 → 原子写入。
+
+> 注：已归档需求不允许 update；`--status 已归档` 会被拒绝（请使用 `req archive`）。
+> 多个 `--tag`/`--depends-on` 操作按顺序模拟后校验**最终结果**，组合操作无法绕过约束（如标签清空、循环依赖）。
 
 **状态流转**：
 ```bash
@@ -627,6 +630,10 @@ req update REQ-20260611-001 \
 # 删除依赖
 req update REQ-20260611-002 \
   --depends-on remove REQ-20260611-001
+
+# 覆盖依赖（set 与 add 同等校验：存在性 / 自依赖 / 循环依赖）
+req update REQ-20260611-002 \
+  --depends-on set REQ-20260611-001,REQ-20260611-003
 ```
 
 **标签管理**：
@@ -773,7 +780,7 @@ flowchart TB
     end
     
     subgraph 解锁
-        U["释放锁 + 删 .lock"]
+        U["释放锁（保留 .lock 文件）"]
     end
     
     L1 --> R --> M --> W --> U
@@ -785,8 +792,9 @@ flowchart TB
 | 锁粒度 | `meta.json` 整体排他锁（`.meta.json.lock`） |
 | 锁模式 | `LOCK_EX`（Unix fcntl）/ `LK_NBLCK`（Windows msvcrt） |
 | 超时 | 5s + 0.1s 重试间隔，超时退出码 2 |
+| 锁文件保留 | 释放时不删除 `.lock`（避免 inode 竞态），0 字节锁文件常驻属正常 |
 | list 无锁 | 只读操作，读取的是 `os.replace` 保证的完整快照 |
-| TOCTOU 防护 | create/update/delete 加锁后均**重读** meta.json |
+| TOCTOU 防护 | create/update/delete/archive 加锁后均**重读并复验** meta.json |
 
 ### 7.3 meta.json 结构
 
@@ -796,8 +804,8 @@ flowchart TB
     "security/2026-06-11-requirement-management": {
       "id": "REQ-20260611-001",
       "feature": "需求管理脚本系统",
-      "created": "2026-06-11",
-      "updated": "2026-06-12",
+      "created": "2026-06-11 10:23:45",
+      "updated": "2026-06-12 09:10:00",
       "status": "实施中",
       "role": "standalone",
       "parent_id": null,
@@ -828,7 +836,7 @@ flowchart TB
 | `role` | 默认 standalone | 筛选 | 覆盖 | — | — |
 | `parent_id` | 自动（有 --parent-id 时） | 展示/筛选 | 可修改 | 清理 | — |
 | `child_ids` | 自动（有子需求时追加） | 展示/筛选 | 自动升降级 | 清理 | — |
-| `tags` | 默认[“feat”] | 筛选 | 增/删/改 | — | — |
+| `tags` | 必填（需从 `requirement_tags` 选取） | 筛选 | 增/删/改 | — | — |
 | `version` | =1 | 展示 | +1 | — | +1 |
 | `created` | 自动 | 展示 | 不可修改 | — | — |
 | `updated` | =created | 展示 | 自动刷新 | — | 自动刷新 |
@@ -846,9 +854,9 @@ flowchart TB
 | 现象 | 原因 | 解决 |
 |------|------|------|
 | `.requirements/config 不存在` | 未运行 `req init` | `req init` 初始化配置 |
-| `无法在 5s 内获取文件锁` | 其他进程持有锁或残留 `.lock` | 等待后重试，或手动删除残留 `.meta.json.lock` |
+| `无法在 5s 内获取文件锁` | 其他进程正持有锁 | 等待后重试（`.lock` 文件常驻是正常现象，进程退出后锁自动释放，无需手动删除） |
 | `依赖需求 REQ-XXX 不存在` | depends-on 指向不存在的 ID | 先 `req create` 依赖需求，或修正 ID |
-| `不能删除最后一个标签` | 标签列表至少保留 1 个 | 先 `req update <ID> --tag add xxx` 再删 |
+| `不能删除最后一个标签` / `操作后标签为空` | 多个标签操作的最终结果至少保留 1 个标签 | 先 `req update <ID> --tag add xxx` 再删 |
 | `标签 XXX 不在 requirement_tags 配置中` | 标签不在配置的允许列表中 | 使用配置中的标签，或更新 `.requirements/config` 的 `requirement_tags` |
 | `必须包含一个功能分类标签` | 创建需求时未指定功能分类标签 | 添加一个 `feature_categories` 中的标签，如 `--tags feat,security` |
 | `功能分类标签只能有一个` | 指定了多个功能分类标签 | 只保留一个功能分类标签 |
@@ -943,7 +951,7 @@ flowchart TB
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `REQ_LOCK_TIMEOUT` | 文件锁超时秒数 | 5 |
+| `REQ_LOCK_TIMEOUT` | 文件锁超时秒数（优先级：环境变量 > config 的 `lock_timeout` > 默认值） | 5 |
 
 ---
 

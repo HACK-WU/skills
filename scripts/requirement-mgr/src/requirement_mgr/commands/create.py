@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """req create: 新建需求，创建目录 + 写入 meta.json。"""
 
+import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -8,8 +10,27 @@ from requirement_mgr.core.config_loader import ConfigLoader
 from requirement_mgr.core.meta_store import MetaStore
 from requirement_mgr.core.file_lock import FileLock
 from requirement_mgr.core.id_generator import gen_next_id
-from requirement_mgr.core.requirement_utils import find_req
+from requirement_mgr.core.requirement_utils import ARCHIVED_STATUS, find_req
 from requirement_mgr.core.time_utils import now_cst_str, today_cst_str
+
+
+# 目录名中禁止的字符（路径分隔符 / 空字符）
+_UNSAFE_CHARS = re.compile(r"[/\\\x00]")
+
+
+def _check_dir_name(name: str) -> str | None:
+    """校验目录名是否为安全的单层目录组件，非法返回错误信息。
+
+    防路径穿越：禁止 . / .. / 路径分隔符，避免写到 storage_root 之外
+    或污染 meta.json 键名（键名格式为 category/dir_name）。
+    """
+    if not name:
+        return "目录名不能为空"
+    if name in (".", ".."):
+        return f"目录名不能为 '{name}'"
+    if _UNSAFE_CHARS.search(name):
+        return f"目录名 '{name}' 含非法字符（不允许 / \\ 和空字符）"
+    return None
 
 
 def cmd_create(args):
@@ -47,6 +68,9 @@ def cmd_create(args):
 
     # status 校验（从 config 驱动，非硬编码）
     status = (args.status or default_status).strip()
+    if status == ARCHIVED_STATUS:
+        print(f"错误: 不能直接创建 '{ARCHIVED_STATUS}' 状态的需求，请使用 req archive", file=sys.stderr)
+        sys.exit(1)
     if status not in valid_statuses:
         print(f"错误: 无效状态 '{status}'，有效值: {', '.join(valid_statuses)}", file=sys.stderr)
         sys.exit(1)
@@ -107,6 +131,9 @@ def cmd_create(args):
         if parent_req is None:
             print(f"错误: 父需求 {parent_id} 不存在", file=sys.stderr)
             sys.exit(1)
+        if parent_req.get("status") == ARCHIVED_STATUS:
+            print(f"错误: 父需求 {parent_id} 已归档，不能挂载子需求", file=sys.stderr)
+            sys.exit(1)
         if parent_req.get("role") not in ("parent", "standalone"):
             print(f"错误: 目标需求 {parent_id} 的角色为 {parent_req.get('role')}，不能作为父需求", file=sys.stderr)
             sys.exit(1)
@@ -118,16 +145,31 @@ def cmd_create(args):
     today = today_cst_str()
     timestamp = now_cst_str()
     if args.dir_name:
+        # 显式指定的目录名：非法直接拒绝
         dir_name = args.dir_name.strip()
+        err = _check_dir_name(dir_name)
+        if err:
+            print(f"错误: --dir-name 非法: {err}", file=sys.stderr)
+            sys.exit(1)
     else:
-        safe_feature = feature[:20]
+        # 从 feature 推导：清洗路径分隔符后截断
+        safe_feature = _UNSAFE_CHARS.sub("-", feature).strip("-. ")[:20]
         dir_name = f"{today}-{safe_feature}"
+        err = _check_dir_name(dir_name)
+        if err:
+            print(f"错误: 无法从 feature 生成合法目录名: {err}，请使用 --dir-name 指定", file=sys.stderr)
+            sys.exit(1)
 
     # 目录路径
     if category:
         dir_path = storage_root / category / dir_name
     else:
         dir_path = storage_root / dir_name
+
+    # 防穿越兜底：解析后必须仍在 storage_root 内
+    if not dir_path.resolve().is_relative_to(storage_root.resolve()):
+        print(f"错误: 目录路径超出存储根目录: {dir_path}", file=sys.stderr)
+        sys.exit(1)
 
     # 确保目录结构存在
     if not storage_root.exists():
@@ -155,11 +197,17 @@ def cmd_create(args):
                 print(f"错误: 目录已存在: {dir_path}", file=sys.stderr)
                 sys.exit(1)
 
-            # 二次校验 parent_id（TOCTOU）
+            # 二次校验 parent_id（TOCTOU：存在性 + 角色 + 归档状态均复验）
             if parent_id:
                 _, parent_req = find_req(requirements, parent_id)
                 if parent_req is None:
                     print(f"错误: 父需求 {parent_id} 不存在（并发删除）", file=sys.stderr)
+                    sys.exit(1)
+                if parent_req.get("status") == ARCHIVED_STATUS:
+                    print(f"错误: 父需求 {parent_id} 已归档（并发变更），不能挂载子需求", file=sys.stderr)
+                    sys.exit(1)
+                if parent_req.get("role") not in ("parent", "standalone"):
+                    print(f"错误: 目标需求 {parent_id} 的角色为 {parent_req.get('role')}（并发变更），不能作为父需求", file=sys.stderr)
                     sys.exit(1)
 
             # 生成 ID
@@ -205,7 +253,13 @@ def cmd_create(args):
                         parent_req.setdefault("child_ids", [])
                         parent_req["child_ids"].append(req_id)
 
-            ms.save(data)
+            try:
+                ms.save(data)
+            except Exception:
+                # meta 写入失败时回滚刚创建的空目录，避免遗留孤儿目录
+                # 阻塞后续同名创建（目录由上方 mkdir(exist_ok=False) 独占创建）
+                shutil.rmtree(dir_path, ignore_errors=True)
+                raise
 
     except TimeoutError as e:
         print(f"错误: {e}", file=sys.stderr)

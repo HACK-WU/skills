@@ -3,6 +3,9 @@
 
 from collections import deque
 
+# 归档状态（系统保留状态：仅 archive 命令可设置，update 不得设置或修改已归档需求）
+ARCHIVED_STATUS = "已归档"
+
 
 def find_req(requirements: dict, req_id: str) -> tuple[str | None, dict | None]:
     """通过 ID 查找需求，返回 (dir_name, req)。"""
@@ -59,7 +62,6 @@ def validate_parent_child_op(
     req_id: str,
     new_role: str,
     new_parent_id: str | None,
-    config_roles: list[str],
 ) -> list[str]:
     """校验 role 变更的合法性，返回错误列表。"""
     errors = []

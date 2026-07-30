@@ -55,16 +55,26 @@ class MetaStore:
         meta_dir = self._meta_path.parent
         meta_dir.mkdir(parents=True, exist_ok=True)
 
-        # 在同一目录下创建临时文件，保证 os.replace 在同一文件系统
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            suffix=".tmp",
-            dir=meta_dir,
-            delete=False,
-        ) as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            tmp_path = f.name
+        # 在同一目录下创建临时文件，保证 os.replace 在同一文件系统；
+        # 失败时清理临时文件，避免 .tmp 泄漏
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                suffix=".tmp",
+                dir=meta_dir,
+                delete=False,
+            ) as f:
+                tmp_path = f.name
+                json.dump(data, f, ensure_ascii=False, indent=2)
 
-        # os.replace 是原子操作
-        os.replace(tmp_path, self._meta_path)
+            # os.replace 是原子操作
+            os.replace(tmp_path, self._meta_path)
+        except Exception:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+            raise

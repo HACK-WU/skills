@@ -2,7 +2,8 @@
 """需求 ID 生成器，支持日期+序号格式。"""
 
 import re
-from datetime import date
+
+from requirement_mgr.core.time_utils import now_cst
 
 
 def gen_next_id(requirements: dict, prefix: str = "REQ", digits: int = 3) -> str:
@@ -22,7 +23,8 @@ def gen_next_id(requirements: dict, prefix: str = "REQ", digits: int = 3) -> str
     Raises:
         ValueError: 当日编号超过上限
     """
-    today = date.today().strftime("%Y%m%d")
+    # 与目录名/created 时间戳同源（东八区），避免本地时区差异导致 ID 日期与目录日期不一致
+    today = now_cst().strftime("%Y%m%d")
     pattern = re.compile(rf"^{re.escape(prefix)}-{today}-(\d{{{digits}}})$")
     max_seq = 0
     for req in requirements.values():

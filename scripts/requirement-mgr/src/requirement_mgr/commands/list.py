@@ -6,7 +6,7 @@ import sys
 
 from requirement_mgr.core.config_loader import ConfigLoader
 from requirement_mgr.core.meta_store import MetaStore
-from requirement_mgr.core.requirement_utils import find_req, find_rev_deps
+from requirement_mgr.core.requirement_utils import ARCHIVED_STATUS, find_req, find_rev_deps
 
 
 DEFAULT_COLUMNS = ["id", "feature", "status", "role", "tags", "version", "updated"]
@@ -15,7 +15,8 @@ ALL_COLUMNS = [
     "created", "updated", "parent_id", "depends_on", "docs", "commits",
 ]
 
-ARCHIVE_STATUS = "已归档"
+ARCHIVE_STATUS = ARCHIVED_STATUS  # 兼容别名，常量收敛在 requirement_utils
+ARCHIVE_PREFIX = "archive/"
 
 
 def _normalize_ts(ts: str) -> str:
@@ -228,9 +229,12 @@ def cmd_list(args):
             req_parent = req.get("parent_id")
             if req_parent != args.parent_id:
                 continue
-        # --category
+        # --category（已归档需求键名带 archive/ 前缀，先去掉前缀再匹配分类）
         if args.category:
-            parts = dir_name.split("/")
+            key = dir_name
+            if key.startswith(ARCHIVE_PREFIX):
+                key = key[len(ARCHIVE_PREFIX):]
+            parts = key.split("/")
             if len(parts) < 2:
                 continue
             if parts[0] != args.category:
