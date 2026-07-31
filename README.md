@@ -4,80 +4,59 @@
 
 ## 设计流程
 
-这些技能可以串联使用，形成完整的设计-开发流程：
+这些技能可以串联使用，自上而下形成完整的设计-开发流程（实线为主链路，虚线为"返回修改"回环；中部"模块知识资产"随时可查、可建）：
 
-```
- ┌──────────────────────────────────────────────────────────────────────────┐
- │                          设 计 前 置                                      │
- │                                                                          │
- │  requirement-mining   dependency-docs    code-survey    demo-verify      │
- │                                                                          │
- │    理解需求   →   整理第三方依赖   →   代码现状调研   →   验证风险点原型     │
- └──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
- ┌──────────────────────────────────────────────────────────────────────────┐
- │                              设 计 阶 段                                  │
- │                                                                          │
- │      interaction   work        data-flow    design                       │
- │       -design   →   -breakdown  -model   →   -craft                      │
- │                                                                          │
- │       设计交互层     拆成独立切片   数据建模+流图   技术设计                 │
- └──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                           场 景 推 演                                     │
-│                                                                          │
-│                        scenario-rehearsal                                │
-│                                                                          │
-│                    模拟真实场景验证可行性 → 返回修改 / 继续                 │
-└──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
- ┌──────────────────────────────────────────────────────────────────────────┐
- │                          设 计 评 审                                      │
- │                                                                          │
- │                          design-review                                   │
- │                                                                          │
- │                    评审设计文档 → 返回修改 / 继续                          │
- └──────────────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
- ┌──────────────────────────────────────────────────────────────────────────┐
- │                            骨 架 生 成                                    │
- │                                                                          │
- │               design-to-code（同批顺序无关时调用 task-dispatch 并行 ）     │
- │                                                                          │
- │                    设计 → 代码骨架 + 契约级注释                            │
- └──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
- ┌──────────────────────────────────────────────────────────────────────────┐
- │                          系 统 化 编 码                                   │
- │                                                                          │
- │       code-implement（批量编码，task-dispatch 并行，契约验证）             │
- │                                                                          │
- │          骨架契约注释 → 参考 code-survey + dependency-docs → 填充实现      │
- └──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
- ┌─────────────────────────────────────────────────────────────────────────┐
- │                               质 量 阶 段                                │
- │                                                                         │
- │          code-review  →  challenger  →  test-planner                    │
- │                                                                         │
- │           代码评审       二次质疑        测试验证                         │
- └─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
- ┌─────────────────────────────────────────────────────────────────────────┐
- │                        实 现 总 结                                       │
- │                                                                         │
- │                 implementation-report                                   │
- │                                                                         │
- │                 生成实现报告，记录最终效果和偏差                           │
- └─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph PRE["🔍 设计前置"]
+        direction LR
+        RM["requirement-mining<br/>理解需求"] --> DD["dependency-docs<br/>整理第三方依赖"] --> CS["code-survey<br/>代码现状调研"] --> DV["demo-verify<br/>验证风险点原型"]
+    end
+
+    subgraph DESIGN["✏️ 设计阶段"]
+        direction LR
+        ID["interaction-design<br/>设计交互层"] --> WB["work-breakdown<br/>拆成独立切片"] --> DFM["data-flow-model<br/>数据建模 + 流图"] --> DC["design-craft<br/>技术设计"]
+    end
+
+    SR["🎭 场景推演 · scenario-rehearsal<br/>模拟真实场景验证可行性"]
+    DR["🔎 设计评审 · design-review<br/>评审设计文档"]
+    D2C["🏗️ 骨架生成 · design-to-code<br/>代码骨架 + 契约级注释（task-dispatch 并行）"]
+    CI["⌨️ 系统化编码 · code-implement<br/>批量编码 + 契约验证"]
+
+    subgraph QA["🧪 质量阶段"]
+        direction LR
+        CRV["code-review<br/>代码评审"] --> CH["challenger<br/>二次质疑"] --> TP["test-planner<br/>测试验证"]
+    end
+
+    IR["📊 实现总结 · implementation-report<br/>记录最终效果与偏差"]
+
+    subgraph EXPERT["📚 模块知识资产（随时可查 / 可建）"]
+        direction LR
+        EL["expert-lookup<br/>查现成专家"] -. 没有则新建 .-> ET["expert-team<br/>并行深挖模块"] --> EA["expert-audit<br/>使用者视角验收"]
+        EA -. 沉淀可复用 .-> EL
+    end
+
+    PRE --> EXPERT --> DESIGN --> SR
+    SR -. 返回修改 .-> DESIGN
+    SR --> DR
+    DR -. 返回修改 .-> DESIGN
+    DR --> D2C --> CI --> QA --> IR
+
+    classDef pre fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    classDef design fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
+    classDef verify fill:#fff3e0,stroke:#ef6c00,color:#e65100
+    classDef code fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    classDef qa fill:#ffebee,stroke:#c62828,color:#b71c1c
+    classDef report fill:#eceff1,stroke:#546e7a,color:#263238
+    classDef expert fill:#e0f2f1,stroke:#00897b,color:#004d40
+
+    class RM,DD,CS,DV pre
+    class ID,WB,DFM,DC design
+    class SR,DR verify
+    class D2C,CI code
+    class CRV,CH,TP qa
+    class IR report
+    class EL,ET,EA expert
 ```
 
 ## 快速安装
