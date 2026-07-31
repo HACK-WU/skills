@@ -6,12 +6,12 @@
 
 每篇切面文档**必须**遵守以下格式（R1–R7 由 AI 在 Step 5 校验阶段手动自检）：
 
-- 顶部 `**本文引用的文件**` cite 块，列出本篇真正用到的源文件，`[名称](file://相对仓库根目录的路径)`，**无需行号**
+- 顶部 `**本文引用的文件**` cite 块，列出本篇真正用到的源文件，`[名称](file://相对仓库根目录的路径)`，**只列文件路径，无需符号**
 - `## 目录` 条目与 `##` 章节一一对应，锚点用中文（如 `[核心组件](#核心组件)`）
-- 每个 `##`/`###` 小节末尾有 `章节来源`：`[名称](file://相对路径#Lx-Ly)`，**必须带 `file://` 与行号区间**（纯概念节可豁免 R3）
+- 每个 `##`/`###` 小节末尾有 `章节来源`：`[名称](file://相对路径)（关键符号：类名 / 方法名 / 类.方法）`，**必须带 `file://`；论述代码的节附关键符号，不标行号**（纯概念节可豁免 R3）
 - 任何 Mermaid 图后紧跟 `图表来源`（同章节来源格式）
 - 所有引用路径均 `file://` 前缀
-- 来源行号区间须覆盖被论述代码实际跨度，`Lx-Lx` 单点不合规（R6）
+- 关键符号须真实存在于源码（类/方法/函数名可 grep 验证），每处标 1~3 个入口符号即可；无类/方法符号的内容（配置/SQL/脚本）可用表名/顶层键等可搜索标识替代，实在没有才只标文件路径（R6）
 - 详细分析须 ≥2 设计维度（设计要点 / 关键流程 / 错误处理 / 风险控制）；架构 / 流程 / 状态机 / 依赖等按需配 ≥1 Mermaid 图（R7）
 - 不逐行转储代码，提炼模式与要点
 - 无内容的章节标注「该模块无此项」，不留空、不编造
@@ -48,7 +48,7 @@
 
 ## 简介
 {一句话职责 + 模块定位}
-章节来源：[README](file://{root}/README.md#L1-L20)
+章节来源：[README](file://{root}/README.md)
 
 ## 项目结构
 {目录树 + 各子模块一句话职责，标注路径}
@@ -56,7 +56,7 @@
 
 ## 核心组件
 {主组件清单 + 各自职责}
-章节来源：[comp.go](file://{root}/comp.go#L1-L30)
+章节来源：[comp.go](file://{root}/comp.go)（关键符号：`Service`、`Repo`）
 
 ## 架构总览
 \`\`\`mermaid
@@ -65,18 +65,18 @@ graph TD
   B --> C[Repo]
   C --> D[(DB)]
 \`\`\`
-图表来源：[main.go](file://{root}/main.go#L10-L50)
+图表来源：[main.go](file://{root}/main.go)（关键符号：`main`）
 
 ## 组件详细分析
 ### {组件 A}
 - 设计要点：{...}
 - 关键流程：{...}
 - 错误处理：{...}
-章节来源：[a.go](file://{root}/a.go#L10-L80)
+章节来源：[a.go](file://{root}/a.go)（关键符号：`ComponentA`）
 
 ## 依赖关系分析
 {内部 / 外部依赖 + 被依赖方，标注文件}
-章节来源：[go.mod](file://{root}/go.mod#L1-L20)
+章节来源：[go.mod](file://{root}/go.mod)
 
 ## 结论
 {架构层面的关键结论 / 风险 / 扩展点}
@@ -112,31 +112,31 @@ graph TD
 
 ## 简介
 {实现层面一句话概述}
-章节来源：[handler.go](file://{root}/handler.go#L1-L30)
+章节来源：[handler.go](file://{root}/handler.go)
 
 ## 核心流程
 \`\`\`mermaid
 flowchart LR
   R[请求] --> V[校验] --> B[业务] --> S[落库]
 \`\`\`
-图表来源：[handler.go](file://{root}/handler.go#L30-L90)
+图表来源：[handler.go](file://{root}/handler.go)（关键符号：`Handler.Handle`）
 
 ## 设计模式
 | 模式 | 位置 | 用途 |
-| 策略 | [s.go](file://{root}/s.go#L1-L40) | {...} |
-章节来源：[s.go](file://{root}/s.go#L1-L40)
+| 策略 | [s.go](file://{root}/s.go)（`Strategy`） | {...} |
+章节来源：[s.go](file://{root}/s.go)（关键符号：`Strategy`）
 
 ## 关键类与函数
 | 名称 | 路径 | 职责 |
-章节来源：[x.go](file://{root}/x.go#L5-L60)
+章节来源：[x.go](file://{root}/x.go)（关键符号：`X.Process`）
 
 ## 热点路径
 {高频 / 性能敏感路径 + 文件}
-章节来源：[hot.go](file://{root}/hot.go#L1-L50)
+章节来源：[hot.go](file://{root}/hot.go)（关键符号：`hotLoop`）
 
 ## 技术债
 {已知 hack / TODO / 待重构点}
-章节来源：[legacy.go](file://{root}/legacy.go#L1-L20)
+章节来源：[legacy.go](file://{root}/legacy.go)
 
 ## 结论
 {实现层面结论 / 风险}
@@ -170,14 +170,14 @@ flowchart LR
 
 ## 简介
 {数据流转一句话概述}
-章节来源：[controller.go](file://{root}/controller.go#L1-L20)
+章节来源：[controller.go](file://{root}/controller.go)
 
 ## 数据生命周期
 \`\`\`mermaid
 flowchart TD
   In[入口] --> T1[变换] --> Store[(存储)] --> Out[出口]
 \`\`\`
-图表来源：[controller.go](file://{root}/controller.go#L20-L70)
+图表来源：[controller.go](file://{root}/controller.go)（关键符号：`Controller.Create`）
 
 ## 状态流转
 \`\`\`mermaid
@@ -185,11 +185,11 @@ stateDiagram-v2
   [*] --> 待处理
   待处理 --> 处理中 --> 完成
 \`\`\`
-图表来源：[state.go](file://{root}/state.go#L1-L40)
+图表来源：[state.go](file://{root}/state.go)（关键符号：`State`）
 
 ## 异步流
 {队列 / 定时 / 回调 + 文件}
-章节来源：[consumer.go](file://{root}/consumer.go#L1-L50)
+章节来源：[consumer.go](file://{root}/consumer.go)（关键符号：`Consumer.Run`）
 
 ## 结论
 {数据一致性 / 丢失风险等结论}
@@ -224,24 +224,24 @@ stateDiagram-v2
 
 ## 简介
 {数据模型一句话概述}
-章节来源：[alert.go](file://{root}/model/alert.go#L1-L20)
+章节来源：[alert.go](file://{root}/model/alert.go)
 
 ## 实体清单
 | 实体 | 路径 | 关键字段 |
-| Alert | [alert.go](file://{root}/model/alert.go#L5-L40) | id, rule, status |
-章节来源：[alert.go](file://{root}/model/alert.go#L5-L40)
+| Alert | [alert.go](file://{root}/model/alert.go)（`Alert`） | id, rule, status |
+章节来源：[alert.go](file://{root}/model/alert.go)（关键符号：`Alert`）
 
 ## DB Schema
 {表 / 集合概述，标注文件}
-章节来源：[schema.sql](file://{root}/migrations/001.sql#L1-L30)
+章节来源：[schema.sql](file://{root}/migrations/001.sql)
 
 ## 迁移
 - 位置：[migrations](file://{root}/migrations)  惯例：{...}
-章节来源：[001.sql](file://{root}/migrations/001.sql#L1-L30)
+章节来源：[001.sql](file://{root}/migrations/001.sql)
 
 ## 校验规则
 {必填 / 格式 / 业务约束 + 文件}
-章节来源：[validate.go](file://{root}/validate.go#L1-L25)
+章节来源：[validate.go](file://{root}/validate.go)（关键符号：`Validate`）
 
 ## 结论
 {模型层面结论 / 风险}
@@ -276,25 +276,25 @@ stateDiagram-v2
 
 ## 简介
 {接口一句话概述}
-章节来源：[router.go](file://{root}/router.go#L1-L20)
+章节来源：[router.go](file://{root}/router.go)
 
 ## 入口清单
 | 入口 | 路径 | 方法 | 说明 |
-| 创建 | [r.go](file://{root}/router.go#L10-L15) | POST | {...} |
-章节来源：[router.go](file://{root}/router.go#L10-L15)
+| 创建 | [r.go](file://{root}/router.go)（`RegisterRoutes`） | POST | {...} |
+章节来源：[router.go](file://{root}/router.go)（关键符号：`RegisterRoutes`）
 
 ## 契约示例
 {请求 / 响应，标注文件}
-章节来源：[handler.go](file://{root}/handler.go#L20-L60)
+章节来源：[handler.go](file://{root}/handler.go)（关键符号：`CreateHandler`）
 
 ## 错误码
 | 码 | 含义 | 来源 |
-| 4001 | {...} | [err.go](file://{root}/err.go#L1-L20) |
-章节来源：[err.go](file://{root}/err.go#L1-L20)
+| 4001 | {...} | [err.go](file://{root}/err.go)（`ErrCode`） |
+章节来源：[err.go](file://{root}/err.go)（关键符号：`ErrCode`）
 
 ## 版本与鉴权
 {版本策略 / 鉴权 / 限流 + 文件}
-章节来源：[middleware.go](file://{root}/middleware.go#L1-L30)
+章节来源：[middleware.go](file://{root}/middleware.go)（关键符号：`AuthMiddleware`）
 
 ## 结论
 {接口层面结论 / 风险}
@@ -333,21 +333,21 @@ stateDiagram-v2
 
 ## 测试位置
 - 目录：[test](file://{root}/test)  命名惯例：{...}
-章节来源：[alert_test.go](file://{root}/test/alert_test.go#L1-L10)
+章节来源：[alert_test.go](file://{root}/test/alert_test.go)
 
 ## 框架与组织
 {框架 / mock 方式 + 文件}
-章节来源：[alert_test.go](file://{root}/test/alert_test.go#L1-L40)
+章节来源：[alert_test.go](file://{root}/test/alert_test.go)（关键符号：`TestAddRule`）
 
 ## 运行命令
 \`\`\`bash
 {命令}
 \`\`\`
-章节来源：[Makefile](file://{root}/Makefile#L1-L10)
+章节来源：[Makefile](file://{root}/Makefile)
 
 ## 覆盖与缺口
 {已覆盖 / 薄弱点 + 文件}
-章节来源：[alert_test.go](file://{root}/test/alert_test.go#L1-L40)
+章节来源：[alert_test.go](file://{root}/test/alert_test.go)
 
 ## 结论
 {测试层面结论}
@@ -381,19 +381,19 @@ stateDiagram-v2
 
 ## 简介
 {运维一句话概述}
-章节来源：[config.yaml](file://{root}/config.yaml#L1-L20)
+章节来源：[config.yaml](file://{root}/config.yaml)
 
 ## 配置
-- 文件：[config.yaml](file://{root}/config.yaml#L1-L20)  环境变量：{...}
-章节来源：[config.yaml](file://{root}/config.yaml#L1-L20)
+- 文件：[config.yaml](file://{root}/config.yaml)  环境变量：{...}
+章节来源：[config.yaml](file://{root}/config.yaml)
 
 ## 部署
 { Dockerfile / k8s / CI + 文件 }
-章节来源：[Dockerfile](file://{root}/Dockerfile#L1-L30)
+章节来源：[Dockerfile](file://{root}/Dockerfile)
 
 ## 日志与监控
 {日志框架 / 关键日志点 / 指标 + 文件}
-章节来源：[main.go](file://{root}/main.go#L1-L30)
+章节来源：[main.go](file://{root}/main.go)（关键符号：`initLogger`）
 
 ## 结论
 {运维层面结论 / 风险}
@@ -618,7 +618,7 @@ flowchart LR
 
 ### 拆分规则
 - **仅一级**：`sub-experts/` 下的专家不可再含 `sub-experts/`
-- 每个子专家结构同父专家：`agent.md` + 契约层文档（`C0`~`C4`，子专家根目录）+ `implementation/` + `CHANGELOG.md`
+- 每个子专家结构同父专家：`agent.md` + 契约层文档（`C0`~`C4`，子专家根目录）+ `implementation/`
 - 父专家的 `C0-使用总览.md` 含「子专家导航」小节，列出子专家名 + 职责 + 覆盖功能子域
 - 父专家的 `implementation/01-架构.md` 含子专家划分说明（为何如此拆、各子专家边界）
 - 父专家的契约层覆盖系统级公开能力；子专家的契约层覆盖该子域的公开能力
@@ -643,14 +643,14 @@ flowchart LR
 - 是否子专家：{是/否}（如是，注明子专家名与其功能子域范围）
 
 ## 调研清单与格式模板
-见 reference.md 中「{NN-切面}」章节（须严格遵循 code-to-wiki 格式：cite 块 / 目录 / 章节来源 / 图表来源 / file:// + 行号区间 / Mermaid / 深度）
+见 reference.md 中「{NN-切面}」章节（须严格遵循 code-to-wiki 格式：cite 块 / 目录 / 章节来源 / 图表来源 / file:// + 关键符号 / Mermaid / 深度）
 
 ## 同批产出的其他切面（供 01-架构.md 预置切面索引）
 {列出同批切面清单，如 02-实现, 05-接口, 06-测试}
 
 ## 方法
 1. search_content / search_file 精确定位（优先）
-2. read_file 读关键文件，**记录文件路径与行号区间**供章节来源
+2. read_file 读关键文件，**记录文件路径与关键符号**（类/方法/函数名）供章节来源
 3. 信息来源标注：ki / 代码搜索 / 语义检索
 
 ## 产出
