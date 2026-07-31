@@ -183,11 +183,13 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本静态列表与 README 技能一览/项目结构 | "更新安装脚本"、"同步技能列表" |
 | **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
 | **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
+| **[expert-audit](./skills/expert-audit/SKILL.md)** | 站在零上下文使用者视角审查 expert-team 专家资产的可读性与格式合规（R1–R7/CR1–CR9/INDEX），格式问题自动修复 | "核对专家团"、"审查专家资产"、"expert audit" |
 | **[loop-discovery](./skills/loop-discovery/SKILL.md)** | 沉淀路由门：新建 skill/rule/solution/memory 前先过证据门→覆盖阶梯→载体选择三步检查，避免重复建设与载体过重 | "要不要沉淀"、"建个 skill 吧"、"loop discovery" |
 | **[solution-capture](./skills/solution-capture/SKILL.md)** | 将解决非平凡问题的过程沉淀为可复用的解决方案 skill，存入 .solutions/ | "记录这个方案"、"沉淀一下"、"保存解决方案" |
 | **[solution-lookup](./skills/solution-lookup/SKILL.md)** | 查找并复用已沉淀的解决方案 skill，通过关键词匹配定位 .solutions/ 中的方案 | "有没有类似方案"、"之前怎么解决的"、"查找方案" |
 | **[artifact-optimizer](./skills/artifact-optimizer/SKILL.md)** | 对代码、设计文档、Skill 文件进行系统化优化分析，根据用户意图调用对应的优化子流程 | "优化代码"、"优化设计文档"、"优化 skill" |
 | **[harness-review](./skills/harness-review/SKILL.md)** | 对项目 AI 工作流配置做五维轻量体检，按证据状态阶梯评分（存在≠被用≠有效），零依赖纯 Markdown | "体检一下工作流"、"harness review"、"评估 AI 配置" |
+| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 HTML 的学习材料，支持课程制/速览双模式 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF" |
 
 ### 规则
 
@@ -269,11 +271,13 @@ skills/
 ├── requirement-doc-store/    # 需求文档存储规范
 ├── expert-lookup/            # 业务专家查找
 ├── expert-team/              # 专家团队并行深挖
+├── expert-audit/             # 专家资产审查
 ├── loop-discovery/           # 沉淀路由门
 ├── solution-capture/         # 解决方案沉淀
 ├── solution-lookup/          # 解决方案查找
 ├── harness-review/           # AI 工作流体检
-└── artifact-optimizer/       # 工件优化
+├── artifact-optimizer/       # 工件优化
+└── topic-teach/              # 通用知识教学
 
 rules/
 ├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则

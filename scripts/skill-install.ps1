@@ -289,6 +289,7 @@ function Install-Skills {
             "e2e-testing/SKILL.md",
             "e2e-testing/examples.md",
             "e2e-testing/reference.md",
+            "expert-audit/SKILL.md",
             "expert-lookup/SKILL.md",
             "expert-team/SKILL.md",
             "expert-team/reference.md",
@@ -314,6 +315,7 @@ function Install-Skills {
             "scenario-rehearsal/reference.md",
             "scenario-rehearsal/strategies/batch-sync.md",
             "scenario-rehearsal/strategies/bug-fix.md",
+            "scenario-rehearsal/strategies/code.md",
             "scenario-rehearsal/strategies/concurrency.md",
             "scenario-rehearsal/strategies/crud-api.md",
             "scenario-rehearsal/strategies/feature.md",
@@ -333,6 +335,8 @@ function Install-Skills {
             "test-planner/references/test-strategies.md",
             "test-planner/strategies/api.md",
             "test-planner/strategies/design.md",
+            "topic-teach/SKILL.md",
+            "topic-teach/reference.md",
             "work-breakdown/SKILL.md"
         )
     }
