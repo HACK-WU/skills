@@ -408,6 +408,8 @@ install_skills() {
             "test-planner/strategies/design.md"
             "topic-teach/SKILL.md"
             "topic-teach/reference.md"
+            "ui-to-ascii/SKILL.md"
+            "ui-to-ascii/reference.md"
             "work-breakdown/SKILL.md"
         )
     elif [ "$SKILLS_DISCOVERED" = false ]; then
