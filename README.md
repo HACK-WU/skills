@@ -2,6 +2,28 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
+**47 Skills · 4 Rules · 1 CLI** · [MIT License](./LICENSE)
+
+## 目录
+
+- [特性](#特性)
+- [设计流程](#设计流程)
+- [快速开始](#快速开始)
+- [技能一览](#技能一览)
+- [规则](#规则)
+- [需求管理 CLI](#需求管理-cli)
+- [项目结构](#项目结构)
+- [参考项目](#参考项目)
+- [贡献](#贡献)
+- [许可证](#许可证)
+
+## 特性
+
+- **覆盖全流程**：需求挖掘 → 技术设计 → 代码骨架 → 编码实现 → 质量保障 → 实现总结，一条链路打穿
+- **可串联使用**：技能按下方设计流程图组合成完整流水线，支持"返回修改"回环与随时查阅的模块知识资产
+- **需求可管理**：内置 `req` CLI，以编程方式管理需求元数据（增删改查、归档、依赖追踪）
+- **规则与技能互补**：附带 AI 协作规则（GitNexus 强制规则、自动审查闭环、任务分级委派）
+
 ## 设计流程
 
 这些技能可以串联使用，自上而下形成完整的设计-开发流程（实线为主链路，虚线为"返回修改"回环；中部"模块知识资产"随时可查、可建）：
@@ -59,7 +81,9 @@ flowchart TD
     class EL,ET,EA expert
 ```
 
-## 快速安装
+## 快速开始
+
+### 安装（Linux / macOS）
 
 ```bash
 # 一键安装
@@ -74,26 +98,11 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 > bash scripts/skill-install.sh --skills -t /path/to/your-project
 > ```
 
-### 参数说明
-
-| 参数 | 作用 |
-|------|------|
-| `--skills` | 安装 AI Skill 定义文件（与 `--rules` 互斥） |
-| `--rules` | 安装 AI 规则文件（与 `--skills` 互斥） |
-
-**目标目录**（三选一，优先级从高到低）：
-
-| 方式 | 示例 |
-|------|------|
-| `-t` 直接指定（支持多个） | `-t ~/projects/app -t ~/projects/api` |
-| `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，`#` 注释） |
-| 不指定，读默认配置 | `--skills` → `~/.skill-targets`，`--rules` → `~/.rule-targets` |
-
-### Windows（PowerShell）
+### 安装（Windows / PowerShell）
 
 参数映射：`--skills` → `-Skills`，`--rules` → `-Rules`，`-t` → `-Target`，`--file` → `-ConfigFile`。
 
-一键下载并执行（用 curl 拉取脚本后直接运行；PowerShell 中 `curl` 是 `Invoke-WebRequest` 的别名，需使用 `curl.exe` 调用真正的 curl）：
+一键下载并执行（PowerShell 中 `curl` 是 `Invoke-WebRequest` 的别名，需使用 `curl.exe` 调用真正的 curl）：
 
 ```powershell
 curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1 -o skill-install.ps1; .\skill-install.ps1 -Skills -Target C:\projects\my-app
@@ -106,6 +115,39 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 .\skill-install.ps1 -Skills -Target C:\projects\my-app
 .\skill-install.ps1 -Rules -Target C:\projects\my-app
 ```
+
+### 参数说明
+
+| 参数 | 作用 |
+|------|------|
+| `--skills` | 安装 AI Skill 定义（`skills/`） |
+| `--rules` | 安装 AI 规则（`rules/`），与 `--skills` 可组合 |
+| `-n <names>` | 只安装指定技能/规则，多个用逗号分隔（如 `-n code-review,design-craft`），需配合 `--skills` 或 `--rules` |
+| `-t <path>` | 指定目标目录，可多次使用（与 `--file` 互斥） |
+| `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
+
+> 未指定 `--skills`/`--rules` 或目标目录为空时运行，即显示完整帮助。
+
+**目标目录**（三选一，优先级从高到低）：
+
+| 方式 | 示例 |
+|------|------|
+| `-t` 直接指定（支持多个） | `-t ~/projects/app -t ~/projects/api` |
+| `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，`#` 注释） |
+| 不指定，读默认配置 | `--skills` → `~/.skill-targets`，`--rules` → `~/.rule-targets` |
+
+### 快速上手
+
+安装完成后，即可在项目中直接使用：
+
+1. **触发一个技能**：在对话中描述需求即可自动匹配，例如：
+   - "帮我分析这个需求" → 触发 `requirement-mining`
+   - "review 这个提交" → 触发 `code-review`
+2. **用 `req` 管理需求元数据**：
+   ```bash
+   req list    # 查询需求列表
+   ```
+3. **串联完整流程**：参考上方[设计流程](#设计流程)图，技能可组合成完整流水线。
 
 ## 技能一览
 
@@ -145,33 +187,42 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 
-### 工具
+### 质量与优化
+
+评审、优化、专家资产与方案沉淀等质量治理能力：
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[review-panel](./skills/review-panel/SKILL.md)** | 启动多角色评审团进行方案评审 | "评审团评审"、"review panel" |
-| **[document-writer](./skills/document-writer/SKILL.md)** | 为项目生成高质量 README 及子文档，根据项目类型自动选择策略 | "生成 README"、"写项目文档" |
-| **[create-rules](./skills/create-rules/SKILL.md)** | 引导创建符合规范的 AI 规则文件 | "创建规则"、"写一个规则" |
-| **[create-skill](./skills/create-skill/SKILL.md)** | 引导创建新的 Agent Skill | "创建 skill"、"写一个技能" |
 | **[content-simplifier](./skills/content-simplifier/SKILL.md)** | 精简 skill 和 rules 文件内容，识别冗余，优化决策流程清晰度 | "精简skill"、"优化rules"、"清理冗余" |
-| **[memory-creator](./skills/memory-creator/SKILL.md)** | 指导 AI 生成简洁的记忆内容描述 | "记住这个"、"创建记忆" |
-| **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
-| **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
-| **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
 | **[skill-amplifier](./skills/skill-amplifier/SKILL.md)** | 执行模式增强器，将目标 skill 能力拆成多个评估维度交子 Agent 并行深调研，汇总后主 Agent 交叉复核再出结论 | "放大执行"、"拆维度并行审查"、"深度模式跑一遍" |
-| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本静态列表与 README 技能一览/项目结构 | "更新安装脚本"、"同步技能列表" |
+| **[artifact-optimizer](./skills/artifact-optimizer/SKILL.md)** | 对代码、设计文档、Skill 文件进行系统化优化分析，根据用户意图调用对应的优化子流程 | "优化代码"、"优化设计文档"、"优化 skill" |
+| **[harness-review](./skills/harness-review/SKILL.md)** | 对项目 AI 工作流配置做五维轻量体检，按证据状态阶梯评分（存在≠被用≠有效），零依赖纯 Markdown | "体检一下工作流"、"harness review"、"评估 AI 配置" |
 | **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
 | **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
 | **[expert-audit](./skills/expert-audit/SKILL.md)** | 站在零上下文使用者视角审查 expert-team 专家资产的可读性与格式合规（R1–R7/CR1–CR9/INDEX），格式问题自动修复 | "核对专家团"、"审查专家资产"、"expert audit" |
 | **[loop-discovery](./skills/loop-discovery/SKILL.md)** | 沉淀路由门：新建 skill/rule/solution/memory 前先过证据门→覆盖阶梯→载体选择三步检查，避免重复建设与载体过重 | "要不要沉淀"、"建个 skill 吧"、"loop discovery" |
 | **[solution-capture](./skills/solution-capture/SKILL.md)** | 将解决非平凡问题的过程沉淀为可复用的解决方案 skill，存入 .solutions/ | "记录这个方案"、"沉淀一下"、"保存解决方案" |
 | **[solution-lookup](./skills/solution-lookup/SKILL.md)** | 查找并复用已沉淀的解决方案 skill，通过关键词匹配定位 .solutions/ 中的方案 | "有没有类似方案"、"之前怎么解决的"、"查找方案" |
-| **[artifact-optimizer](./skills/artifact-optimizer/SKILL.md)** | 对代码、设计文档、Skill 文件进行系统化优化分析，根据用户意图调用对应的优化子流程 | "优化代码"、"优化设计文档"、"优化 skill" |
-| **[harness-review](./skills/harness-review/SKILL.md)** | 对项目 AI 工作流配置做五维轻量体检，按证据状态阶梯评分（存在≠被用≠有效），零依赖纯 Markdown | "体检一下工作流"、"harness review"、"评估 AI 配置" |
+
+### 开发与工具
+
+文档生成、技能创建、记忆管理、任务调度等开发辅助能力：
+
+| 技能 | 作用 | 触发词 |
+|------|------|--------|
+| **[document-writer](./skills/document-writer/SKILL.md)** | 为项目生成高质量 README 及子文档，根据项目类型自动选择策略 | "生成 README"、"写项目文档" |
+| **[create-rules](./skills/create-rules/SKILL.md)** | 引导创建符合规范的 AI 规则文件 | "创建规则"、"写一个规则" |
+| **[create-skill](./skills/create-skill/SKILL.md)** | 引导创建新的 Agent Skill | "创建 skill"、"写一个技能" |
+| **[memory-creator](./skills/memory-creator/SKILL.md)** | 指导 AI 生成简洁的记忆内容描述 | "记住这个"、"创建记忆" |
+| **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
+| **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
+| **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
+| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本静态列表与 README 技能一览（项目结构树仅维护顶层目录） | "更新安装脚本"、"同步技能列表" |
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 HTML 的学习材料，支持课程制/速览双模式 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 
-### 规则
+## 规则
 
 | 规则 | 作用 | 适用场景 |
 |------|------|----------|
@@ -182,7 +233,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 
 > **安装约定**：`task-delegation` 与 `disable-task-delegation` 互斥，不应同时部署到同一工作区。默认只装前者；需关闭时用后者覆盖。
 
-### 需求管理脚本
+## 需求管理 CLI
 
 项目内置一套 Python CRUD 脚本，通过 `req` CLI 命令统一入口，支持以编程方式管理需求元数据。
 
@@ -199,100 +250,35 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/insta
 | `req delete` | 安全删除需求，反向依赖检查，级联清理引用，支持 dry-run |
 | `req archive` | 归档需求或单个文档到 archive/，整体归档更新状态，文档级归档（--doc）不改状态，支持 dry-run 和 --force |
 
-> 📖 完整文档：[docs/README.md](./docs/README.md)
-
-### 需求管理文档
-
-| 文档 | 说明 |
-|------|------|
-| [快速开始](./docs/README.md) | 安装、配置、核心命令速览 |
-| [命令参考](./docs/command-reference.md) | `req` 命令行工具的所有命令及其参数和输出示例 |
-| [配置指南](./docs/configuration.md) | 配置文件格式、配置项详解和约束规则 |
-| [架构文档](./docs/requirement-mgr-guide.md) | 系统架构、技术实现细节、数据模型 |
-| [故障排查](./docs/troubleshooting.md) | 常见问题及解决方案 |
-
+> 📖 完整文档：
+> - [快速开始](./docs/README.md)：安装、配置、核心命令速览
+> - [命令参考](./docs/command-reference.md)：所有命令及其参数和输出示例
+> - [配置指南](./docs/configuration.md)：配置文件格式、配置项详解和约束规则
+> - [架构文档](./docs/requirement-mgr-guide.md)：系统架构、技术实现细节、数据模型
+> - [故障排查](./docs/troubleshooting.md)：常见问题及解决方案
 
 ## 项目结构
 
 ```
-skills/
-├── requirement-mining/       # 需求挖掘
-├── interaction-design/       # 交互设计
-├── work-breakdown/          # 需求拆分
-├── data-flow-model/          # 数据流模型
-├── dependency-docs/          # 第三方依赖整理
-├── code-survey/              # 代码现状调研
-├── design-craft/             # 技术设计
-├── design-to-code/           # 设计到代码骨架
-├── code-implement/           # 骨架编码实施
-├── module-teach/             # 模块讲解
-├── negative-requirement/     # 负向场景分析
-├── api-design/               # API 设计
-├── frontend-api-guide/       # 前端集成指南
-├── design-review/            # 设计评审
-├── demo-verify/              # 验证原型
-├── scenario-rehearsal/       # 场景推演
-├── request-guard/            # 请求守卫
-├── implementation-report/    # 实现报告
-├── code-review/              # 代码评审
-├── debug/                    # 系统化排错
-├── challenger/               # 质疑（代码/设计/报告）
-├── auto-review/              # 自动审查修复闭环
-├── bug-impact-analysis/      # Bug 影响分析
-├── api-testing/              # HTTP API 自主测试
-├── e2e-testing/              # 端到端验证
-├── test-planner/             # 测试计划生成
-├── review-panel/             # 评审团
-├── task-dispatch/            # 任务并行调度
-├── skill-amplifier/          # 执行模式放大
-├── document-writer/          # 项目文档生成
-├── create-rules/             # 创建规则
-├── create-skill/             # 创建技能
-├── skill-updater/            # 技能列表同步
-├── content-simplifier/       # 内容精简
-├── memory-creator/           # 记忆生成
-├── migrate-to-codehub/       # 迁移工具
-├── requirement-doc-store/    # 需求文档存储规范
-├── expert-lookup/            # 业务专家查找
-├── expert-team/              # 专家团队并行深挖
-├── expert-audit/             # 专家资产审查
-├── loop-discovery/           # 沉淀路由门
-├── solution-capture/         # 解决方案沉淀
-├── solution-lookup/          # 解决方案查找
-├── harness-review/           # AI 工作流体检
-├── artifact-optimizer/       # 工件优化
-├── topic-teach/              # 通用知识教学
-└── ui-to-ascii/              # UI 转 ASCII
-
-rules/
-├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则
-└── writing-pipeline.md        # 自动审查修复闭环
-
-agents/
-└── sub-agent/                 # 通用子 Agent
-    ├── agent.md               # 子 Agent 提示词
-    └── rules/                 # 子 Agent 专属规则
-        ├── task-delegation.md         # 任务分级委派（默认生效）
-        └── disable-task-delegation.md # 关闭任务分级委派
-
-scripts/
-├── skill-install.sh           # 一键安装器（Linux/Mac）
-├── skill-install.ps1          # 一键安装器（Windows）
-└── requirement-mgr/           # 需求管理 CRUD 脚本
+skills/       # AI Skill 定义（技能一览见上）
+rules/        # 通用 AI 规则（详见"规则"节）
+agents/       # 子 Agent 提示词与专属规则
+scripts/      # 一键安装器 + 需求管理 CLI（req）
+docs/         # 需求管理 CLI 文档
 ```
 
-## 其他 Skill 项目
+## 参考项目
 
 社区中有很多优秀的 Agent Skill 项目，值得参考和借鉴：
 
 | 项目 | 作者 | 简介 |
 |------|------|------|
-| [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | 121k star，面向真实工程的技能集，涵盖 TDD、调试、架构改进、需求对齐 |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | 高 star，面向真实工程的技能集，涵盖 TDD、调试、架构改进、需求对齐 |
 | [anthropics/skills](https://github.com/anthropics/skills) | Anthropic | Anthropic 官方 Agent Skills 示例集，含文档处理、创意设计、开发技术等技能，附带 Agent Skills 规范 |
 | [obra/superpowers](https://github.com/obra/superpowers) | Jesse Vincent | Claude Code 增强技能集 |
 | [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | Addy Osmani | 开源 Agent Skills 合集，含多类工程实践技能 |
-| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | Leonxlnx | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量（68.4k star） |
-| [greensock/gsap-skills](https://github.com/greensock/gsap-skills) | GreenSock | GSAP 动画平台的官方 AI 技能集，教 AI 正确使用 GSAP 动画库（12.5k star） |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | Leonxlnx | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量 |
+| [greensock/gsap-skills](https://github.com/greensock/gsap-skills) | GreenSock | GSAP 动画平台的官方 AI 技能集，教 AI 正确使用 GSAP 动画库 |
 | [QoderAI/better-harness](https://github.com/QoderAI/better-harness) | Qoder | 审查与改进 AI 编码工作流（Harness）的工具，基于五维 Agent Work Loop 模型评估，本项目的 loop-discovery / harness-review 技能及证据状态纪律即借鉴自此 |
 
 > 如果你有好的 Skill 项目，欢迎提 PR 添加到这里。
