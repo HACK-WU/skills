@@ -177,6 +177,10 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 |------|------|----------|
 | **[gitnexus-mcp-rules](./rules/gitnexus-mcp-rules.md)** | GitNexus MCP 强制规则，指导工具选择和使用方式 | 使用 GitNexus MCP 时 |
 | **[writing-pipeline](./rules/writing-pipeline.md)** | 自动审查修复闭环，复杂场景调用 challenger 二次质疑 | 文档或代码编写完成后 |
+| **[task-delegation](./agents/sub-agent/rules/task-delegation.md)** | 任务分级委派，低认知密度任务默认委派子 Agent，主 Agent 聚焦核心决策与核心代码 | 默认生效 |
+| **[disable-task-delegation](./agents/sub-agent/rules/disable-task-delegation.md)** | 关闭任务分级委派，主 Agent 退回全包模式 | 需停用委派机制时 |
+
+> **安装约定**：`task-delegation` 与 `disable-task-delegation` 互斥，不应同时部署到同一工作区。默认只装前者；需关闭时用后者覆盖。
 
 ### 需求管理脚本
 
@@ -263,6 +267,13 @@ skills/
 rules/
 ├── gitnexus-mcp-rules.md      # GitNexus MCP 强制规则
 └── writing-pipeline.md        # 自动审查修复闭环
+
+agents/
+└── sub-agent/                 # 通用子 Agent
+    ├── agent.md               # 子 Agent 提示词
+    └── rules/                 # 子 Agent 专属规则
+        ├── task-delegation.md         # 任务分级委派（默认生效）
+        └── disable-task-delegation.md # 关闭任务分级委派
 
 scripts/
 ├── skill-install.sh           # 一键安装器（Linux/Mac）
