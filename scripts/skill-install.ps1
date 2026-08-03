@@ -336,6 +336,7 @@ function Install-Skills {
             "test-planner/strategies/api.md",
             "test-planner/strategies/design.md",
             "topic-teach/SKILL.md",
+            "topic-teach/examples.md",
             "topic-teach/reference.md",
             "ui-to-ascii/SKILL.md",
             "ui-to-ascii/reference.md",
