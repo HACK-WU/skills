@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "requirement-mgr"
-version = "0.1.0-beta"
+version = "0.2.0-beta"
 description = "需求管理 CLI 工具"
 requires-python = ">=3.10"
 # 零外部依赖
