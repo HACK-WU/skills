@@ -46,7 +46,26 @@ if [ "$PKG_VERSION" != "$VERSION" ]; then
   echo "请先修改 pyproject.toml 中的 version 字段"
   exit 1
 fi
-echo "  ✅ 版本号一致: ${VERSION}"
+echo "  ✅ 包元数据版本一致: ${VERSION}"
+
+# ────────────────────────────────────────────────────────────
+# 1b. 确认代码 __version__ 与 pyproject.toml 一致
+# ────────────────────────────────────────────────────────────
+# 单一版本源约束：__init__.py 的 __version__ 必须与 pyproject.toml 同步，
+# 否则 req --version 显示错误版本，且 install-latest.sh 的版本比较会失效。
+INIT_FILE="${PKG_DIR}/src/requirement_mgr/__init__.py"
+if [ ! -f "$INIT_FILE" ]; then
+  echo "错误: ${INIT_FILE} 不存在"
+  exit 1
+fi
+
+INIT_VERSION=$(grep -E '^__version__\s*=' "$INIT_FILE" | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')
+if [ "$INIT_VERSION" != "$VERSION" ]; then
+  echo "错误: ${INIT_FILE} 中的 __version__ 为 ${INIT_VERSION}，与指定版本 ${VERSION} 不一致"
+  echo "请同步修改 src/requirement_mgr/__init__.py 中的 __version__ 字段"
+  exit 1
+fi
+echo "  ✅ 代码版本一致: ${VERSION}"
 
 # ────────────────────────────────────────────────────────────
 # 2. 确认工作区干净

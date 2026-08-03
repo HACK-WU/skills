@@ -39,7 +39,7 @@ def find_config_upward() -> Path | None:
 
 def main():
     parser = argparse.ArgumentParser(prog="req", description="需求管理工具")
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("-v", "-V", "--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
     # req init
