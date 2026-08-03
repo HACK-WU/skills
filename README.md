@@ -83,10 +83,9 @@ flowchart TD
 
 ## 快速开始
 
-### 安装（Linux / macOS）
+### 一键安装（Linux / macOS）
 
 ```bash
-# 一键安装
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
   bash -s -- --skills -t /path/to/your-project
 ```
@@ -106,7 +105,6 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 
 ```powershell
 curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1 -o skill-install.ps1; .\skill-install.ps1 -Skills -Target C:\projects\my-app
-curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1 -o skill-install.ps1; .\skill-install.ps1 -Rules -Target C:\projects\my-app
 ```
 
 若已下载脚本到本地，可直接执行：
