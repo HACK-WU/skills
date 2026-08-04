@@ -226,6 +226,7 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 |------|------|----------|
 | **[gitnexus-mcp-rules](./rules/gitnexus-mcp-rules.md)** | GitNexus MCP 强制规则，指导工具选择和使用方式 | 使用 GitNexus MCP 时 |
 | **[writing-pipeline](./rules/writing-pipeline.md)** | 自动审查修复闭环，复杂场景调用 challenger 二次质疑 | 文档或代码编写完成后 |
+| **[expert-solution-workflow](./rules/expert-solution-workflow.md)** | 资产复用工作流，区分"业务专家团（expert-lookup/team）"与"解决方案（solution-lookup/capture）"两类资产的本质区别与调用场景 | 遇到业务模块任务 / 具体技术问题时 |
 | **[task-delegation](./agents/sub-agent/rules/task-delegation.md)** | 任务分级委派，低认知密度任务默认委派子 Agent，主 Agent 聚焦核心决策与核心代码 | 默认生效 |
 | **[disable-task-delegation](./agents/sub-agent/rules/disable-task-delegation.md)** | 关闭任务分级委派，主 Agent 退回全包模式 | 需停用委派机制时 |
 

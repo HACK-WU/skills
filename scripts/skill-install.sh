@@ -534,7 +534,7 @@ FILES=(
     "gitnexus-mcp-rules.md"
     "agents-memory.md"
     "writing-pipeline.md"
-    "solution-workflow.md"
+    "expert-solution-workflow.md"
 )
     elif [ "$RULES_DISCOVERED" = false ]; then
         # 缓存首次发现的文件列表，后续目标目录复用

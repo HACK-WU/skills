@@ -165,7 +165,7 @@ updated: {YYYY-MM-DD}
 
 ### Step 7：更新 INDEX.md
 
-读取现有 INDEX.md（不存在则创建），在对应分类下添加条目：
+读取现有 INDEX.md（不存在则创建），在对应分类下追加条目（**列表式格式**，参考 expert-team 的索引风格，不用表格以免拥挤）：
 
 ```markdown
 # 解决方案索引
@@ -173,21 +173,30 @@ updated: {YYYY-MM-DD}
 > 由 solution-capture 自动维护
 
 ## debugging
-| ID | 标题 | 触发关键词 | 目录 |
-|----|------|-----------|------|
-| jwt-token-expiry | JWT Token 过期时间设置 | jwt,token,过期,登出,expiry | debugging/jwt-token-expiry/ |
-| cors-policy-fix | CORS 跨域策略修复 | cors,跨域,cross-origin | debugging/cors-policy-fix/ |
+
+### jwt-token-expiry：JWT Token 过期时间设置
+- **描述**：解决 JWT Token 过期时间设置不当导致登录态提前失效的问题
+- **触发关键词**：jwt, token, 过期, 登出, expiry
+- **目录**：debugging/jwt-token-expiry/
+
+### cors-policy-fix：CORS 跨域策略修复
+- **描述**：解决跨域请求被浏览器拦截、CORS 配置不生效的问题
+- **触发关键词**：cors, 跨域, cross-origin
+- **目录**：debugging/cors-policy-fix/
 
 ## configuration
-| ID | 标题 | 触发关键词 | 目录 |
-|----|------|-----------|------|
-| nginx-reverse-proxy | Nginx 反向代理配置 | nginx,反向代理,proxy,reverse | configuration/nginx-reverse-proxy/ |
+
+### nginx-reverse-proxy：Nginx 反向代理配置
+- **描述**：解决 Nginx 反向代理配置错误导致服务不可访问的问题
+- **触发关键词**：nginx, 反向代理, proxy, reverse
+- **目录**：configuration/nginx-reverse-proxy/
 ```
 
 **INDEX.md 更新规则**：
-- 新增解决方案：在对应分类表格末尾追加一行
-- 更新解决方案：修改对应行的标题或触发关键词（目录名不变）
-- 分类不存在：新增 `## {分类}` 标题 + 表格
+- **描述字段必填**：一句话说明该方案用于解决什么问题（触发查找时帮助快速判断是否相关）
+- 新增解决方案：在对应分类下追加一条记录（`### {ID}：{标题}` + 描述/触发关键词/目录三行）
+- 更新解决方案：修改对应记录的标题、描述或触发关键词（目录名不变）
+- 分类不存在：新增 `## {分类}` 标题，再追加记录
 - 触发关键词：从问题的描述、症状、技术栈中提取 3-6 个关键词
 
 ### Step 8：验证

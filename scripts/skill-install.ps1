@@ -408,7 +408,7 @@ $files = @(
     "gitnexus-mcp-rules.md",
     "agents-memory.md",
     "writing-pipeline.md",
-    "solution-workflow.md"
+    "expert-solution-workflow.md"
 )
     }
 
