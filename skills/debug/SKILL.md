@@ -32,8 +32,7 @@ description: 系统化排错。以运行时证据驱动的复现→假设→验�
 3. **最近变更**：`git log --oneline -10`、`git diff`，异常是否与近期改动时间吻合
 4. **环境因素**：运行环境、依赖版本、配置差异（本地好的线上坏 → 优先查环境差异）
 5. **经验查询**（可选，失败则跳过）：
-   - 调用 `solution-lookup` 查 `.solutions/debugging/` 是否有同类问题的现成解法
-   - 调用 `expert-lookup` 查相关模块专家资产的"已知坑"
+   - 按 `expert-solution-workflow` 规则查询相关经验、解决方案或记忆（如 `.solutions/debugging/` 的现成解法、相关模块专家资产的"已知坑"）
 
 ### Step 1：构造最小复现
 
