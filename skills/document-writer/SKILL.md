@@ -22,6 +22,8 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 - 用户只要求写单一章节 → 直接写
 - 项目没有代码（纯文档仓库、配置仓库）→ 无法自动识别类型
 - 用户明确表示只需要一个简单草稿 → 不走质量检查
+- 用户要的是前端 API 调用流程文档 → 使用 `frontend-api-guide`
+- 用户要的是模块内部技术资产（契约层 + 实现层）→ 使用 `expert-team`
 
 ### 快速通道
 
@@ -38,10 +40,12 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 
 1. **类型驱动策略**：先识别项目类型，再套用对应策略
 2. **示例即血肉**：每个对外接口（API/命令/配置项）必须有输入→输出完整示例
-3. **README 是索引**：README 不超过一屏，做导航枢纽；详细信息按主题拆分到子文档
+3. **README 是索引**：README 控制在 120 行内做导航枢纽（快速开始须一屏内读完）；详细信息按主题拆分到子文档
 4. **按需拆分**：有拆分阈值，简单项目不冗余拆分，复杂项目不遗漏文档
 5. **并行生成**：子文档 ≥ 2 时自动调用 task-dispatch 并行生成
 6. **零空洞容忍**：禁止出现 "TODO"、"Coming soon"、"See source code" 等占位符
+7. **语言跟随项目**：文档语言跟随项目现有文档语言；无现有文档时默认中文；用户明确指定风格（语言/徽章/格式约定）时优先遵循用户约定
+8. **图表按需选型**：文档图表按「图本质 × 复杂度 × 渲染环境 × 复用需求」四因子选型——结构化关系图（流程/时序/状态/ER）优先 mermaid；**架构图（模块总览）统一用 SVG**；视觉布局类图、需精确样式或需独立复用的图用 SVG。SVG 命名遵循 kebab-case 规范，详见 `references/strategies.md` 通用规则
 
 ---
 
@@ -94,9 +98,10 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 - **项目名称**：[从 package.json/setup.py 等提取]
 - **判定类型**：[库 / CLI / Web 应用 / 插件 / 混合型]
 - **判定依据**：[列出匹配到的关键特征]
+- **文档语言**：[跟随项目现有文档语言；无现有文档时默认中文；用户指定风格时以用户约定为准]（核心原则 7，传递给子 agent）
 - **推荐文档集**：[列出将生成的文档列表]
 
-请确认或手动指定类型。
+请确认或手动指定类型。确认后进入阶段 2 核定文档集；若最终文档集与推荐一致，无需再次确认。
 ```
 
 ## 阶段 2：策略确认 + 拆分决策
@@ -115,7 +120,9 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 
 **插件**：配置项 > 10 → `configuration.md`；API/Hooks > 5 → `api-reference.md`；有多场景示例 → `examples.md`
 
-### 2.3 确认文档集
+### 2.3 核定文档集
+
+按 2.2 阈值核对阶段 1.5 的推荐文档集，输出最终文档集。**无论是否与推荐集一致，均输出文档生成计划（含每个子文档的触发原因）供用户知情**；仅当与推荐集一致时免去等待用户确认，直接进入阶段 3：
 
 ```markdown
 ## 文档生成计划
@@ -129,9 +136,9 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 
 [若子文档 ≥ 2]
   → 将使用 task-dispatch 并行生成，预计加速 {N} 倍。
-
-确认后开始生成内容。
 ```
+
+若最终文档集与阶段 1.5 推荐集一致，直接进入阶段 3 内容生成（无需再次确认）；若不一致，输出差异项请用户确认。
 
 ---
 
@@ -146,36 +153,42 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 
 ### task-dispatch 调度要点
 
-**task-name**：`docs-{项目名称}`（如 `docs-my-lib`）
+**task-name**：`docs-{项目名称}`（如 `docs-my-lib`），命名遵循 task-dispatch 的规则（英文小写 + 短横线）；中文项目名须转写为英文短横线形式。
+
+**子任务编号**：遵循 task-dispatch 的子任务编号规范 `S-{NN}`（与 task-dispatch 的 `subtasks/S-{NN}/` 目录结构一致，勿自造编号格式）。
+
+**产出路径**：以 task-dispatch 的调度约定为准（当前为 `.codebuddy/task-dispatch/{task-name}/subtasks/S-{NN}/code/`，若约定变更无需修改本 skill）。
 
 **子任务拆分**：README + 每个子文档各为一个子任务：
 
 ```text
 | 编号 | 子任务 | 产出文件 | 类型 |
 |------|--------|----------|------|
-| D-01 | README 生成 | README.md | 索引枢纽 |
-| D-02 | API 参考生成 | api-reference.md | 子文档 |
-| D-03 | 配置文档生成 | configuration.md | 子文档 |
+| S-01 | README 生成 | README.md | 索引枢纽 |
+| S-02 | API 参考生成 | api-reference.md | 子文档 |
+| S-03 | 配置文档生成 | configuration.md | 子文档 |
 ```
 
 独立性校验：各文档内容独立（无接口依赖），但 README 作为索引需要引用其他文档，标记为弱依赖（先定子文档文件名，README 按文件名写链接）。
 
-**子 agent prompt 要点**：
+**子 agent prompt 要点**（`{references/strategies.md}` 等占位符由主 agent 在派发时替换为项目内相对路径；若子 agent 环境无法访问 references 文件，主 agent 须将对应规则直接内联到 prompt，保证子 agent 自包含）：
 
 ```
-你是子 agent，负责生成文档 D-{NN}：{文档名称}
+你是子 agent，负责生成文档 S-{NN}：{文档名称}
 
 ## 任务目标
 生成 {文档名称}，内容要求：
-{从 strategies.md 提取该文档的章节要求、示例规则}
+- 章节结构：从 {references/strategies.md} 中对应类型的策略模板提取章节要求、示例规则
+- 图表：按 {references/strategies.md}「图表选型规则」决策 mermaid vs SVG，勿误用
+- 其余遵循下方"内容质量底线"与"示例获取优先级"
 
 ## 输出目录
-产出：.codebuddy/task-dispatch/docs-{项目名}/subtasks/D-{NN}/code/
+产出：{task-dispatch 约定的 S-{NN} 输出目录}
   - 产出文件：{文件名}.md
-报告：.codebuddy/task-dispatch/docs-{项目名}/subtasks/D-{NN}/report.md
+报告：{task-dispatch 约定的 report.md 路径}
 
 ## 内容质量底线
-- 每个对外接口必须有输入→输出完整示例
+- 每个对外接口必须有输入→输出完整示例（规则详见 {references/quality-rules.md}）
 - 每个命令必须附带预期终端输出
 - 禁止任何形式的占位符（TODO、Coming soon、See source code 等）
 - 章节要么写满实质内容，要么从导航中移除
@@ -231,6 +244,8 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 
 将生成的文档写入项目根目录。若用户指定了输出目录，写入指定路径。
 
+SVG 资产随文档落盘：独立 SVG 文件写入各文档所在目录的 `assets/` 子目录（如 `docs/assets/architecture-overview.svg`），命名遵循 kebab-case 规范，README 中引用路径与其实际位置一致。落盘后校验：所有 `![...](...)` 引用的 SVG 文件真实存在。
+
 ### 5.2 输出导航概览
 
 ```markdown
@@ -243,6 +258,12 @@ description: 为项目生成高质量 README 及子文档。根据项目类型�
 | README.md | 项目概述 + 快速开始 + 导航 | 85 |
 | api-reference.md | 12 个 API 的完整参考 | 340 |
 | configuration.md | 15 个配置项详解 | 120 |
+
+### SVG 资产
+
+| 文件 | 用途 |
+|------|------|
+| assets/architecture-overview.svg | 模块总览图（architecture.md 引用） |
 
 ### 快速验证
 
