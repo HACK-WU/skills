@@ -111,6 +111,14 @@ agent 专属能力遵循 **通用 skill 规范**（create-skill skill）：`SKIL
 - [ ] `skills/` 文件符合 create-skill 规范
 - [ ] 全文术语一致、无 Windows 风格路径
 
+## 其他 skill 如何引用本 agent
+
+其他 skill 的 SKILL.md 中引用本 agent 时，直接用 **`use_agent({agent-name})`**（如 `use_agent(course-reviewer)`）即可：
+
+- 不写文件路径、不重复 agent 内容
+- agent 定义唯一事实源在 `agents/{agent-name}/agent.md`，引用方按需裁剪使用
+- 委派时仍按 agent.md 的输入契约传入【任务】【背景】【目标】【验收标准】【输出格式】
+
 ## 更多资源
 
 - agent.md 完整模板与写作要点，参见 [reference.md](reference.md)
