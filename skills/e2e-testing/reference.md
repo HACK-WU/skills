@@ -144,3 +144,75 @@ ctx:
 
 - 同一 `depends_on` 层、且彼此无数据依赖的 step 可并行执行。
 - 解析 `${ctx.x}` 时确保上游 `produces` 已写入；跨并行 step 的依赖必须用 `depends_on` 显式声明，禁止隐式时序假设。
+
+## 7. 动态体验验证契约
+
+> 配套「动态体验验证」增强维度（见 SKILL.md）。本节定义体验计划与体验点的结构化契约，供 AI 在白盒规划阶段照搬。
+
+### 7.1 体验计划（ExperiencePlan）
+
+每个批次一份体验计划，YAML/字典表达"意图与结构"（同 Step 模型，非被引擎解析的 DSL）：
+
+```yaml
+experience_plan:
+  scope: "用户登录模块"          # 本批体验范围（模块/功能域）
+  requirement_ref: REQ-login     # 绑定的需求条目（同 Scenario）
+  code_refs:                      # 白盒规划依据的代码位置
+    - "src/auth/login.py:login()"
+    - "src/auth/login.py:分支-密码错误"
+  experience_points:              # 体验点清单
+    - id: login_normal
+      branch: "密码正确分支"
+      path_type: positive         # positive 正面 / boundary 边界 / negative 负面
+      action: "用正确账号密码登录"
+      expect:                     # 预期体验（正确性锚需求，不锚代码）
+        correctness: "返回 token + 用户信息"
+        feedback_focus: "返回字段是否充分、是否含下一步引导"
+    - id: login_wrong_password
+      branch: "密码错误分支"
+      path_type: negative
+      action: "故意输错密码"
+      expect:
+        correctness: "拒绝登录，返回错误"
+        feedback_focus: "错误提示是否清晰、是否暴露'用户存在'、是否有剩余次数"
+```
+
+### 7.2 体验点字段
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `id` | ✅ | 体验点唯一标识 |
+| `branch` | ✅ | 对应的代码分支/功能点（白盒识别结果） |
+| `path_type` | ✅ | `positive`（正面）/ `boundary`（边界）/ `negative`（负面） |
+| `action` | ✅ | 体验动作描述（像真人的操作） |
+| `expect.correctness` | ✅ | 预期正确性（锚需求规格，不锚代码） |
+| `expect.feedback_focus` | — | 体验关注点（反馈全面性/友好度等） |
+
+### 7.3 体验记录（执行后产出）
+
+```yaml
+experience_record:
+  id: login_wrong_password
+  status: observed                # observed 已观察 / skipped
+  actual:                         # 实际观察到的输出
+    correctness: "拒绝登录 ✅"
+    feedback: "返回 '密码错误'，未提示剩余次数，未暴露用户存在性"
+  assessment:                     # 四维评估
+    correctness: pass
+    feedback_completeness: "中等——缺剩余次数"
+    error_friendliness: "良——清晰但不具引导性"
+    optimization: "建议补充'剩余 N 次尝试'提示"
+```
+
+### 7.4 评估四维度细则
+
+| 维度 | 判断依据 | 举例 |
+|------|----------|------|
+| 正确性 | 需求规格（给定 X 应得到 Y） | 登录成功返回 token ✅ |
+| 反馈全面性 | 合理用户预期：信息是否够用、有无下一步引导 | 登录成功只返回 token 无用户信息 → 不够全面 |
+| 错误反馈友好度 | 负面路径下：提示是否清晰、可操作、不泄露敏感信息 | "密码错误"清晰但无剩余次数 → 可优化 |
+| 可优化点 | 即使正确，体验改善空间 | 列表返回字段过多、步骤冗余、缺引导 |
+
+> **判据来源铁律**：正确性锚需求规格；其余三维基于"合理用户预期"，**均不锚代码实现**。读代码只在 D1 规划阶段为识别分支，D2/D3 执行评估时不读代码。
+
+> **"合理用户预期"基准**：判据参考①需求文档的交互约定 ②行业惯例（如"登录失败不应暴露用户存在性"是安全共识、"错误提示应含可操作的下一步"是体验惯例）。无明确约定时标注 `[主观判断]` 供人工复核。

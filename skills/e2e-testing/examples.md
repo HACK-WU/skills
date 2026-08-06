@@ -186,3 +186,151 @@ API_TOKEN=
 ## 建议
 - 全链路通过，跨组件终态一致（落库 + 事件 + 库存扣减均符合预期）。
 ```
+
+## 示例 5：动态体验验证（登录模块，分批）
+
+**意图**：e2e 通过后，对"用户登录"功能做动态体验——白盒读代码规划分支覆盖，黑盒像真人操作评估体验质量与负面反馈。
+
+### 前置门禁
+
+```
+✅ 对应 e2e 场景 login_scenario：PASS
+   - register+login 旅程通过，登录返回 token 正确
+→ 允许进入动态体验
+```
+
+### 批次 1 体验计划（白盒）
+
+读 `src/auth/login.py`，识别分支：
+
+```yaml
+experience_plan:
+  scope: "用户登录-核心分支"
+  requirement_ref: REQ-login
+  code_refs:
+    - "src/auth/login.py:login() 主流程"
+    - "src/auth/login.py:密码错误分支"
+    - "src/auth/login.py:账号不存在分支"
+    - "src/auth/login.py:账号锁定分支"
+  experience_points:
+    - id: login_normal
+      branch: "密码正确"
+      path_type: positive
+      action: "用正确账号密码登录"
+      expect:
+        correctness: "返回 token + 用户基本信息"
+        feedback_focus: "返回字段是否充分、是否含过期时间"
+
+    - id: login_wrong_password
+      branch: "密码错误"
+      path_type: negative
+      action: "故意输错密码"
+      expect:
+        correctness: "拒绝登录"
+        feedback_focus: "错误提示是否清晰、是否暴露用户存在性、是否有剩余次数"
+
+    - id: login_nonexistent_user
+      branch: "账号不存在"
+      path_type: negative
+      action: "用不存在的账号登录"
+      expect:
+        correctness: "拒绝登录"
+        feedback_focus: "提示是否与'密码错误'一致（防账号枚举）"
+
+    - id: login_locked_account
+      branch: "账号锁定"
+      path_type: boundary
+      action: "连续输错密码至锁定阈值后登录"
+      expect:
+        correctness: "账号被锁定，拒绝登录"
+        feedback_focus: "锁定提示是否含解锁时间/方式"
+```
+
+### 批次 1 体验执行（黑盒）
+
+agent 像真人操作（不读代码），观察记录：
+
+```yaml
+experience_record:
+  - id: login_normal
+    actual:
+      correctness: "返回 token + {id, name}，无过期时间"
+    assessment:
+      correctness: pass
+      feedback_completeness: "中——缺 token 过期时间，前端无法预判刷新"
+      optimization: "建议返回 expires_in"
+
+  - id: login_wrong_password
+    actual:
+      correctness: "拒绝登录 ✅"
+      feedback: "返回'密码错误'，未提示剩余次数"
+    assessment:
+      correctness: pass
+      error_friendliness: "良——清晰但无引导"
+      optimization: "建议补'剩余 N 次尝试'，达阈值提示将锁定"
+
+  - id: login_nonexistent_user
+    actual:
+      correctness: "拒绝登录 ✅"
+      feedback: "返回'账号不存在'"
+    assessment:
+      correctness: pass
+      error_friendliness: "差——暴露账号存在性，可被枚举"
+      optimization: "🔴 应与'密码错误'返回一致提示，防账号枚举"
+
+  - id: login_locked_account
+    actual:
+      correctness: "账号锁定 ✅"
+      feedback: "返回'账号已锁定'"
+    assessment:
+      correctness: pass
+      error_friendliness: "中——未告知解锁时间"
+      optimization: "建议补'N 分钟后自动解锁'"
+```
+
+### 批次 1 体验小结（用户确认）
+
+```
+覆盖分支：4/4（核心分支全覆盖）
+正确性：全通过
+关键发现：
+  🔴 账号不存在与密码错误提示不一致 → 可被枚举攻击
+  🟡 登录成功缺 token 过期时间
+  🟡 锁定提示缺解锁时间
+→ 用户确认后，进入批次 2（如登录+记住设备、第三方登录等扩展分支）
+```
+
+### 体验报告（全部批次完成）
+
+```markdown
+# 动态体验报告：用户登录模块
+
+## 前置门禁
+- 对应 e2e 场景：login_scenario，PASS ✅
+
+## 体验范围（分批）
+- 批次1：登录核心分支（4 体验点）
+- 批次2：登录扩展分支（3 体验点）
+
+## 体验明细
+| 体验点 | 路径类型 | 正确性 | 反馈全面性 | 错误反馈友好度 | 可优化点 |
+|--------|----------|--------|-----------|---------------|----------|
+| 正常登录 | 正面 | ✅ | 中（缺过期时间） | — | 补 expires_in |
+| 错误密码 | 负面 | ✅ | — | 良（缺剩余次数） | 补剩余次数 |
+| 账号不存在 | 负面 | ✅ | — | 差（暴露存在性） | 🔴 与密码错误一致化 |
+| 账号锁定 | 边界 | ✅ | — | 中（缺解锁时间） | 补解锁时间 |
+
+## 优化建议（按优先级）
+1. 🔴 账号不存在/密码错误提示一致化，防账号枚举（安全+体验）
+2. 🟡 登录成功返回补 expires_in，前端可预判 token 刷新
+3. 🟡 锁定提示补"N 分钟后自动解锁"
+4. 🟢 错误密码补"剩余 N 次尝试"
+
+## 体验结论
+- 覆盖分支：7 / 总 7
+- 正确性：全通过（e2e 已保证）
+- 体验质量：需优化（1 个安全问题 + 3 个体验改进）
+- 负面路径反馈：不一致，存在账号枚举风险
+```
+
+> **注意**：本示例中 agent 在 D1 读 `login.py` 识别 4 个分支（白盒规划），在 D2 像真人登录操作、不读代码（黑盒体验），在 D3 依据"合理用户预期"评估反馈质量（判据不锚代码）。负面路径均为只读（输错密码/不存在账号），未做任何破坏性写操作。
