@@ -1,36 +1,53 @@
+<div align="center">
+
 # Skills
 
-> 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
+一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-48-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+
+</div>
 
 ---
 
 ## 📑 目录
 
-- 🚀 快速开始
-- ✨ 特性
-- 🔄 设计流程
-- 🧩 技能一览
-- 📜 规则
-- 📦 需求管理 CLI
-- 🗂️ 项目结构
-- 📚 文档导航
-- 🌟 其他优秀项目
-- 🤝 贡献
-- 📄 许可证
+- [🚀 快速开始](#quickstart)
+- [✨ 特性](#features)
+- [🔄 设计流程](#workflow)
+- [🧩 技能一览](#skills-index)
+- [📜 规则](#rules)
+- [📦 需求管理 CLI](#req-cli)
+- [🗂️ 项目结构](#structure)
+- [📚 文档导航](#docs)
+- [🌟 其他优秀项目](#projects)
+- [🤝 贡献](#contributing)
+- [📄 许可证](#license)
 
 ---
 
+<a id="quickstart"></a>
 ## 🚀 快速开始
 
 一条命令将全部技能安装到目标项目（Linux / macOS）：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
-  bash -s -- --skills -t /path/to/your-project
-# → 将 48 个技能写入 /path/to/your-project/.codebuddy/skills/
+  bash -s -- -t /path/to/your-project
+# → 将 48 个技能写入 /path/to/your-project/skills/（经 ~/.hackwu-skills/ 管理源同步）
 ```
+
+也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
+
+```bash
+# 安装全部技能到当前目录的 skills/
+npx skills add HACK-WU/skills --agent openclaw -y
+
+# 只安装指定技能
+npx skills add HACK-WU/skills --skill code-review design-craft --agent openclaw -y
+```
+
+> `--agent openclaw` 将技能写入当前目录 `skills/`。直接使用 `npx skills` 不生成管理源，无法用本仓库脚本的 `--update` / `--remove` / `--list` 持续跟踪——如需后续管理，请用上方 `skill-install.sh`。
 
 安装后即可在对话中触发技能，无需其他配置：
 
@@ -40,6 +57,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 
 > Windows / PowerShell 及完整参数说明见[安装指南](./docs/installation.md)。
 
+<a id="features"></a>
 ## ✨ 特性
 
 - **覆盖全流程**：需求挖掘 → 技术设计 → 代码骨架 → 编码实现 → 质量保障 → 实现总结，一条链路打穿
@@ -47,6 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 - **需求可管理**：内置 `req` CLI，以编程方式管理需求元数据（增删改查、归档、依赖追踪）
 - **规则与技能互补**：附带 AI 协作规则（GitNexus 强制规则、自动审查闭环、任务分级委派）
 
+<a id="workflow"></a>
 ## 🔄 设计流程
 
 这些技能可以串联使用，自上而下形成完整的设计-开发流程（实线为主链路，虚线为"返回修改"回环；中部"模块知识资产"随时可查、可建）：
@@ -104,6 +123,7 @@ flowchart TD
     class EL,ET,EA expert
 ```
 
+<a id="skills-index"></a>
 ## 🧩 技能一览
 
 48 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
@@ -176,10 +196,11 @@ flowchart TD
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
-| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新安装脚本静态列表与 README 技能一览（项目结构树仅维护顶层目录） | "更新安装脚本"、"同步技能列表" |
+| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新 README"技能一览"表格（安装脚本已用 npx skills 自动发现，无需维护静态列表） | "更新安装脚本"、"同步技能列表" |
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 HTML 的学习材料，支持课程制/速览双模式 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 
+<a id="rules"></a>
 ## 📜 规则
 
 | 规则 | 作用 | 适用场景 |
@@ -192,6 +213,7 @@ flowchart TD
 
 > **安装约定**：`task-delegation` 与 `disable-task-delegation` 互斥，不应同时部署到同一工作区。默认只装前者；需关闭时用后者覆盖。
 
+<a id="req-cli"></a>
 ## 📦 需求管理 CLI
 
 项目内置 Python CRUD 脚本，通过 `req` CLI 统一入口，以编程方式管理需求元数据：
@@ -209,6 +231,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/insta
 | `req delete` | 安全删除需求，反向依赖检查，级联清理引用，支持 dry-run |
 | `req archive` | 归档需求或单个文档到 archive/，支持 dry-run 和 --force |
 
+<a id="structure"></a>
 ## 🗂️ 项目结构
 
 ```
@@ -219,6 +242,7 @@ scripts/      # 一键安装器 + 需求管理 CLI（req）
 docs/         # 文档（安装指南 / req CLI / 需求文档）
 ```
 
+<a id="docs"></a>
 ## 📚 文档导航
 
 | 文档 | 内容 |
@@ -230,6 +254,7 @@ docs/         # 文档（安装指南 / req CLI / 需求文档）
 | [req 架构文档](./docs/requirement-mgr-guide.md) | 系统架构、技术实现细节、数据模型 |
 | [req 故障排查](./docs/troubleshooting.md) | 常见问题及解决方案 |
 
+<a id="projects"></a>
 ## 🌟 其他优秀项目
 
 社区中还有不少优秀的 Agent Skill 项目，一并推荐供参考：
@@ -239,16 +264,19 @@ docs/         # 文档（安装指南 / req CLI / 需求文档）
 | [mattpocock/skills](https://github.com/mattpocock/skills) | 面向真实工程的技能集，涵盖 TDD、调试、架构改进、需求对齐 |
 | [anthropics/skills](https://github.com/anthropics/skills) | Anthropic 官方 Agent Skills 示例集，附带 Agent Skills 规范 |
 | [obra/superpowers](https://github.com/obra/superpowers) | Claude Code 增强技能集 |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量 |
 | [QoderAI/better-harness](https://github.com/QoderAI/better-harness) | 审查与改进 AI 编码工作流的工具，本项目的 loop-discovery / harness-review 及证据状态纪律借鉴自此 |
 
 > 如果你有好的技能项目，欢迎提 PR 添加到这里。
 
+<a id="contributing"></a>
 ## 🤝 贡献
 
 1. Fork 本项目
 2. 创建你的技能目录（参考 [create-skill](./skills/create-skill/SKILL.md)）
 3. 提交 PR
 
+<a id="license"></a>
 ## 📄 许可证
 
 [MIT](./LICENSE)
