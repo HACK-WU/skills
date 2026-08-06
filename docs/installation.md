@@ -53,7 +53,7 @@ npx skills add HACK-WU/skills --list -y
 
 本安装器固定使用 `--agent openclaw`，将技能写入当前目录 `skills/`，与 `<target>/skills` 布局一致。其他 agent（如 `universal` → `.agents/skills/`）映射不同目录，但本仓库脚本不支持切换。
 
-> 直接使用 `npx skills` 不会生成 `~/.hackwu-skills/` 管理源和 `targets.list`，因此无法使用本安装器的 `--update` / `--remove` / `--list` 持续跟踪管理。如需后续管理，请使用本仓库的 `skill-install.sh`。
+> 直接使用 `npx skills` 不会生成 `~/.hackwu-skills/` 管理源和 `targets.list`，因此无法使用本安装器的 `--remove` / `--list` 持续跟踪管理。如需后续管理，请使用本仓库的 `skill-install.sh`。
 
 ## 参数说明
 
@@ -71,16 +71,16 @@ npx skills add HACK-WU/skills --list -y
 
 | 命令 | 作用 |
 |------|------|
-| `bash skill-install.sh --update` | 更新管理源到最新版本，并同步到所有已记录的目标目录 |
 | `bash skill-install.sh --remove <names>` | 从管理源删除指定技能（逗号分隔），并同步删除所有目标 |
 | `bash skill-install.sh --list` | 列出管理源中已安装的技能 |
 
-> 管理源 `~/.hackwu-skills/` 是唯一真相：`-t` 目标始终从管理源镜像同步，`--update` / `--remove` 会自动同步到所有曾安装过的目标目录（记录于 `~/.hackwu-skills/targets.list`）。
+> 管理源 `~/.hackwu-skills/` 是技能更新的来源：`-t` 目标始终从管理源增量同步（覆盖更新同名文件，不删除目标中多余文件），`--remove` 会自动同步到所有曾安装过的目标目录（记录于 `~/.hackwu-skills/targets.list`）。
 
 **注意事项**：
 
-- **`-n` 语义**：`-n` 控制的是"往管理源追加哪些 skill"，而非"目标只保留哪些"。首次安装（管理源为空）时 `-n code-review` 目标只有 code-review；但管理源已有其他 skill 后，`-n` 仅追加，目标会镜像管理源全部 skill。若需目标只含子集，请先 `--remove` 清理管理源再用 `-n` 安装。
-- **镜像同步会删除目标自定义文件**：`--update` / `--remove` 同步时，目标 `skills/` 中不在管理源的文件（如手动添加的自定义 skill）会被删除。请勿在目标 `skills/` 中手动添加文件，所有管理通过安装器进行。
+- **更新方式**：重新执行安装（默认操作）即可将管理源与目标更新到最新版本，无需单独的更新命令。
+- **`-n` 语义**：`-n` 控制的是"往管理源追加哪些 skill"，而非"目标只保留哪些"。首次安装（管理源为空）时 `-n code-review` 目标只有 code-review；但管理源已有其他 skill 后，`-n` 仅追加，目标会同步管理源全部 skill。若需目标只含子集，请先 `--remove` 清理管理源再用 `-n` 安装。
+- **增量同步不删除多余文件**：同步采用增量覆盖（如 rsync 不带 `--delete`），目标 `skills/` 中管理源没有的文件（如手动添加的自定义 skill 或本地修改）**不会被删除**，同名文件会被管理源版本覆盖更新。目标中的手动修改会被覆盖，如需保留请勿放在同名路径下。
 - **运行时依赖**：安装器需要 **Node.js >= 22** + npx。`npx skills` 依赖 Node 22（`node:util` 的 `styleText` 自 21.7 起可用，skills 包 engines 声明 ≥22.20.0）。未检测到 npx 或 Node 版本过低时脚本会报错并给出升级指引（Linux/macOS：nvm 或官网 LTS；Windows：winget/Chocolatey 或官网 LTS）。
 
 ## 目标目录

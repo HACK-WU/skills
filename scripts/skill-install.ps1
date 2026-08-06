@@ -10,7 +10,6 @@
 #   .\skill-install.ps1 -Target C:\projects\app
 #   .\skill-install.ps1 -NameFilter code-review,design-craft -Target C:\projects\app
 #   .\skill-install.ps1 -Target C:\projects\a -Target C:\projects\b
-#   .\skill-install.ps1 -Update
 #   .\skill-install.ps1 -Remove code-review
 #   .\skill-install.ps1 -List
 #
@@ -28,7 +27,6 @@ param(
 
     [string[]]$NameFilter,
 
-    [switch]$Update,
     [switch]$Remove,
     [switch]$List,
     [switch]$Help
@@ -57,14 +55,12 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 
 用法:
   .\skill-install.ps1 [-Target <path>...] [-NameFilter <names>] [-ConfigFile <path>]
-  .\skill-install.ps1 -Update
   .\skill-install.ps1 -Remove <names>
   .\skill-install.ps1 -List
   .\skill-install.ps1 -Help
 
 操作:
-  （默认）             安装 skill 到目标目录
-  -Update             更新管理源并同步到所有已记录的目标
+  （默认）             安装 skill 到目标目录（重新安装即更新到最新）
   -Remove <names>     从管理源删除指定 skill 并同步（逗号分隔）
   -List               列出管理源中已安装的 skill
   -Help               显示此帮助
@@ -84,7 +80,6 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   .\skill-install.ps1 -Target C:\projects\app
   .\skill-install.ps1 -NameFilter code-review,design-craft -Target C:\projects\app
   .\skill-install.ps1 -Target C:\projects\a -Target C:\projects\b
-  .\skill-install.ps1 -Update
   .\skill-install.ps1 -Remove code-review
   .\skill-install.ps1 -List
 "@
@@ -95,8 +90,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 # 确定操作
 # ============================================================
 $Action = ""
-if ($Update) { $Action = "update" }
-elseif ($Remove) {
+if ($Remove) {
     $Action = "remove"
     if (-not $NameFilter -or $NameFilter.Count -eq 0) { Write-Err "-Remove 需要指定 skill 名称（-NameFilter）" }
 }
@@ -200,7 +194,8 @@ function Get-RecordedTargets {
 }
 
 # ============================================================
-# 同步：管理源 → 目标（镜像同步）
+# 同步：管理源 → 目标（增量同步）
+# 只覆盖更新同名文件，不删除目标中管理源没有的文件（保护本地手动修改）
 # ============================================================
 function Sync-ToTarget($target) {
     $leaf = Split-Path $target.TrimEnd('\').TrimEnd('/') -Leaf
@@ -208,13 +203,11 @@ function Sync-ToTarget($target) {
     if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
 
     if (-not (Test-Path $ManageSkillsDir) -or -not (Get-ChildItem $ManageSkillsDir -ErrorAction SilentlyContinue)) {
-        # 管理源为空，清空目标
-        Get-ChildItem $dest -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        # 管理源为空，跳过同步（不删除目标中已有文件）
         return
     }
 
-    # 镜像同步：先清空目标，再复制管理源
-    Get-ChildItem $dest -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    # 增量同步：直接覆盖复制（不先清空目标）
     Copy-Item -Path (Join-Path $ManageSkillsDir "*") -Destination $dest -Recurse -Force -ErrorAction SilentlyContinue
 }
 
@@ -272,31 +265,9 @@ function Do-Install {
 
     Write-Host ""
     Write-Info "已安装并同步到 $($script:TargetDirs.Count) 个目标"
-    Write-Info "管理命令: -Update（更新）/ -Remove <names>（删除）/ -List（查看）"
+    Write-Info "管理命令: -Remove <names>（删除）/ -List（查看）；更新请重新执行安装"
 }
 
-# ============================================================
-# 更新
-# ============================================================
-function Do-Update {
-    Ensure-ManageDir
-    if (-not (Test-Path $LockFile)) { Write-Err "管理源为空，请先安装技能" }
-
-    Write-Info "更新管理源..."
-    Push-Location $ManageDir
-    try {
-        & npx skills update -y
-        if ($LASTEXITCODE -ne 0) { Write-Err "npx skills update 失败" }
-    } finally {
-        Pop-Location
-    }
-
-    Write-Host ""
-    Write-Info "同步到所有已记录目标..."
-    Sync-AllRecorded
-    Write-Host ""
-    Write-Info "更新完成"
-}
 
 # ============================================================
 # 删除
@@ -318,6 +289,15 @@ function Do-Remove {
 
     Write-Host ""
     Write-Info "同步删除到所有已记录目标..."
+    # 因 Sync-ToTarget 为增量同步（不删多余文件），此处显式删除目标中对应的 skill 目录
+    foreach ($t in (Get-RecordedTargets)) {
+        if (-not (Test-Path $t)) { continue }
+        $leaf = Split-Path $t.TrimEnd('\').TrimEnd('/') -Leaf
+        $dest = if ($leaf -eq "skills") { $t } else { Join-Path $t "skills" }
+        foreach ($name in $NameList) {
+            Remove-Item -Path (Join-Path $dest $name) -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
     Sync-AllRecorded
     Write-Host ""
     Write-Info "删除完成"
@@ -360,7 +340,7 @@ function Do-List {
     Write-Host ""
     if (Test-Path $TargetsFile) {
         $tcount = (Get-Content $TargetsFile | Where-Object { $_.Trim() -ne "" }).Count
-        Write-Info "已记录 $tcount 个目标目录（-Update / -Remove 时自动同步）"
+        Write-Info "已记录 $tcount 个目标目录（-Remove 时自动同步）"
     }
 }
 
@@ -369,7 +349,6 @@ function Do-List {
 # ============================================================
 switch ($Action) {
     "install" { Do-Install }
-    "update"  { Do-Update }
     "remove"  { Do-Remove }
     "list"    { Do-List }
 }

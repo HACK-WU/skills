@@ -47,7 +47,7 @@ npx skills add HACK-WU/skills --agent openclaw -y
 npx skills add HACK-WU/skills --skill code-review design-craft --agent openclaw -y
 ```
 
-> `--agent openclaw` 将技能写入当前目录 `skills/`。直接使用 `npx skills` 不生成管理源，无法用本仓库脚本的 `--update` / `--remove` / `--list` 持续跟踪——如需后续管理，请用上方 `skill-install.sh`。
+> `--agent openclaw` 将技能写入当前目录 `skills/`。直接使用 `npx skills` 不生成管理源，无法用本仓库脚本的 `--remove` / `--list` 持续跟踪——如需后续管理，请用上方 `skill-install.sh`。
 
 安装后即可在对话中触发技能，无需其他配置：
 

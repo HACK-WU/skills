@@ -11,7 +11,6 @@
 #   bash skill-install.sh -t /path/to/target
 #   bash skill-install.sh -n code-review,design-craft -t /path/to/target
 #   bash skill-install.sh -t /path/a -t /path/b
-#   bash skill-install.sh --update          # 更新管理源 + 同步所有已记录目标
 #   bash skill-install.sh --remove names    # 删除 skill + 同步
 #   bash skill-install.sh --list            # 列出已装 skill
 #   bash skill-install.sh --help
@@ -54,14 +53,12 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 
 用法:
   bash skill-install.sh [-t <path>...] [-n <names>] [--file <path>]
-  bash skill-install.sh --update
   bash skill-install.sh --remove <names>
   bash skill-install.sh --list
   bash skill-install.sh --help
 
 操作:
-  （默认）             安装 skill 到目标目录
-  --update             更新管理源并同步到所有已记录的目标
+  （默认）             安装 skill 到目标目录（重新安装即更新到最新）
   --remove <names>     从管理源删除指定 skill 并同步（逗号分隔）
   --list               列出管理源中已安装的 skill
   --help, -h           显示此帮助
@@ -76,13 +73,12 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 
 管理目录:
   $MANAGE_DIR
-  （npx skills 的安装/跟踪工作目录，update/remove/list 基于此持续管理）
+  （npx skills 的安装/跟踪工作目录，remove/list 基于此持续管理）
 
 示例:
   bash skill-install.sh -t ~/projects/app
   bash skill-install.sh -n code-review,design-craft -t ~/projects/app
   bash skill-install.sh -t ~/projects/a -t ~/projects/b
-  bash skill-install.sh --update
   bash skill-install.sh --remove code-review
   bash skill-install.sh --list
 
@@ -97,7 +93,6 @@ while [ $# -gt 0 ]; do
     arg="$1"
     case "$arg" in
         --help|-h) show_help ;;
-        --update)  ACTION="update" ;;
         --list)    ACTION="list" ;;
         --remove)
             ACTION="remove"
@@ -210,7 +205,8 @@ get_recorded_targets() {
 }
 
 # ============================================================
-# 同步：管理源 → 目标（镜像同步，管理源是唯一真相）
+# 同步：管理源 → 目标（增量同步，管理源是更新来源）
+# 只覆盖更新同名文件，不删除目标中管理源没有的文件（保护本地手动修改）
 # ============================================================
 sync_to_target() {
     local target="$1"
@@ -226,17 +222,15 @@ sync_to_target() {
     mkdir -p "$dest"
 
     if [ ! -d "$MANAGE_SKILLS_DIR" ] || [ -z "$(ls -A "$MANAGE_SKILLS_DIR" 2>/dev/null)" ]; then
-        # 管理源为空，清空目标
-        rm -rf "${dest:?}/"* 2>/dev/null || true
+        # 管理源为空，跳过同步（不删除目标中已有文件）
         return 0
     fi
 
-    # 优先 rsync（镜像同步，删除目标中多余文件）
+    # 优先 rsync（增量同步：覆盖更新，不删除多余文件）
     if command -v rsync &>/dev/null; then
-        rsync -a --delete "$MANAGE_SKILLS_DIR/" "$dest/"
+        rsync -a "$MANAGE_SKILLS_DIR/" "$dest/"
     else
-        # 降级 cp：先清空目标再复制
-        rm -rf "${dest:?}/"* 2>/dev/null || true
+        # 降级 cp：直接覆盖复制（不先清空目标）
         cp -r "$MANAGE_SKILLS_DIR/"* "$dest/" 2>/dev/null || true
     fi
 }
@@ -295,25 +289,9 @@ do_install() {
 
     echo ""
     info "已安装并同步到 ${#TARGETS[@]} 个目标"
-    info "管理命令: --update（更新）/ --remove <names>（删除）/ --list（查看）"
+    info "管理命令: --remove <names>（删除）/ --list（查看）；更新请重新执行安装"
 }
 
-# ============================================================
-# 更新
-# ============================================================
-do_update() {
-    ensure_manage_dir
-    [ ! -f "$LOCK_FILE" ] && error "管理源为空，请先安装技能"
-
-    info "更新管理源..."
-    (cd "$MANAGE_DIR" && npx skills update -y) || error "npx skills update 失败"
-
-    echo ""
-    info "同步到所有已记录目标..."
-    sync_all_recorded
-    echo ""
-    info "更新完成"
-}
 
 # ============================================================
 # 删除
@@ -330,6 +308,22 @@ do_remove() {
 
     echo ""
     info "同步删除到所有已记录目标..."
+    # 因 sync_to_target 为增量同步（不删多余文件），此处显式删除目标中对应的 skill 目录
+    while IFS= read -r t; do
+        [ -z "$t" ] && continue
+        [ ! -d "$t" ] && continue
+        local leaf="${t%/}"
+        leaf="${leaf##*/}"
+        local dest
+        if [ "$leaf" = "skills" ]; then
+            dest="$t"
+        else
+            dest="$t/skills"
+        fi
+        for name in $names; do
+            rm -rf "${dest:?}/$name" 2>/dev/null || true
+        done
+    done < <(get_recorded_targets)
     sync_all_recorded
     echo ""
     info "删除完成"
@@ -376,7 +370,7 @@ print(f\"\n  共 {len(skills)} 个 skill\")
     if [ -f "$TARGETS_FILE" ]; then
         local tcount
         tcount=$(grep -c . "$TARGETS_FILE" 2>/dev/null || echo 0)
-        info "已记录 $tcount 个目标目录（--update / --remove 时自动同步）"
+        info "已记录 $tcount 个目标目录（--remove 时自动同步）"
     fi
 }
 
@@ -385,7 +379,6 @@ print(f\"\n  共 {len(skills)} 个 skill\")
 # ============================================================
 case "$ACTION" in
     install) do_install ;;
-    update)  do_update ;;
     remove)  do_remove ;;
     list)    do_list ;;
     *)       error "未知操作: $ACTION" ;;
