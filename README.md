@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-48-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-47-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -34,7 +34,7 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
   bash -s -- -t /path/to/your-project
-# → 将 48 个技能写入 /path/to/your-project/skills/（经 ~/.hackwu-skills/ 管理源同步）
+# → 将 47 个技能写入 /path/to/your-project/skills/（经 ~/.hackwu-skills/ 管理源同步）
 ```
 
 也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
@@ -126,7 +126,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-48 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+47 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -196,7 +196,6 @@ flowchart TD
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
-| **[skill-updater](./skills/skill-updater/SKILL.md)** | 新增/删除技能后同步更新 README"技能一览"表格（安装脚本已用 npx skills 自动发现，无需维护静态列表） | "更新安装脚本"、"同步技能列表" |
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 HTML 的学习材料，支持课程制/速览双模式 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 

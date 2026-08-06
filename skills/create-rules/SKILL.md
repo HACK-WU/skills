@@ -71,30 +71,16 @@ provider:
 {不需要应用此规则的情况}
 ```
 
-### 第三步：更新安装脚本
+### 第三步：分发规则文件
 
-创建规则文件后，**必须同步更新安装脚本**，将新规则文件添加到 `--rules` 模式的文件列表中：
-
-1. 更新 `scripts/skill-install.sh` 中 `--rules` 分支的 `FILES=()` 数组
-2. 更新 `scripts/skill-install.ps1` 中 `$Rules` 分支的 `Install-Files "rules" @()` 数组
-
-使用 `skill-updater` skill 完成同步，或手动添加：
+规则文件创建后，**手动复制**到目标项目的 `rules/` 目录即可生效。安装器（`skill-install.sh`）仅管理 skill 的安装与同步，不再支持规则文件的自动分发。
 
 ```bash
-# skill-install.sh 的 --rules 部分
-FILES=(
-    "writing-pipeline.md"
-    "new-rule.md"  # 新增
-)
+# 手动复制到目标项目
+cp rules/new-rule.md /path/to/your-project/rules/
 ```
 
-```powershell
-# skill-install.ps1 的 $Rules 部分
-Install-Files "rules" @(
-    "writing-pipeline.md",
-    "new-rule.md"  # 新增
-) $RulesDest
-```
+> 如需批量管理规则，可参考 `skill-install.sh` 的 `--file` 配置文件机制自行编写同步脚本，或将规则纳入目标项目的版本控制。
 
 ## 规则编写最佳实践
 

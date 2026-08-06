@@ -1,15 +1,21 @@
 ﻿# ============================================================
-# Skills 安装器 — 从 GitHub 下载 Skills / Rules（PowerShell）
+# Skills 安装器 — 基于 npx skills 管理本仓库的 AI Skills（PowerShell）
+#
+# 管理目录: $env:USERPROFILE\.hackwu-skills\
+#   ├── skills\              # npx 安装的 skill（openclaw 映射 = cwd\skills\）
+#   ├── skills-lock.json     # npx 生成的跟踪文件（update/remove/list 依据）
+#   └── targets.list         # 已安装目标目录记录（update/remove 同步依据）
 #
 # 用法:
-#   .\skill-install.ps1 -Skills -Target C:\projects\app -Target C:\projects\api
-#   .\skill-install.ps1 -Rules -ConfigFile C:\targets.txt
-#   .\skill-install.ps1 -Skills -NameFilter code-review,design-craft -Target C:\projects\app
-#   .\skill-install.ps1 C:\projects\my-app -Skills   # 旧用法，兼容
-#   .\skill-install.ps1 C:\projects\my-app -Skills -Rules  # 多模式
+#   .\skill-install.ps1 -Target C:\projects\app
+#   .\skill-install.ps1 -NameFilter code-review,design-craft -Target C:\projects\app
+#   .\skill-install.ps1 -Target C:\projects\a -Target C:\projects\b
+#   .\skill-install.ps1 -Update
+#   .\skill-install.ps1 -Remove code-review
+#   .\skill-install.ps1 -List
 #
-#   或:
-#   iex (irm https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1)
+# 兼容旧用法:
+#   .\skill-install.ps1 C:\projects\my-app
 # ============================================================
 
 param(
@@ -22,64 +28,96 @@ param(
 
     [string[]]$NameFilter,
 
-    [switch]$Skills,
-    [switch]$Rules
+    [switch]$Update,
+    [switch]$Remove,
+    [switch]$List,
+    [switch]$Help
 )
 
 $ErrorActionPreference = "Stop"
 
-$GITHUB_REPO = "HACK-WU/skills"
-$GITHUB_BRANCH = "master"
-$RawBase = "https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
-$ApiBase = "https://api.github.com/repos/${GITHUB_REPO}/contents"
-$DefaultSkillsTargets = "$env:USERPROFILE\.skill-targets"
-$DefaultRulesTargets = "$env:USERPROFILE\.rule-targets"
+$Repo = "HACK-WU/skills"
+$Agent = "openclaw"
+$ManageDir = Join-Path $env:USERPROFILE ".hackwu-skills"
+$ManageSkillsDir = Join-Path $ManageDir "skills"
+$LockFile = Join-Path $ManageDir "skills-lock.json"
+$TargetsFile = Join-Path $ManageDir "targets.list"
+$DefaultTargetsFile = Join-Path $env:USERPROFILE ".skill-targets"
 
-# 文件列表缓存（跨目标目录复用，避免重复调用 GitHub API）
-$script:SkillsFiles = @()
-$script:RulesFiles = @()
-$script:SkillsDiscovered = $false
-$script:RulesDiscovered = $false
+function Write-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Green }
+function Write-Warn($msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
+function Write-Err($msg)  { Write-Host "[ERROR] $msg" -ForegroundColor Red; exit 1 }
 
 # ============================================================
-# 收集安装模式
+# 帮助
 # ============================================================
-$Modes = @()
-if ($Skills) { $Modes += "skills" }
-if ($Rules)  { $Modes += "rules" }
-
-if ($Modes.Count -eq 0) {
+if ($Help) {
     Write-Host @"
-用法: .\skill-install.ps1 [-Skills] [-Rules] [-Target <path>...] [-ConfigFile <path>] [-NameFilter <names>]
+Skills 安装器 — 基于 npx skills 管理 AI Skills
 
-  -Skills          安装 AI Skill 定义（skills/）
-  -Rules           安装 AI 规则（rules/）
-  -NameFilter <names> 指定要安装的 skill/rule 名称（可多次使用，逗号分隔，如 -NameFilter code-review,design-craft 或 -NameFilter code-review -NameFilter design-craft）
-  -Target <path>   指定目标目录（可多次使用，与 -ConfigFile 互斥）
-  -ConfigFile <path> 指定目标目录配置文件（与 -Target 互斥）
+用法:
+  .\skill-install.ps1 [-Target <path>...] [-NameFilter <names>] [-ConfigFile <path>]
+  .\skill-install.ps1 -Update
+  .\skill-install.ps1 -Remove <names>
+  .\skill-install.ps1 -List
+  .\skill-install.ps1 -Help
 
-兼容旧用法:
-  .\skill-install.ps1 C:\projects\my-app -Skills
-  .\skill-install.ps1 C:\projects\my-app -Skills -Rules
+操作:
+  （默认）             安装 skill 到目标目录
+  -Update             更新管理源并同步到所有已记录的目标
+  -Remove <names>     从管理源删除指定 skill 并同步（逗号分隔）
+  -List               列出管理源中已安装的 skill
+  -Help               显示此帮助
+
+安装选项:
+  -Target <path>      目标目录（可多次使用，与 -ConfigFile 互斥）
+  -NameFilter <names> 只安装指定 skill（逗号分隔，如 -NameFilter code-review,design-craft）
+  -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
+
+默认配置文件（不指定 -Target / -ConfigFile 时读取）:
+  $DefaultTargetsFile
+
+管理目录:
+  $ManageDir
 
 示例:
-  .\skill-install.ps1 -Skills -Target C:\projects\app -Target C:\projects\api
-  .\skill-install.ps1 -Skills -NameFilter code-review,design-craft -Target C:\projects\app
-  .\skill-install.ps1 -Rules -ConfigFile C:\my-targets.txt
-  .\skill-install.ps1 -Skills -Rules -Target C:\projects\my-app
-
-默认配置文件（不指定 -Target / -ConfigFile 时自动读取）:
-  -Skills  → $env:USERPROFILE\.skill-targets
-  -Rules   → $env:USERPROFILE\.rule-targets
-
-一键安装:
-  iex (irm https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1)
+  .\skill-install.ps1 -Target C:\projects\app
+  .\skill-install.ps1 -NameFilter code-review,design-craft -Target C:\projects\app
+  .\skill-install.ps1 -Target C:\projects\a -Target C:\projects\b
+  .\skill-install.ps1 -Update
+  .\skill-install.ps1 -Remove code-review
+  .\skill-install.ps1 -List
 "@
-    exit 1
+    exit 0
 }
 
 # ============================================================
-# 解析名称过滤（支持多参数和逗号分隔：-NameFilter a -NameFilter b 或 -NameFilter "a,b"）
+# 确定操作
+# ============================================================
+$Action = ""
+if ($Update) { $Action = "update" }
+elseif ($Remove) {
+    $Action = "remove"
+    if (-not $NameFilter -or $NameFilter.Count -eq 0) { Write-Err "-Remove 需要指定 skill 名称（-NameFilter）" }
+}
+elseif ($List) { $Action = "list" }
+else { $Action = "install" }  # 默认安装
+
+# ============================================================
+# 前置检查
+# ============================================================
+$npxCmd = Get-Command npx -ErrorAction SilentlyContinue
+if (-not $npxCmd) {
+    Write-Err "未检测到 npx（本安装器基于 'npx skills' 管理技能，需 Node.js >= 18）。`n`n  请先安装 Node.js，任选其一：`n    1. 官方安装包: https://nodejs.org/ （选择 LTS 版本）`n    2. winget: winget install OpenJS.NodeJS.LTS`n    3. Chocolatey: choco install nodejs-lts`n`n  安装完成后重试本脚本。"
+}
+
+function Ensure-ManageDir {
+    if (-not (Test-Path $ManageDir)) { New-Item -ItemType Directory -Path $ManageDir -Force | Out-Null }
+    if (-not (Test-Path $TargetsFile)) { New-Item -ItemType File -Path $TargetsFile -Force | Out-Null }
+}
+
+# ============================================================
+# 名称过滤解析（支持多参数和逗号分隔）
 # ============================================================
 $NameList = @()
 if ($NameFilter) {
@@ -88,403 +126,239 @@ if ($NameFilter) {
     }
 }
 
-function Test-NameMatches {
-    param([string]$Name)
-    if ($NameList.Count -eq 0) { return $true }
-    return $NameList -contains $Name
-}
-
 # ============================================================
-# 互斥检查 & 解析目标目录
+# 目标目录解析
 # ============================================================
-if ($Target -and $ConfigFile) {
-    Write-Host "错误：-Target 和 -ConfigFile 不能同时使用"
-    exit 1
-}
-
 $TargetDirs = @()
-$SourceDesc = ""
 
-if ($Target) {
-    $TargetDirs = @($Target)
-    $SourceDesc = "命令行参数 (-Target x $($TargetDirs.Count))"
-} elseif ($ConfigFile) {
-    if (-not (Test-Path $ConfigFile)) {
-        Write-Host "错误：配置文件不存在: $ConfigFile"
-        exit 1
+function Resolve-Targets {
+    if ($Target -and $ConfigFile) { Write-Err "-Target 和 -ConfigFile 不能同时使用" }
+
+    if ($Target) {
+        $script:TargetDirs = @($Target)
+        return
     }
-    foreach ($line in (Get-Content $ConfigFile -ErrorAction Stop)) {
+
+    if ($ConfigFile) {
+        if (-not (Test-Path $ConfigFile)) { Write-Err "配置文件不存在: $ConfigFile" }
+        foreach ($line in (Get-Content $ConfigFile -ErrorAction Stop)) {
+            $trimmed = $line.Trim()
+            if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
+            $script:TargetDirs += $trimmed
+        }
+        if ($script:TargetDirs.Count -eq 0) { Write-Err "配置文件为空: $ConfigFile" }
+        return
+    }
+
+    if ($TargetPath) {
+        $script:TargetDirs = @($TargetPath)
+        return
+    }
+
+    # 默认配置文件
+    if (Test-Path $DefaultTargetsFile) {
+        foreach ($line in (Get-Content $DefaultTargetsFile -ErrorAction SilentlyContinue)) {
+            $trimmed = $line.Trim()
+            if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
+            $script:TargetDirs += $trimmed
+        }
+    }
+}
+
+# 记录目标（去重）
+function Record-Target($t) {
+    if (Test-Path $TargetsFile) {
+        $existing = Get-Content $TargetsFile -ErrorAction SilentlyContinue
+        if ($existing -contains $t) { return }
+    }
+    Add-Content -Path $TargetsFile -Value $t
+}
+
+# 读取所有已记录目标
+function Get-RecordedTargets {
+    if (-not (Test-Path $TargetsFile)) { return @() }
+    $result = @()
+    foreach ($line in (Get-Content $TargetsFile -ErrorAction SilentlyContinue)) {
         $trimmed = $line.Trim()
-        if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
-        $TargetDirs += $trimmed
+        if ($trimmed -ne "") { $result += $trimmed }
     }
-    if ($TargetDirs.Count -eq 0) {
-        Write-Host "错误：配置文件为空: $ConfigFile"
-        exit 1
-    }
-    $SourceDesc = "配置文件: $ConfigFile"
-} elseif ($Modes.Count -gt 0) {
-    # 模式特定的默认配置文件
-    $modeFiles = @()
-    foreach ($mode in $Modes) {
-        switch ($mode) {
-            "skills"  { $modeFiles += $DefaultSkillsTargets }
-            "rules"   { $modeFiles += $DefaultRulesTargets }
-        }
-    }
-    $seen = @{}
-    foreach ($cf in $modeFiles) {
-        if (Test-Path $cf) {
-            foreach ($line in (Get-Content $cf -ErrorAction SilentlyContinue)) {
-                $trimmed = $line.Trim()
-                if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
-                if (-not $seen.ContainsKey($trimmed)) {
-                    $TargetDirs += $trimmed
-                    $seen[$trimmed] = $true
-                }
-            }
-        }
-    }
-    if ($TargetDirs.Count -gt 0) {
-        $SourceDesc = "默认配置（模式区分）"
-    }
-} elseif ($TargetPath) {
-    $TargetDirs = @($TargetPath)
-    $SourceDesc = "位置参数"
-}
-
-if ($TargetDirs.Count -eq 0) {
-    Write-Host "错误：未指定目标目录"
-    Write-Host "使用 -Target <path> 或 -ConfigFile <path> 指定目标目录"
-    exit 1
+    return $result
 }
 
 # ============================================================
-# 通用函数
+# 同步：管理源 → 目标（镜像同步）
 # ============================================================
-function Download-File {
-    param([string]$Url, [string]$Dest)
-    $dir = Split-Path $Dest -Parent
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+function Sync-ToTarget($target) {
+    $leaf = Split-Path $target.TrimEnd('\').TrimEnd('/') -Leaf
+    $dest = if ($leaf -eq "skills") { $target } else { Join-Path $target "skills" }
+    if (-not (Test-Path $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+
+    if (-not (Test-Path $ManageSkillsDir) -or -not (Get-ChildItem $ManageSkillsDir -ErrorAction SilentlyContinue)) {
+        # 管理源为空，清空目标
+        Get-ChildItem $dest -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        return
     }
-    try {
-        Invoke-WebRequest -Uri $Url -OutFile $Dest -UseBasicParsing -ErrorAction Stop
-        return $true
-    } catch {
-        if (Test-Path $Dest) { Remove-Item $Dest -Force -ErrorAction SilentlyContinue }
-        return $false
-    }
+
+    # 镜像同步：先清空目标，再复制管理源
+    Get-ChildItem $dest -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    Copy-Item -Path (Join-Path $ManageSkillsDir "*") -Destination $dest -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# 通过 GitHub API 递归发现目录下所有文件
-function Discover-FilesRecursive {
-    param([string]$ApiPath, [string]$Prefix)
-    $files = @()
-    try {
-        $items = Invoke-RestMethod -Uri "$ApiBase/$ApiPath" -UseBasicParsing -ErrorAction Stop
-    } catch {
-        return $files
-    }
-    foreach ($item in $items) {
-        if ($item.type -eq "dir") {
-            $files += Discover-FilesRecursive -ApiPath "$($item.path)" -Prefix "$Prefix$($item.name)/"
-        } elseif ($item.type -eq "file") {
-            $files += "$Prefix$($item.name)"
-        }
-    }
-    return $files
-}
-
-# 通过 GitHub API 发现目录下的直接子目录或文件
-function Discover-DirectItems {
-    param([string]$ApiPath, [string]$Filter)
-    $results = @()
-    try {
-        $items = Invoke-RestMethod -Uri "$ApiBase/$ApiPath" -UseBasicParsing -ErrorAction Stop
-    } catch {
-        return $results
-    }
-    foreach ($item in $items) {
-        switch ($Filter) {
-            "dirs"  { if ($item.type -eq "dir")  { $results += $item.name } }
-            "files" { if ($item.type -eq "file") { $results += $item.name } }
-            "md"    { if ($item.type -eq "file" -and $item.name -like "*.md") { $results += $item.name } }
-        }
-    }
-    return $results
-}
-
-# ============================================================
-# 安装函数
-# ============================================================
-function Install-Skills {
-    param([string]$NormalizedDir)
-    $leaf = Split-Path $NormalizedDir -Leaf
-    $dest = if ($leaf -eq "skills") { $NormalizedDir } else { Join-Path $NormalizedDir "skills" }
-    New-Item -ItemType Directory -Path $dest -Force | Out-Null
-
-    # 动态发现：优先 GitHub API 递归获取，降级为硬编码；使用缓存避免重复 API 调用
-    $files = @()
-    if ($script:SkillsDiscovered) {
-        $files = $script:SkillsFiles
-    } else {
-        Write-Host "🔍 正在通过 GitHub API 发现 skill 文件列表..." -NoNewline
-        $skillDirs = @(Discover-DirectItems -ApiPath "skills" -Filter "dirs")
-        if ($skillDirs.Count -gt 0) {
-            foreach ($skillName in $skillDirs) {
-                if ($skillName -eq "skill-updater") { continue }
-                $subFiles = Discover-FilesRecursive -ApiPath "skills/$skillName" -Prefix ""
-                foreach ($rel in $subFiles) {
-                    $files += "$skillName/$rel"
-                }
-                Write-Host "." -NoNewline
-            }
-        }
-        Write-Host ""
-    }
-
-    if ($files.Count -eq 0 -and -not $script:SkillsDiscovered) {
-        Write-Host "⚠️  GitHub API 不可用，使用静态 skill 列表（可能不是最新）" -ForegroundColor Yellow
-        $files = @(
-            "api-design/SKILL.md",
-            "api-testing/SKILL.md",
-            "api-testing/examples.md",
-            "api-testing/reference.md",
-            "artifact-optimizer/SKILL.md",
-            "auto-review/SKILL.md",
-            "bug-impact-analysis/SKILL.md",
-            "challenger/SKILL.md",
-            "challenger/strategies/bug-fix.md",
-            "challenger/strategies/design.md",
-            "challenger/strategies/feature.md",
-            "challenger/strategies/optimization.md",
-            "challenger/templates/report.md",
-            "code-implement/SKILL.md",
-            "code-review/SKILL.md",
-            "code-review/examples.md",
-            "code-review/reference.md",
-            "code-survey/SKILL.md",
-            "content-simplifier/SKILL.md",
-            "create-rules/SKILL.md",
-            "create-skill/SKILL.md",
-            "create-sub-agent/SKILL.md",
-            "create-sub-agent/examples.md",
-            "create-sub-agent/reference.md",
-            "data-flow-model/SKILL.md",
-            "debug/SKILL.md",
-            "demo-verify/SKILL.md",
-            "dependency-docs/SKILL.md",
-            "design-craft/CHALLENGER_REPORT.md",
-            "design-craft/SINGLE_DOC.md",
-            "design-craft/SKILL.md",
-            "design-craft/SUB_TEMPLATE.md",
-            "design-craft/reference.md",
-            "design-review/SKILL.md",
-            "design-review/reference.md",
-            "design-to-code/SKILL.md",
-            "document-writer/SKILL.md",
-            "document-writer/references/examples/README.md",
-            "document-writer/references/examples/example-1-library.md",
-            "document-writer/references/examples/example-2-cli.md",
-            "document-writer/references/quality-rules.md",
-            "document-writer/references/strategies.md",
-            "e2e-testing/SKILL.md",
-            "e2e-testing/examples.md",
-            "e2e-testing/reference.md",
-            "expert-audit/SKILL.md",
-            "expert-lookup/SKILL.md",
-            "expert-team/SKILL.md",
-            "expert-team/reference.md",
-            "frontend-api-guide/SKILL.md",
-            "frontend-api-guide/reference.md",
-            "harness-review/SKILL.md",
-            "implementation-report/SKILL.md",
-            "interaction-design/SKILL.md",
-            "loop-discovery/SKILL.md",
-            "memory-creator/SKILL.md",
-            "migrate-to-codehub/SKILL.md",
-            "module-teach/SKILL.md",
-            "module-teach/examples.md",
-            "module-teach/reference.md",
-            "negative-requirement/SKILL.md",
-            "request-guard/SKILL.md",
-            "requirement-doc-store/SKILL.md",
-            "requirement-mining/SKILL.md",
-            "requirement-mining/references/example.md",
-            "review-panel/SKILL.md",
-            "review-panel/references/review-panel.md",
-            "scenario-rehearsal/SKILL.md",
-            "scenario-rehearsal/reference.md",
-            "scenario-rehearsal/strategies/batch-sync.md",
-            "scenario-rehearsal/strategies/bug-fix.md",
-            "scenario-rehearsal/strategies/code.md",
-            "scenario-rehearsal/strategies/concurrency.md",
-            "scenario-rehearsal/strategies/crud-api.md",
-            "scenario-rehearsal/strategies/feature.md",
-            "scenario-rehearsal/strategies/optimization.md",
-            "scenario-rehearsal/strategies/realtime-messaging.md",
-            "scenario-rehearsal/strategies/refactor-migration.md",
-            "scenario-rehearsal/strategies/requirement.md",
-            "scenario-rehearsal/strategies/skill.md",
-            "scenario-rehearsal/strategies/transaction-state-machine.md",
-            "skill-amplifier/SKILL.md",
-            "solution-capture/SKILL.md",
-            "solution-lookup/SKILL.md",
-            "task-dispatch/SKILL.md",
-            "task-dispatch/reference.md",
-            "test-planner/SKILL.md",
-            "test-planner/references/examples/example-1-registration.md",
-            "test-planner/references/test-strategies.md",
-            "test-planner/strategies/api.md",
-            "test-planner/strategies/design.md",
-            "topic-teach/SKILL.md",
-            "topic-teach/examples.md",
-            "topic-teach/reference.md",
-            "ui-to-ascii/SKILL.md",
-            "ui-to-ascii/reference.md",
-            "work-breakdown/SKILL.md"
-        )
-    }
-
-    # 缓存首次发现的文件列表
-    if (-not $script:SkillsDiscovered -and $files.Count -gt 0) {
-        $script:SkillsFiles = $files
-        $script:SkillsDiscovered = $true
-    }
-
-    Write-Host "🧠 安装 AI Skills → $dest"
-    Write-Host ""
-
-    # 以“目录(第一级)”为粒度统计 skill，而非按文件计数
-    $fileCount = 0
-    $fileTotal = 0
-    $skippedSkills = @{}
-    $matchedSkills = @{}
-    $installedSkills = @{}
-    foreach ($f in $files) {
-        # 提取 skill 名称用于过滤（取第一级目录名）
-        $skillName = $f.Split('/')[0]
-        if (-not (Test-NameMatches -Name $skillName)) {
-            $skippedSkills[$skillName] = $true
-            continue
-        }
-        $matchedSkills[$skillName] = $true
-        $fileTotal++
-        $url  = "$RawBase/skills/$f"
-        $destFile = Join-Path $dest $f
-        if (Download-File -Url $url -Dest $destFile) {
-            Write-Host "  [OK] $f"
-            $fileCount++
-            $installedSkills[$skillName] = $true
-        } else {
-            Write-Host "  [FAIL] $f"
-        }
-    }
-    if ($skippedSkills.Count -gt 0) { Write-Host "  跳过: $($skippedSkills.Count) 个未匹配的 skill" }
-    Write-Host ""
-    $skillTotal = $matchedSkills.Count
-    $skillInstalled = $installedSkills.Count
-    Write-Host "已安装: $skillInstalled/$skillTotal 个 skill（$fileCount/$fileTotal 个文件）"
-    if ($skillInstalled -gt 0) { $script:AnyInstalled = $true }
-}
-
-function Install-Rules {
-    param([string]$NormalizedDir)
-    $leaf = Split-Path $NormalizedDir -Leaf
-    $dest = if ($leaf -eq "rules") { $NormalizedDir } else { Join-Path $NormalizedDir "rules" }
-    New-Item -ItemType Directory -Path $dest -Force | Out-Null
-
-    # 动态发现：优先 GitHub API，降级为硬编码；使用缓存避免重复 API 调用
-    $files = @()
-    if ($script:RulesDiscovered) {
-        $files = $script:RulesFiles
-    } else {
-        Write-Host "🔍 正在通过 GitHub API 发现规则文件列表..."
-        $files = @(Discover-DirectItems -ApiPath "rules" -Filter "md")
-        Write-Host "   已发现 $($files.Count) 个规则文件"
-    }
-
-    if ($files.Count -eq 0 -and -not $script:RulesDiscovered) {
-        Write-Host "⚠️  GitHub API 不可用，使用静态 rule 列表（可能不是最新）" -ForegroundColor Yellow
-$files = @(
-    "gitnexus-mcp-rules.md",
-    "agents-memory.md",
-    "writing-pipeline.md",
-    "expert-solution-workflow.md"
-)
-    }
-
-    # 缓存首次发现的文件列表
-    if (-not $script:RulesDiscovered -and $files.Count -gt 0) {
-        $script:RulesFiles = $files
-        $script:RulesDiscovered = $true
-    }
-
-    Write-Host "📏 安装 AI Rules → $dest"
-    Write-Host ""
-
+function Sync-AllRecorded {
+    $targets = Get-RecordedTargets
+    $total = $targets.Count
     $count = 0
-    $total = 0
-    $skipped = 0
-    foreach ($f in $files) {
-        # 提取规则名称用于过滤（去掉 .md 后缀）
-        $ruleName = $f -replace '\.md$', ''
-        if (-not (Test-NameMatches -Name $ruleName)) {
-            $skipped++
-            continue
+    foreach ($t in $targets) {
+        if (-not (Test-Path $t)) { Write-Warn "目标目录不存在，跳过: $t"; continue }
+        Sync-ToTarget $t
+        $count++
+        Write-Host "  [SYNC] $t"
+    }
+    Write-Info "已同步 $count/$total 个目标目录"
+}
+
+# ============================================================
+# 安装
+# ============================================================
+function Do-Install {
+    Resolve-Targets
+    if ($script:TargetDirs.Count -eq 0) {
+        Write-Err "未指定目标目录。使用 -Target <path>、-ConfigFile <path>，或在 $DefaultTargetsFile 配置。"
+    }
+
+    Ensure-ManageDir
+
+    Write-Host "🚀 skill-install.ps1"
+    Write-Host "   管理目录: $ManageDir"
+    Write-Host "   目标数量: $($script:TargetDirs.Count)"
+    if ($NameList.Count -gt 0) { Write-Host "   名称过滤: $($NameList -join ', ')" }
+    Write-Host ""
+
+    Write-Info "通过 npx skills 安装到管理源..."
+    Push-Location $ManageDir
+    try {
+        $npxArgs = @("skills", "add", $Repo, "--agent", $Agent, "-y")
+        if ($NameList.Count -gt 0) {
+            $npxArgs += @("--skill") + $NameList
         }
-        $total++
-        $url  = "$RawBase/rules/$f"
-        $destFile = Join-Path $dest $f
-        if (Download-File -Url $url -Dest $destFile) {
-            Write-Host "  [OK] $f"
-            $count++
-        } else {
-            Write-Host "  [FAIL] $f"
+        & npx @npxArgs
+        if ($LASTEXITCODE -ne 0) { Write-Err "npx skills add 失败" }
+    } finally {
+        Pop-Location
+    }
+
+    Write-Host ""
+    Write-Info "同步到目标目录..."
+    foreach ($t in $script:TargetDirs) {
+        if (-not (Test-Path $t)) { New-Item -ItemType Directory -Path $t -Force | Out-Null }
+        Sync-ToTarget $t
+        Record-Target $t
+        Write-Host "  [SYNC] $t"
+    }
+
+    Write-Host ""
+    Write-Info "已安装并同步到 $($script:TargetDirs.Count) 个目标"
+    Write-Info "管理命令: -Update（更新）/ -Remove <names>（删除）/ -List（查看）"
+}
+
+# ============================================================
+# 更新
+# ============================================================
+function Do-Update {
+    Ensure-ManageDir
+    if (-not (Test-Path $LockFile)) { Write-Err "管理源为空，请先安装技能" }
+
+    Write-Info "更新管理源..."
+    Push-Location $ManageDir
+    try {
+        & npx skills update -y
+        if ($LASTEXITCODE -ne 0) { Write-Err "npx skills update 失败" }
+    } finally {
+        Pop-Location
+    }
+
+    Write-Host ""
+    Write-Info "同步到所有已记录目标..."
+    Sync-AllRecorded
+    Write-Host ""
+    Write-Info "更新完成"
+}
+
+# ============================================================
+# 删除
+# ============================================================
+function Do-Remove {
+    Ensure-ManageDir
+    if (-not (Test-Path $LockFile)) { Write-Err "管理源为空，无可删除项" }
+    if ($NameList.Count -eq 0) { Write-Err "-Remove 需要指定 skill 名称（-NameFilter）" }
+
+    Write-Info "从管理源删除: $($NameList -join ', ')"
+    Push-Location $ManageDir
+    try {
+        $npxArgs = @("skills", "remove") + $NameList + @("-y")
+        & npx @npxArgs
+        if ($LASTEXITCODE -ne 0) { Write-Err "npx skills remove 失败" }
+    } finally {
+        Pop-Location
+    }
+
+    Write-Host ""
+    Write-Info "同步删除到所有已记录目标..."
+    Sync-AllRecorded
+    Write-Host ""
+    Write-Info "删除完成"
+}
+
+# ============================================================
+# 列表
+# ============================================================
+function Do-List {
+    Ensure-ManageDir
+    if (-not (Test-Path $LockFile)) {
+        Write-Warn "管理源为空，尚未安装任何 skill"
+        Write-Warn "使用 -Target <path> 安装"
+        exit 0
+    }
+
+    Write-Info "管理源已安装的 skill:"
+    Write-Host ""
+
+    Push-Location $ManageDir
+    try {
+        & npx skills list
+    } finally {
+        Pop-Location
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        # 降级：从 lock 文件解析
+        Write-Warn "npx skills list 不可用，从 lock 文件读取..."
+        try {
+            $data = Get-Content $LockFile -Raw | ConvertFrom-Json
+            $skills = $data.skills.PSObject.Properties.Name | Sort-Object
+            foreach ($name in $skills) { Write-Host "  $name" }
+            Write-Host "`n  共 $($skills.Count) 个 skill"
+        } catch {
+            Write-Host "  （无法解析，lock 文件: $LockFile）"
         }
     }
-    if ($skipped -gt 0) { Write-Host "  跳过: $skipped 个未匹配的 rule" }
+
     Write-Host ""
-    Write-Host "已安装: $count/$total 个规则文件"
-    if ($count -gt 0) { $script:AnyInstalled = $true }
+    if (Test-Path $TargetsFile) {
+        $tcount = (Get-Content $TargetsFile | Where-Object { $_.Trim() -ne "" }).Count
+        Write-Info "已记录 $tcount 个目标目录（-Update / -Remove 时自动同步）"
+    }
 }
 
 # ============================================================
 # 主流程
 # ============================================================
-Write-Host "🚀 skill-install.ps1"
-Write-Host "   目标来源: $SourceDesc"
-Write-Host "   目标数量: $($TargetDirs.Count)"
-Write-Host "   安装模式: $($Modes -join ', ')"
-if ($NameList.Count -gt 0) { Write-Host "   名称过滤: $($NameList -join ', ')" }
-Write-Host ""
-
-$script:AnyInstalled = $false
-
-for ($i = 0; $i -lt $TargetDirs.Count; $i++) {
-    $dir = $TargetDirs[$i]
-    $label = "[$($i + 1)/$($TargetDirs.Count)]"
-
-    if (-not (Test-Path $dir)) {
-        Write-Host "$label 创建目标目录: $dir"
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-    }
-
-    $normalizedDir = $dir.TrimEnd('\').TrimEnd('/')
-
-    foreach ($mode in $Modes) {
-        switch ($mode) {
-            "skills"  { Install-Skills $normalizedDir }
-            "rules"   { Install-Rules $normalizedDir }
-        }
-        Write-Host ""
-    }
+switch ($Action) {
+    "install" { Do-Install }
+    "update"  { Do-Update }
+    "remove"  { Do-Remove }
+    "list"    { Do-List }
 }
 
 Write-Host ""
-if (-not $script:AnyInstalled -and $NameList.Count -gt 0) {
-    Write-Host "⚠️ 未找到匹配的项，请检查名称是否正确"
-    exit 1
-}
 Write-Host "✅ 完成"

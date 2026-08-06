@@ -46,7 +46,7 @@ description: 在沉淀可复用资产（skill/rule/solution/memory/脚本）之�
 |------|------|
 | 简单事实记忆（一句话偏好、路径配置） | 直接用 update_memory，不值得走路由 |
 | 用户已明确指定载体且经过讨论 | 尊重用户决定，直接执行创建 |
-| 对已有资产的修改、精简 | 走 skill-updater / content-simplifier |
+| 对已有资产的修改、精简 | 走 content-simplifier 或直接修改 |
 
 ## 核心原则
 
@@ -87,7 +87,7 @@ description: 在沉淀可复用资产（skill/rule/solution/memory/脚本）之�
 | ① 已在使用的覆盖 | 现有 skill/rule/memory 已经在处理这类场景且工作正常 | **复用现有**，无需任何动作 |
 | ② 平台内置能力 | AI/平台本来就会做这件事，不需要额外指导 | **不沉淀**，说明理由 |
 | ③ 已配置但未触发 | 存在能覆盖的资产，但触发词不匹配 / description 不清导致没被用上 | **修触发**：改 description、补触发短语，而非新建 |
-| ④ 可扩展现有 | 现有资产覆盖了大部分场景，缺的部分可作为分支/策略/子章节加入 | **扩展现有**（交给 skill-updater） |
+| ④ 可扩展现有 | 现有资产覆盖了大部分场景，缺的部分可作为分支/策略/子章节加入 | **扩展现有**（直接增补） |
 | ⑤ 确需新建 | 以上都不满足，且证据门已通过 | **新建**，进入 Step 3 选载体 |
 
 **检查方法**：
@@ -142,7 +142,7 @@ description: 在沉淀可复用资产（skill/rule/solution/memory/脚本）之�
 |------|--------|
 | 复用现有 | 直接使用现有资产，本次结束 |
 | 修触发 | 修改现有资产的 description / 触发短语 |
-| 扩展现有 | 调用 skill-updater 在现有资产中增补 |
+| 扩展现有 | 直接在现有资产中增补 |
 | 新建 skill | 调用 create-skill |
 | 新建 solution | 调用 solution-capture（跳过其内部评估，路由已完成） |
 | 新建 memory | 调用 memory-creator |
@@ -222,7 +222,7 @@ AI 解决了一次 Docker 端口冲突后想调用 solution-capture
 |-------|------|
 | request-guard | 平行机制：request-guard 守"修改请求"，本 skill 守"沉淀请求" |
 | create-skill / solution-capture / memory-creator / create-rules | 下游执行者：本 skill 输出"新建"结论后交给它们 |
-| content-simplifier / skill-updater | 存量治理：本 skill 只管增量入口 |
+| content-simplifier | 存量治理：本 skill 只管增量入口 |
 | scenario-rehearsal（skill 模式） | 事后验证：新建 skill 后可用它验证触发准确性 |
 
 ## 反模式
