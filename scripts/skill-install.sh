@@ -134,7 +134,15 @@ done
 # 前置检查
 # ============================================================
 if ! command -v npx &>/dev/null; then
-    error "未检测到 npx（本安装器基于 'npx skills' 管理技能，需 Node.js >= 18）。\n\n  请先安装 Node.js，任选其一：\n    1. 官方安装包: https://nodejs.org/ （选择 LTS 版本）\n    2. Linux (apt):  sudo apt install nodejs npm\n    3. Linux/macOS (nvm):  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash\n    4. macOS (Homebrew):  brew install node\n\n  安装完成后重试本脚本。"
+    error "未检测到 npx（本安装器基于 'npx skills' 管理技能，需 Node.js >= 22）。\n\n  请先安装 Node.js，任选其一：\n    1. 官方安装包: https://nodejs.org/ （选择 LTS 版本）\n    2. Linux (apt):  sudo apt install nodejs npm\n    3. Linux/macOS (nvm):  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash\n    4. macOS (Homebrew):  brew install node\n\n  安装完成后重试本脚本。"
+fi
+
+# 检查 Node.js 版本（npx skills 依赖 Node >= 22）
+if command -v node &>/dev/null; then
+    NODE_MAJOR=$(node -v 2>/dev/null | sed 's/^v//;s/\..*$//')
+    if [ -z "${NODE_MAJOR:-}" ] || [ "$NODE_MAJOR" -lt 22 ] 2>/dev/null; then
+        error "Node.js 版本过低（当前 v${NODE_MAJOR:-未知}，需 >= 22）。\n\n  npx skills 依赖 Node >= 22，请升级 Node.js：\n    1. Linux/macOS (nvm):  nvm install 22 && nvm use 22\n    2. 官方安装包: https://nodejs.org/ （选择 LTS 版本）\n    3. macOS (Homebrew):  brew install node@22\n\n  升级后重试本脚本。"
+    fi
 fi
 
 ensure_manage_dir() {

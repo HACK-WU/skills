@@ -81,7 +81,7 @@ npx skills add HACK-WU/skills --list -y
 
 - **`-n` 语义**：`-n` 控制的是"往管理源追加哪些 skill"，而非"目标只保留哪些"。首次安装（管理源为空）时 `-n code-review` 目标只有 code-review；但管理源已有其他 skill 后，`-n` 仅追加，目标会镜像管理源全部 skill。若需目标只含子集，请先 `--remove` 清理管理源再用 `-n` 安装。
 - **镜像同步会删除目标自定义文件**：`--update` / `--remove` 同步时，目标 `skills/` 中不在管理源的文件（如手动添加的自定义 skill）会被删除。请勿在目标 `skills/` 中手动添加文件，所有管理通过安装器进行。
-- **运行时依赖**：安装器需要 Node.js + npx。未检测到 npx 时脚本会报错并给出安装指引（Linux/macOS：官网安装包或 nvm/Homebrew；Windows：官网安装包或 winget/Chocolatey）。
+- **运行时依赖**：安装器需要 **Node.js >= 22** + npx。`npx skills` 依赖 Node 22（`node:util` 的 `styleText` 自 21.7 起可用，skills 包 engines 声明 ≥22.20.0）。未检测到 npx 或 Node 版本过低时脚本会报错并给出升级指引（Linux/macOS：nvm 或官网 LTS；Windows：winget/Chocolatey 或官网 LTS）。
 
 ## 目标目录
 

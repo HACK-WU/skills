@@ -108,7 +108,21 @@ else { $Action = "install" }  # 默认安装
 # ============================================================
 $npxCmd = Get-Command npx -ErrorAction SilentlyContinue
 if (-not $npxCmd) {
-    Write-Err "未检测到 npx（本安装器基于 'npx skills' 管理技能，需 Node.js >= 18）。`n`n  请先安装 Node.js，任选其一：`n    1. 官方安装包: https://nodejs.org/ （选择 LTS 版本）`n    2. winget: winget install OpenJS.NodeJS.LTS`n    3. Chocolatey: choco install nodejs-lts`n`n  安装完成后重试本脚本。"
+    Write-Err "未检测到 npx（本安装器基于 'npx skills' 管理技能，需 Node.js >= 22）。`n`n  请先安装 Node.js，任选其一：`n    1. 官方安装包: https://nodejs.org/ （选择 LTS 版本）`n    2. winget: winget install OpenJS.NodeJS.LTS`n    3. Chocolatey: choco install nodejs-lts`n`n  安装完成后重试本脚本。"
+}
+
+# 检查 Node.js 版本（npx skills 依赖 Node >= 22）
+$nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+if ($nodeCmd) {
+    try {
+        $nodeVer = (& node -v) -replace '^v', ''
+        $nodeMajor = [int]($nodeVer -split '\.')[0]
+        if ($nodeMajor -lt 22) {
+            Write-Err "Node.js 版本过低（当前 v$nodeVer，需 >= 22）。`n`n  npx skills 依赖 Node >= 22，请升级 Node.js：`n    1. winget: winget install OpenJS.NodeJS.LTS`n    2. 官方安装包: https://nodejs.org/ （选择 LTS 版本）`n`n  升级后重试本脚本。"
+        }
+    } catch {
+        # node 存在但无法读取版本，不阻塞
+    }
 }
 
 function Ensure-ManageDir {
