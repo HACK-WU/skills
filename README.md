@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-47-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-48-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -34,7 +34,7 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
   bash -s -- -t /path/to/your-project
-# → 将 47 个技能写入 /path/to/your-project/skills/（经 ~/.hackwu-skills/ 管理源同步）
+# → 将 48 个技能写入 /path/to/your-project/skills/（经 ~/.hackwu-skills/ 管理源同步）
 ```
 
 也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
@@ -79,7 +79,7 @@ flowchart TD
 
     subgraph DESIGN["✏️ 设计阶段"]
         direction LR
-        ID["interaction-design<br/>设计交互层"] --> WB["work-breakdown<br/>拆成独立切片"] --> DFM["data-flow-model<br/>数据建模 + 流图"] --> DC["design-craft<br/>技术设计"]
+        ID["interaction-design<br/>设计交互层"] --> UID["ui-designer<br/>UI 视觉设计"] --> WB["work-breakdown<br/>拆成独立切片"] --> DFM["data-flow-model<br/>数据建模 + 流图"] --> DC["design-craft<br/>技术设计"]
     end
 
     SR["🎭 场景推演 · scenario-rehearsal<br/>模拟真实场景验证可行性"]
@@ -115,7 +115,7 @@ flowchart TD
     classDef expert fill:#e0f2f1,stroke:#00897b,color:#004d40
 
     class RM,DD,CS,DV pre
-    class ID,WB,DFM,DC design
+    class ID,UID,WB,DFM,DC design
     class SR,DR verify
     class D2C,CI code
     class CRV,CH,TP qa
@@ -126,7 +126,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-47 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+48 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -134,6 +134,7 @@ flowchart TD
 |------|------|--------|
 | **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单，集成 CRUD 脚本持久化 | "我想做一个xxx"、"帮我分析需求" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
+| **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
 | **[work-breakdown](./skills/work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
 | **[data-flow-model](./skills/data-flow-model/SKILL.md)** | 构建 ER 图和数据流图，支持并发/分布式/实时流/批处理等场景分析 | "画 ER 图"、"数据怎么流"、"设计数据模型" |
 | **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构 | "写设计文档"、"帮我设计"、"dd" |
