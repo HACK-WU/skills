@@ -152,4 +152,4 @@ S-01 登录场景
 1. 阶段 0.4 检测到工具库 → 列出可用 skill（`high-end-visual-design`、`design-taste-frontend`…）
 2. 阶段 4.0 按路由表选 `high-end-visual-design`，读取 `ui-tools/skills/high-end-visual-design/SKILL.md`
 3. 其指令（留白、精致字体、昂贵感阴影）融合进 4.1 的 token 定义与排版决策
-4. 用户偏好与工具指令冲突时以用户为准；无匹配或工具库缺失 → 用内置参考色板，流程不中断
+4. 用户偏好与工具指令冲突时以用户为准；无匹配场景 → 用内置参考色板（工具库已由阶段 0.4 保证安装）
