@@ -266,6 +266,7 @@ docs/         # 文档（安装指南 / req CLI / 需求文档）
 | [obra/superpowers](https://github.com/obra/superpowers) | Claude Code 增强技能集 |
 | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量 |
 | [QoderAI/better-harness](https://github.com/QoderAI/better-harness) | 审查与改进 AI 编码工作流的工具，本项目的 loop-discovery / harness-review 及证据状态纪律借鉴自此 |
+| [zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill) | 网络安全技能路由包，AI 自动路由 APK/二进制/前端 JS/CTF/渗透等约 25 种逆向与安全场景，按需自举工具链（jadx/Frida/IDA/BurpSuite）并沉淀实战经验库，内置授权范围确认机制，仅用于授权渗透测试与安全研究 |
 
 > 如果你有好的技能项目，欢迎提 PR 添加到这里。
 
