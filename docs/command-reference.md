@@ -89,7 +89,7 @@ $ req create --feature "JWT 鉴权" --tags feat --parent-id REQ-20260611-001
 ```bash
 # 列出所有需求
 $ req list
-ID               状态    角色       功能名称           更新时间
+ID               状态    角色       功能名称           创建时间
 REQ-20260611-001 已确认  standalone 用户认证模块       2026-06-11
 REQ-20260611-002 草案    child      JWT 鉴权          2026-06-11
 

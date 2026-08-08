@@ -11,7 +11,7 @@ from requirement_mgr.core.meta_store import MetaStore
 from requirement_mgr.core.requirement_utils import ARCHIVED_STATUS, find_req, find_rev_deps
 
 
-DEFAULT_COLUMNS = ["id", "feature", "status", "role", "tags", "branch", "commits", "version", "updated"]
+DEFAULT_COLUMNS = ["id", "feature", "status", "role", "tags", "branch", "commits", "version", "created"]
 ALL_COLUMNS = [
     "id", "feature", "status", "role", "tags", "branch", "version",
     "created", "updated", "parent_id", "depends_on", "docs", "commits",
@@ -348,8 +348,8 @@ def cmd_list(args):
             print(_format_detail(req, requirements, args))
         return
 
-    # 按 updated 降序（归一化处理旧格式时间戳）
-    results.sort(key=lambda r: _normalize_ts(r.get("updated", "")), reverse=True)
+    # 按 created 降序（归一化处理旧格式时间戳）
+    results.sort(key=lambda r: _normalize_ts(r.get("created", "")), reverse=True)
 
     if not results:
         print("（无匹配需求）")

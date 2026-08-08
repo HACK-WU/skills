@@ -245,10 +245,10 @@ class TestListCommand:
             cmd_list(self.base_args)
         
         output = captured_output.getvalue()
-        # 验证排序：REQ-002 (2026-07-23 15:30:00) 应该排在 REQ-001 (2026-07-23 10:00:00) 前面
-        req002_pos = output.find("REQ-002")
+        # 验证排序：按创建时间降序，REQ-001 (created 2026-07-23) 应该排在 REQ-002 (created 2026-07-22) 前面
         req001_pos = output.find("REQ-001")
-        assert req002_pos < req001_pos, "REQ-002 应该排在 REQ-001 前面"
+        req002_pos = output.find("REQ-002")
+        assert req001_pos < req002_pos, "REQ-001 应该排在 REQ-002 前面"
     
     @patch('requirement_mgr.commands.list.MetaStore')
     @patch('requirement_mgr.commands.list.ConfigLoader')
