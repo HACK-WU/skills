@@ -1,11 +1,11 @@
 ---
-description: GitNexus MCP 强制规则，指导 AI 何时用 GitNexus、何时用 grep、如何组合使用
+description: GitNexus MCP 强制规则 + 使用指导（融合 gitnexus-guide），指导 AI 何时用 GitNexus、何时用 grep、每个工具/资源怎么用、如何组合使用
 alwaysApply: true
 enabled: true
-updatedAt: 2026-07-30T00:00:00.000Z
+updatedAt: 2026-08-10T00:00:00.000Z
 ---
 
-## GitNexus MCP 强制规则
+## GitNexus MCP 强制规则与使用指导
 
 ### 适用范围（全场景强制）
 
@@ -54,6 +54,45 @@ updatedAt: 2026-07-30T00:00:00.000Z
 - `cypher`：仅当 context/impact 无法满足需求时使用，用于方法级调用链追踪；禁止作为默认入口工具。
 - `query`：仅在只知概念、不知符号名时使用；一旦确认具体符号，必须立即切换到 `context` 或 grep。
 - `route_map`/`shape_check`/`tool_map`：低优先级，不作主工具；返回空结果时禁止据此推导"没有关系/没有影响"。
+
+### 场景 → 工具映射（gitnexus-guide 融合）
+
+以下为 **gitnexus-guide** 场景映射与操作流程，先据此判断任务类型、再选工具。任何任务**先读 `gitnexus://repo/{name}/context`**（代码库总览 + 索引新鲜度检查）；若提示索引过期，先跑 `node .gitnexus/run.cjs analyze` 再继续。
+
+| 任务 | 入口工具/流程 |
+|------|--------------|
+| 理解架构 / "X 怎么工作的" | `query` 找流程 → `context` 深挖符号 → 读 `gitnexus://repo/{name}/process/{展示名}` 追踪完整调用链 |
+| 爆炸半径 / "改 X 会破坏什么" | `impact`(upstream) → 读 affected_processes → `detect_changes` 复核 |
+| 追踪 Bug / "为什么 X 挂了" | `query` 症状 → `context` 可疑点 → 读 process → `trace`(A→B 调用链) |
+| 重命名/抽取/拆分/重构 | `impact` 摸依赖 → `rename(dry_run=true)` 预览 → 复核 → 正式执行 |
+| 工具/资源/schema 参考 | 读 `gitnexus://repo/{name}/schema`（写 cypher 前必读） |
+
+### 工具/资源能力参考（gitnexus-guide 融合）
+
+**核心工具**：
+
+- `query`：按概念找相关执行流（process 按相关度排序）。**结果偏泛，仅作探索起点**；确认具体符号后切 `context`/grep。
+- `context`：单符号 360° 视图——入/出引用（CALLS/IMPORTS/EXTENDS/IMPLEMENTS 等）、参与流程、文件位置。同名符号返回排名候选，用 uid（零歧义）或 file_path/kind 消歧。
+- `impact`：符号爆炸半径，按深度分组：**d=1 WILL BREAK（直接调用者）→ 优先审**；d=2 LIKELY AFFECTED；d=3 MAY NEED TESTING。含风险等级（LOW/MEDIUM/HIGH/CRITICAL）、受影响流程、受影响模块、每条边置信度。hub 符号（大量直接调用者）先 `summaryOnly:true` 看总数与风险，再按 depth 分页下钻（`limit`/`offset` 每个深度独立生效）。
+- `trace`：两个符号间最短调用链，一次返回（含每跳文件:行、边类型、置信度）。`no_path` 时返回 `furthest`（链条断点：动态分派/反射/外部边界）+ `truncated:true`（若被遍历上限截断）——**用 furthest 定位断点，不要据此断言"无关系"**。
+- `rename`：跨文件协调改名，返回置信度标注的编辑（graph 编辑高置信可放行，text_search 编辑需人工复核）。**必须先 `dry_run:true` 预览**。
+- `detect_changes`：git diff → 受影响流程 + 风险。提交前必跑；发现高风险符号补 `impact`。
+- `api_impact`：API 路由改前报告（消费方/中间件/响应形状漂移/风险）。`route_map`/`shape_check`/`tool_map` 为辅助，空结果不能推导"无关系"。
+- `explain`/`pdg_query`（需 `analyze --pdg`）：污点分析（source→sink）与控制/数据依赖（CDG/REACHING_DEF）。
+- `group_list`/`group_sync`/`list_repos`：多仓库分组与契约注册表；`list_repos` 分页（limit 默认 50 max 200，用 nextOffset 遍历全量）。
+
+**资源**（轻量导航读，~100-500 tokens）：
+
+- `gitnexus://repo/{name}/context`：统计、过期检查
+- `gitnexus://repo/{name}/clusters`：功能模块（内聚度）｜`cluster/{name}`：模块成员
+- `gitnexus://repo/{name}/processes`：全部执行流｜`process/{展示名}`：逐步调用链
+- `gitnexus://repo/{name}/schema`：Cypher 图 schema（**写 cypher 前必读**）
+
+**坑（实测）**：
+
+- `process` 资源必须用**展示名**（如 `"ExecuteDeleteRelation → ExpandPath"`），**不能用内部 ID**（`proc_8_...`）——内部 ID 访问返回 not found。
+- `query` 对"概念"检索偏泛（BM25+向量混合），主链路符号常散落在 `definitions` 而非 processes，别据此认定"没相关代码"，要落到源码确认。
+- `detect_changes`/`impact` 对**测试文件符号、字符串引用、枚举/常量**覆盖不全，必须 grep 兜底。
 
 ### MCP 不可用时
 
