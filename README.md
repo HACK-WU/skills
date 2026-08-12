@@ -39,9 +39,40 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 也可以指定安装源，安装其他项目的 skill：
 
 ```bash
-bash skill-install.sh --repo anthropics/skills -t /path/to/your-project
+bash skill-install.sh install --repo anthropics/skills -t /path/to/your-project
 # → 安装 anthropics/skills 的技能；多个 --repo 混合安装到同一管理源（默认 HACK-WU/skills）
 ```
+
+### 管理已装技能
+
+安装器用子命令管理已装技能（管理源 `~/.hackwu-skills/`，多目标同步）：
+
+| 命令 | 作用 |
+|------|------|
+| `install`（默认） | 安装/更新 skill 到目标目录 |
+| `update` | 更新管理源已装 skill 的最新版本并同步目标 |
+| `remove <names>` | 从管理源删除 skill 并同步删除所有目标 |
+| `list` | 查看已装 skill（含来源仓库），支持 `--repo` 过滤 |
+
+```bash
+# 安装（默认命令，可省略 install）
+bash skill-install.sh install -t ~/project-a            # 安装全部到目标
+bash skill-install.sh install -n code-review -t ~/app   # 只装指定 skill
+
+# 更新：只更新已装的，不追加新 skill
+bash skill-install.sh update                             # 更新并同步所有已记录目标
+bash skill-install.sh update -n code-review -t ~/app     # 限定 skill 与目标
+bash skill-install.sh update --repo anthropics/skills    # 只更新指定仓库
+
+# 查看：先列仓库来源，再按仓库分组列 skill
+bash skill-install.sh list
+bash skill-install.sh list --repo anthropics/skills      # 只显示该仓库的 skill
+
+# 删除：管理源 + 所有目标同步删除
+bash skill-install.sh remove code-review,design-craft
+```
+
+> 参数：`-t <path>` 目标目录（可多次）；`-n <names>` 指定 skill（逗号分隔）；`--repo <owner/repo>` 安装源/过滤仓库（默认 `HACK-WU/skills`）。Windows PowerShell 用 `-Target` / `-NameFilter` / `-Repo`。完整参数见[安装指南](./docs/installation.md)。
 
 也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
 
@@ -53,7 +84,7 @@ npx skills add HACK-WU/skills --agent openclaw -y
 npx skills add HACK-WU/skills --skill code-review design-craft --agent openclaw -y
 ```
 
-> `--agent openclaw` 将技能写入当前目录 `skills/`。直接使用 `npx skills` 不生成管理源，无法用本仓库脚本的 `--remove` / `--list` 持续跟踪——如需后续管理，请用上方 `skill-install.sh`。
+> `--agent openclaw` 将技能写入当前目录 `skills/`。直接使用 `npx skills` 不生成管理源，无法用本仓库脚本的 `update` / `remove` / `list` 持续跟踪——如需后续管理，请用上方 `skill-install.sh`。
 
 安装后即可在对话中触发技能，无需其他配置：
 

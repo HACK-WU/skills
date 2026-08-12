@@ -53,35 +53,73 @@ npx skills add HACK-WU/skills --list -y
 
 本安装器固定使用 `--agent openclaw`，将技能写入当前目录 `skills/`，与 `<target>/skills` 布局一致。其他 agent（如 `universal` → `.agents/skills/`）映射不同目录，但本仓库脚本不支持切换。
 
-> 直接使用 `npx skills` 不会生成 `~/.hackwu-skills/` 管理源和 `targets.list`，因此无法使用本安装器的 `--remove` / `--list` 持续跟踪管理。如需后续管理，请使用本仓库的 `skill-install.sh`。
+> 直接使用 `npx skills` 不会生成 `~/.hackwu-skills/` 管理源和 `targets.list`，因此无法使用本安装器的 `update` / `remove` / `list` 持续跟踪管理。如需后续管理，请使用本仓库的 `skill-install.sh`。
 
-## 参数说明
+## 命令与参数说明
 
-| 参数 | 作用 |
-|------|------|
-| `-n <names>` | 只安装指定技能，多个用逗号分隔（如 `-n code-review,design-craft`） |
-| `-t <path>` | 指定目标目录，可多次使用（与 `--file` 互斥） |
-| `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
-
-> 不带任何参数运行即显示完整帮助。默认操作为安装。
-
-## 管理命令
-
-安装器基于 `npx skills` 持续跟踪管理已安装的技能，管理源位于 `~/.hackwu-skills/`：
+安装器使用子命令形式：`install`（默认）、`update`、`remove`、`list`。
 
 | 命令 | 作用 |
 |------|------|
-| `bash skill-install.sh --remove <names>` | 从管理源删除指定技能（逗号分隔），并同步删除所有目标 |
-| `bash skill-install.sh --list` | 列出管理源中已安装的技能 |
+| `install`（默认） | 安装 skill 到目标目录（重新安装即更新） |
+| `update` | 更新管理源中已安装的 skill 并同步到目标目录 |
+| `remove <names>` | 从管理源删除指定 skill 并同步删除所有目标 |
+| `list` | 列出管理源中已安装的 skill（含来源仓库） |
 
-> 管理源 `~/.hackwu-skills/` 是技能更新的来源：`-t` 目标始终从管理源增量同步（覆盖更新同名文件，不删除目标中多余文件），`--remove` 会自动同步到所有曾安装过的目标目录（记录于 `~/.hackwu-skills/targets.list`）。
+| 参数 | 作用 |
+|------|------|
+| `-n <names>` | 指定 skill，多个用逗号分隔（如 `-n code-review,design-craft`） |
+| `-t <path>` | 指定目标目录，可多次使用（与 `--file` 互斥；`update` 时限定同步范围） |
+| `--repo <owner/repo>` | 指定安装源仓库，可多次使用；`install`/`update` 指定安装源，`list` 按来源过滤；默认 `HACK-WU/skills` |
+| `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
+
+> 不带任何参数运行即显示完整帮助。默认操作为 `install`。
+
+### 安装其他项目的 skill
+
+默认安装本仓库（`HACK-WU/skills`）。如需安装其他技能项目（如 `anthropics/skills`、`mattpocock/skills` 或任意 `owner/repo`），用 `--repo` 指定：
+
+```bash
+# 只安装指定仓库（替代默认仓库）
+bash skill-install.sh install --repo anthropics/skills -t ~/projects/app
+
+# 多个仓库混合安装到同一管理源
+bash skill-install.sh install --repo HACK-WU/skills --repo anthropics/skills -t ~/projects/app
+```
+
+> **混合模式**：多个仓库的 skill 会混在同一管理源 `~/.hackwu-skills/skills/` 中，同步时全部写入目标 `skills/`。`remove` 删除同名 skill 时会在所有目标中同步删除（不区分来源仓库）。`-n` 名称过滤会应用到每个安装源。
+
+### 更新与查看
+
+```bash
+# 更新管理源中已安装的全部 skill 并同步到所有已记录目标
+bash skill-install.sh update
+
+# 只更新指定 skill / 指定仓库 / 指定目标
+bash skill-install.sh update -n code-review --repo HACK-WU/skills -t ~/projects/app
+
+# 查看已安装 skill（含来源仓库），可按仓库过滤
+bash skill-install.sh list
+bash skill-install.sh list --repo anthropics/skills
+```
+
+> **update 语义**：只更新管理源中**已安装**的 skill 的最新版本（不追加未安装的 skill），并同步到目标（未指定 `-t` 时同步所有已记录目标）。`-n` 指定 skill 时按所属仓库分组更新。
+
+### 删除
+
+```bash
+bash skill-install.sh remove code-review,design-craft
+# → 从管理源删除指定 skill，并同步删除所有目标目录中对应的 skill
+```
+
+> 管理源 `~/.hackwu-skills/` 是技能更新的来源：`-t` 目标始终从管理源增量同步（覆盖更新同名文件，不删除目标中多余文件），`remove` 会自动同步到所有曾安装过的目标目录（记录于 `~/.hackwu-skills/targets.list`）。
 
 **注意事项**：
 
-- **更新方式**：重新执行安装（默认操作）即可将管理源与目标更新到最新版本，无需单独的更新命令。
-- **`-n` 语义**：`-n` 控制的是"往管理源追加哪些 skill"，而非"目标只保留哪些"。首次安装（管理源为空）时 `-n code-review` 目标只有 code-review；但管理源已有其他 skill 后，`-n` 仅追加，目标会同步管理源全部 skill。若需目标只含子集，请先 `--remove` 清理管理源再用 `-n` 安装。
+- **update 与 install 的区别**：`install` 会追加安装（可装新 skill）；`update` 只更新已安装的 skill 版本，不追加新 skill。
+- **`-n` 语义**：`-n` 控制的是"往管理源追加哪些 skill"，而非"目标只保留哪些"。首次安装（管理源为空）时 `-n code-review` 目标只有 code-review；但管理源已有其他 skill 后，`-n` 仅追加，目标会同步管理源全部 skill。若需目标只含子集，请先 `remove` 清理管理源再用 `-n` 安装。
 - **增量同步不删除多余文件**：同步采用增量覆盖（如 rsync 不带 `--delete`），目标 `skills/` 中管理源没有的文件（如手动添加的自定义 skill 或本地修改）**不会被删除**，同名文件会被管理源版本覆盖更新。目标中的手动修改会被覆盖，如需保留请勿放在同名路径下。
-- **运行时依赖**：安装器需要 **Node.js >= 22** + npx。`npx skills` 依赖 Node 22（`node:util` 的 `styleText` 自 21.7 起可用，skills 包 engines 声明 ≥22.20.0）。未检测到 npx 或 Node 版本过低时脚本会报错并给出升级指引（Linux/macOS：nvm 或官网 LTS；Windows：winget/Chocolatey 或官网 LTS）。
+- **运行时依赖**：安装器需要 **Node.js >= 22** + npx。`npx skills` 依赖 Node 22（`node:util` 的 `styleText` 自 21.7 起可用，skills 包 engines 声明 ≥22.20.0）。`update` / `list` 解析管理源 `skills-lock.json` 也用 node 内置 `JSON.parse`（复用既有 node 依赖，**无需 python3**）。未检测到 npx 或 Node 版本过低时脚本会报错并给出升级指引（Linux/macOS：nvm 或官网 LTS；Windows：winget/Chocolatey 或官网 LTS）。
 
 ## 目标目录
 
