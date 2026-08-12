@@ -92,7 +92,7 @@ flowchart LR
 
 ## 示例 2：课程制单课 lesson-02 成品（知识点粒度）
 
-> 场景：课程制 `k8s 基础`，阶段 1 课 2《Pod》，本批含 3 个知识点。文件为 `k8s-basics/stages/stage-01-k8s-basics/lessons/lesson-02-pod.md`。
+> 场景：课程制 `k8s 基础`，阶段 1（容器与 k8s 基础）课 2《Pod》，本批含 3 个知识点。文件为 `k8s-basics/stages/1-容器与k8s基础/lessons/lesson-02-pod.md`。
 
 ```markdown
 # 第 2 课：Pod——k8s 的最小调度单位
@@ -306,7 +306,7 @@ flowchart LR
 ## 示例 5：B-1 数据结构内部结构 SVG（哈希表）
 
 > 场景：课程制讲解「哈希表」知识点时，文字描述"数组+链表"结构学习者难以脑补完整画面。触发 B-1 信号 → 产出 SVG 具象化内部构造图。
-> 文件存 `data-structures/stages/stage-01/assets/hash-table-structure.svg`，在课文中以 `![哈希表内部结构](./assets/hash-table-structure.svg)` 引用。
+> 文件存 `data-structures/stages/1-数据结构基础/assets/hash-table-structure.svg`，在课文中以 `![哈希表内部结构](./assets/hash-table-structure.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -419,7 +419,7 @@ flowchart LR
 ## 示例 6：B-2 算法执行过程 SVG（数组插入）
 
 > 场景：课程制讲解「数组插入操作」时，需演示"在索引 2 处插入元素后，后续元素如何逐步右移"。触发 B-2 信号 → 产出分步纵向排列的状态快照图。
-> 文件存 `data-structures/stages/stage-01/assets/array-insert-step.svg`，在课文中以 `![数组插入分步演示](./assets/array-insert-step.svg)` 引用。
+> 文件存 `data-structures/stages/1-数据结构基础/assets/array-insert-step.svg`，在课文中以 `![数组插入分步演示](./assets/array-insert-step.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -577,7 +577,7 @@ flowchart LR
 ## 示例 7：B-3 层级结构 SVG（OSI 七层模型）
 
 :> 场景：课程制讲解「网络基础」时，需展示 OSI 七层模型的层级关系与各层职责。触发 B-3 信号（层级结构）→ 产出横向分层 + 层间交互箭头 + 每层职责标注的层级图。
-:> 文件存 `network-basics/stages/stage-01/assets/osi-seven-layers.svg`，在课文中以 `![OSI 七层模型](./assets/osi-seven-layers.svg)` 引用。
+:> 文件存 `network-basics/stages/1-网络基础/assets/osi-seven-layers.svg`，在课文中以 `![OSI 七层模型](./assets/osi-seven-layers.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -722,7 +722,7 @@ flowchart LR
 ## 示例 8：B-4 多概念对比分类 SVG（线性 vs 非线性数据结构）
 
 :> 场景：课程制讲解「数据结构选型」时，需并排对比线性结构与非线性结构的特征差异、适用场景和时间复杂度。触发 B-4 信号 → 产出对比矩阵/分类卡片图。
-:> 文件存 `data-structures/stages/stage-02/assets/linear-vs-nonlinear.svg`，在课文中以 `![线性 vs 非线性数据结构对比](./assets/linear-vs-nonlinear.svg)` 引用。
+:> 文件存 `data-structures/stages/2-数据结构进阶/assets/linear-vs-nonlinear.svg`，在课文中以 `![线性 vs 非线性数据结构对比](./assets/linear-vs-nonlinear.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -901,7 +901,7 @@ flowchart LR
 ## 示例 9：B-5 数据可视化 SVG（时间复杂度曲线）
 
 :> 场景：课程制讲解「算法分析」时，需直观展示不同时间复杂度的增长趋势差异——O(1) 几乎平、O(log n) 缓慢爬升、O(n) 直线增长、O(n log n) 微曲上升、O(n²) 急剧飙升。触发 B-5 信号 → 产出坐标轴 + 曲线 + 关键点标注的数据图表。
-:> 文件存 `algorithms/stages/stage-01/assets/time-complexity-curves.svg`，在课文中以 `![时间复杂度曲线对比](./assets/time-complexity-curves.svg)` 引用。
+:> 文件存 `algorithms/stages/1-算法分析基础/assets/time-complexity-curves.svg`，在课文中以 `![时间复杂度曲线对比](./assets/time-complexity-curves.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
