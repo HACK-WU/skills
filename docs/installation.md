@@ -129,7 +129,9 @@ bash skill-install.sh remove code-review,design-craft
 |------|------|
 | `-t` 直接指定（支持多个） | `-t ~/projects/app -t ~/projects/api` |
 | `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，`#` 注释） |
-| 不指定，读默认配置 | `~/.skill-targets` |
+| 不指定，读默认配置 | 优先当前目录 `./.skill-targets`，未找到再用家目录 `~/.skill-targets` |
+
+> 直接执行脚本（未指定 `-t` / `--file`）时，默认配置文件查找顺序为 **当前目录 `./.skill-targets` → 家目录 `~/.skill-targets`**。适合在项目仓库根放置 `.skill-targets` 指定该项目专用目标；未放则回退到用户级配置。两个文件均为每行一个目录、`#` 注释的文本文件。当前目录文件存在时（即使为空）即优先使用、不再回退家目录；install 时会打印实际使用的配置文件路径。
 
 ## 安装 `req` CLI
 
