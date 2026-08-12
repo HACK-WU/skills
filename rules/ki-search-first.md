@@ -33,10 +33,7 @@ AI 在遇到任何任务或问题、开始处理前，**务必先使用 ki-searc
    ├─ 命中？→ 记下命中的记忆内容（关键代码位置 / 结论 / 踩坑）
    │        → 带着记忆去定位源码 / 直接求解
    └─ 未命中或结果不足以求解？
-        → 进入 expert-solution-workflow 复用路径：
-          ├─ 业务模块类 → expert-lookup（专家团）
-          ├─ 具体技术问题类 → solution-lookup（解决方案）
-          └─ 均未命中 → 查代码库，从头排查
+        → 进入 expert-solution-workflow 复用路径（判断类型 → 查专家/方案 → 查代码库）
 2. 求解过程中如新产生关键知识，随时可再 ki_search 核对或补充检索
 3. 解决后，按 expert-solution-workflow 沉淀流程把有价值结论写入项目记忆
 ```
@@ -49,10 +46,7 @@ AI 在遇到任何任务或问题、开始处理前，**务必先使用 ki-searc
 
 ### 与 expert-solution-workflow 的关系
 
-本规则是 `expert-solution-workflow.md` 的**前置步骤**，优先级更高：
-
-- 原工作流查找流程的 ki 检索是"判断问题类型后"的第 2 步；本规则把它**提前为第 1 步且不分类型必做**。
-- 两者不冲突：本规则只强化"ki-search 先做、记忆优先"，后续专家团/解决方案查找逻辑仍按 expert-solution-workflow 执行。
+本规则是 `expert-solution-workflow.md` 的**前置步骤**，优先级更高：本规则负责「先 ki-search、记忆优先」，后续专家团/解决方案的查找与沉淀逻辑仍按 expert-solution-workflow 执行。两者职责互补，不冲突。
 
 ## 例外
 
