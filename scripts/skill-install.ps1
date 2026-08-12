@@ -10,6 +10,7 @@
 #   .\skill-install.ps1 -Target C:\projects\app
 #   .\skill-install.ps1 -NameFilter code-review,design-craft -Target C:\projects\app
 #   .\skill-install.ps1 -Target C:\projects\a -Target C:\projects\b
+#   .\skill-install.ps1 -Repo owner/repo -Target C:\projects\app
 #   .\skill-install.ps1 -Remove code-review
 #   .\skill-install.ps1 -List
 #
@@ -27,6 +28,8 @@ param(
 
     [string[]]$NameFilter,
 
+    [string[]]$Repo,
+
     [switch]$Remove,
     [switch]$List,
     [switch]$Help
@@ -34,7 +37,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Repo = "HACK-WU/skills"
+if (-not $Repo -or $Repo.Count -eq 0) { $Repo = @("HACK-WU/skills") }
 $Agent = "openclaw"
 $ManageDir = Join-Path $env:USERPROFILE ".hackwu-skills"
 $ManageSkillsDir = Join-Path $ManageDir "skills"
@@ -54,7 +57,7 @@ if ($Help) {
 Skills 安装器 — 基于 npx skills 管理 AI Skills
 
 用法:
-  .\skill-install.ps1 [-Target <path>...] [-NameFilter <names>] [-ConfigFile <path>]
+  .\skill-install.ps1 [-Target <path>...] [-NameFilter <names>] [-Repo <owner/repo>...] [-ConfigFile <path>]
   .\skill-install.ps1 -Remove <names>
   .\skill-install.ps1 -List
   .\skill-install.ps1 -Help
@@ -68,6 +71,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 安装选项:
   -Target <path>      目标目录（可多次使用，与 -ConfigFile 互斥）
   -NameFilter <names> 只安装指定 skill（逗号分隔，如 -NameFilter code-review,design-craft）
+  -Repo <owner/repo>  安装源仓库（可多次使用，多个仓库混合安装到同一管理源；默认 HACK-WU/skills）
   -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
 
 默认配置文件（不指定 -Target / -ConfigFile 时读取）:
@@ -80,6 +84,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   .\skill-install.ps1 -Target C:\projects\app
   .\skill-install.ps1 -NameFilter code-review,design-craft -Target C:\projects\app
   .\skill-install.ps1 -Target C:\projects\a -Target C:\projects\b
+  .\skill-install.ps1 -Repo anthropics/skills -Target C:\projects\app
+  .\skill-install.ps1 -Repo HACK-WU/skills -Repo anthropics/skills -Target C:\projects\app
   .\skill-install.ps1 -Remove code-review
   .\skill-install.ps1 -List
 "@
@@ -237,6 +243,7 @@ function Do-Install {
 
     Write-Host "🚀 skill-install.ps1"
     Write-Host "   管理目录: $ManageDir"
+    Write-Host "   安装源: $($Repo -join ', ')"
     Write-Host "   目标数量: $($script:TargetDirs.Count)"
     if ($NameList.Count -gt 0) { Write-Host "   名称过滤: $($NameList -join ', ')" }
     Write-Host ""
@@ -244,12 +251,15 @@ function Do-Install {
     Write-Info "通过 npx skills 安装到管理源..."
     Push-Location $ManageDir
     try {
-        $npxArgs = @("skills", "add", $Repo, "--agent", $Agent, "-y")
-        if ($NameList.Count -gt 0) {
-            $npxArgs += @("--skill") + $NameList
+        foreach ($repo in $Repo) {
+            Write-Info "  安装源: $repo"
+            $npxArgs = @("skills", "add", $repo, "--agent", $Agent, "-y")
+            if ($NameList.Count -gt 0) {
+                $npxArgs += @("--skill") + $NameList
+            }
+            & npx @npxArgs
+            if ($LASTEXITCODE -ne 0) { Write-Err "npx skills add 失败: $repo" }
         }
-        & npx @npxArgs
-        if ($LASTEXITCODE -ne 0) { Write-Err "npx skills add 失败" }
     } finally {
         Pop-Location
     }

@@ -11,6 +11,7 @@
 #   bash skill-install.sh -t /path/to/target
 #   bash skill-install.sh -n code-review,design-craft -t /path/to/target
 #   bash skill-install.sh -t /path/a -t /path/b
+#   bash skill-install.sh --repo owner/repo -t /path/to/target
 #   bash skill-install.sh --remove names    # 删除 skill + 同步
 #   bash skill-install.sh --list            # 列出已装 skill
 #   bash skill-install.sh --help
@@ -20,8 +21,8 @@
 # ============================================================
 set -euo pipefail
 
-REPO="HACK-WU/skills"
 AGENT="openclaw"
+REPOS=()
 MANAGE_DIR="${HOME}/.hackwu-skills"
 MANAGE_SKILLS_DIR="${MANAGE_DIR}/skills"
 LOCK_FILE="${MANAGE_DIR}/skills-lock.json"
@@ -52,7 +53,7 @@ show_help() {
 Skills 安装器 — 基于 npx skills 管理 AI Skills
 
 用法:
-  bash skill-install.sh [-t <path>...] [-n <names>] [--file <path>]
+  bash skill-install.sh [-t <path>...] [-n <names>] [--repo <owner/repo>...] [--file <path>]
   bash skill-install.sh --remove <names>
   bash skill-install.sh --list
   bash skill-install.sh --help
@@ -66,6 +67,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 安装选项:
   -t <path>            目标目录（可多次使用，与 --file 互斥）
   -n <names>           只安装指定 skill（逗号分隔，如 -n code-review,design-craft）
+  --repo <owner/repo>  安装源仓库（可多次使用，多个仓库混合安装到同一管理源；默认 HACK-WU/skills）
   --file <path>        从配置文件读取目标目录（与 -t 互斥）
 
 默认配置文件（不指定 -t / --file 时读取）:
@@ -79,11 +81,13 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   bash skill-install.sh -t ~/projects/app
   bash skill-install.sh -n code-review,design-craft -t ~/projects/app
   bash skill-install.sh -t ~/projects/a -t ~/projects/b
+  bash skill-install.sh --repo anthropics/skills -t ~/projects/app
+  bash skill-install.sh --repo HACK-WU/skills --repo anthropics/skills -t ~/projects/app
   bash skill-install.sh --remove code-review
   bash skill-install.sh --list
 
-一键安装:
-  curl -fsSL https://raw.githubusercontent.com/${REPO}/master/scripts/skill-install.sh | \\
+一键安装（默认安装 HACK-WU/skills）:
+  curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \\
     bash -s -- -t ~/projects/my-app
 EOF
     exit 0
@@ -110,6 +114,12 @@ while [ $# -gt 0 ]; do
             [ $# -eq 0 ] && error "-n 需要参数"
             NAME_FILTER="${NAME_FILTER:+$NAME_FILTER,}$1"
             ;;
+        --repo)
+            shift
+            [ $# -eq 0 ] && error "--repo 需要参数"
+            REPOS+=("$1")
+            ;;
+        --repo=*) REPOS+=("${arg#*=}") ;;
         --file)
             shift
             [ $# -eq 0 ] && error "--file 需要参数"
@@ -124,6 +134,9 @@ done
 
 # 默认操作：安装
 [ -z "$ACTION" ] && ACTION="install"
+
+# 默认安装源：未指定 --repo 时使用 HACK-WU/skills
+[ ${#REPOS[@]} -eq 0 ] && REPOS=("HACK-WU/skills")
 
 # ============================================================
 # 前置检查
@@ -264,19 +277,23 @@ do_install() {
 
     echo "🚀 skill-install.sh"
     echo "   管理目录: $MANAGE_DIR"
+    echo "   安装源: ${REPOS[*]}"
     echo "   目标数量: ${#TARGETS[@]}"
     [ -n "$NAME_FILTER" ] && echo "   名称过滤: $NAME_FILTER"
     echo ""
 
     info "通过 npx skills 安装到管理源..."
-    local npx_args=(add "$REPO" --agent "$AGENT" -y)
-    if [ -n "$NAME_FILTER" ]; then
-        # 逗号分隔转空格分隔，作为 --skill 的多值
-        local names="${NAME_FILTER//,/ }"
-        npx_args+=(--skill $names)
-    fi
+    for repo in "${REPOS[@]}"; do
+        info "  安装源: $repo"
+        local npx_args=(add "$repo" --agent "$AGENT" -y)
+        if [ -n "$NAME_FILTER" ]; then
+            # 逗号分隔转空格分隔，作为 --skill 的多值
+            local names="${NAME_FILTER//,/ }"
+            npx_args+=(--skill $names)
+        fi
 
-    (cd "$MANAGE_DIR" && npx skills "${npx_args[@]}") || error "npx skills add 失败"
+        (cd "$MANAGE_DIR" && npx skills "${npx_args[@]}") || error "npx skills add 失败: $repo"
+    done
 
     echo ""
     info "同步到目标目录..."

@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-48-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-49-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -34,7 +34,13 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
   bash -s -- -t /path/to/your-project
-# → 将 48 个技能写入 /path/to/your-project/skills/（经 ~/.hackwu-skills/ 管理源同步）
+```
+
+也可以指定安装源，安装其他项目的 skill：
+
+```bash
+bash skill-install.sh --repo anthropics/skills -t /path/to/your-project
+# → 安装 anthropics/skills 的技能；多个 --repo 混合安装到同一管理源（默认 HACK-WU/skills）
 ```
 
 也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
@@ -126,7 +132,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-48 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+49 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -176,6 +182,7 @@ flowchart TD
 | **[skill-amplifier](./skills/skill-amplifier/SKILL.md)** | 执行模式增强器，将目标 skill 能力拆成多个评估维度交子 Agent 并行深调研，汇总后主 Agent 交叉复核再出结论 | "放大执行"、"拆维度并行审查"、"深度模式跑一遍" |
 | **[artifact-optimizer](./skills/artifact-optimizer/SKILL.md)** | 对代码、设计文档、Skill 文件进行系统化优化分析，根据用户意图调用对应的优化子流程 | "优化代码"、"优化设计文档"、"优化 skill" |
 | **[harness-review](./skills/harness-review/SKILL.md)** | 对项目 AI 工作流配置做五维轻量体检，按证据状态阶梯评分（存在≠被用≠有效），零依赖纯 Markdown | "体检一下工作流"、"harness review"、"评估 AI 配置" |
+| **[ecosystem-review](./skills/ecosystem-review/SKILL.md)** | 评审技能生态（skills/rules/memories/agents）的整体一致性、冗余健康度、资产定位与触发链闭环，甄别"有意冗余"（提注意力）vs"有害重复/冲突" | "评审技能生态"、"体检技能体系"、"ecosystem review"、"三层一致性检查" |
 | **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
 | **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
 | **[expert-audit](./skills/expert-audit/SKILL.md)** | 站在零上下文使用者视角审查 expert-team 专家资产的可读性与格式合规（R1–R7/CR1–CR9/INDEX），格式问题自动修复 | "核对专家团"、"审查专家资产"、"expert audit" |
