@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-49-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-4-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-52-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-7-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -163,7 +163,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-49 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+52 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -201,6 +201,8 @@ flowchart TD
 | **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
+| **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并记录跨文件强关联关系（契约/业务耦合），按功能模块分组写入 ki-search（只写不查） | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
+| **[relation-lookup](./skills/relation-lookup/SKILL.md)** | 查询已沉淀的跨模块强关联关系，感知"改了 A 要连带改哪里"，供各 skill 分析/评审时引用（只查不写） | "查关联关系"、"改A要连带改B吗"、"这个模块牵动哪些" |
 
 ### 质量与优化
 
@@ -237,6 +239,7 @@ flowchart TD
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 HTML 的学习材料，支持课程制/速览双模式 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
+| **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |
 
 <a id="rules"></a>
 ## 📜 规则
@@ -246,6 +249,9 @@ flowchart TD
 | **[gitnexus-mcp-rules](./rules/gitnexus-mcp-rules.md)** | GitNexus MCP 强制规则，指导工具选择和使用方式 | 使用 GitNexus MCP 时 |
 | **[writing-pipeline](./rules/writing-pipeline.md)** | 自动审查修复闭环，复杂场景调用 challenger 二次质疑 | 文档或代码编写完成后 |
 | **[expert-solution-workflow](./rules/expert-solution-workflow.md)** | 资产复用工作流，区分"业务专家团（expert-lookup/team）"与"解决方案（solution-lookup/capture）"两类资产的本质区别与调用场景 | 遇到业务模块任务 / 具体技术问题时 |
+| **[ki-search-first](./rules/ki-search-first.md)** | 项目记忆优先规则，遇事不决 ki-search；已定位要改的代码/已修改时必查强关联关系（relation-lookup） | 任何任务/问题开始前、改代码时 |
+| **[proactive-extension](./rules/proactive-extension.md)** | 解决小问题后主动联想关联功能，主动补充优化而非等用户逐个提出 | 解决小问题/小需求后 |
+| **[temp-and-timeout](./rules/temp-and-timeout.md)** | 调试/验证用临时文件统一建在 workspace temp 目录且只增不删；耗时命令加 timeout 防挂起 | 调试/验证涉及临时文件、执行耗时命令时 |
 | **[task-delegation](./agents/sub-agent/rules/task-delegation.md)** | 任务分级委派，低认知密度任务默认委派子 Agent，主 Agent 聚焦核心决策与核心代码 | 默认生效 |
 | **[disable-task-delegation](./agents/sub-agent/rules/disable-task-delegation.md)** | 关闭任务分级委派，主 Agent 退回全包模式 | 需停用委派机制时 |
 

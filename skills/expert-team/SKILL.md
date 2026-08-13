@@ -787,4 +787,4 @@ Step 5 自检通过后，调用 [auto-review](../auto-review/SKILL.md) skill 对
 - 项目全局资产（PROJECT.md）模板**独立存储**，参见 [templates/PROJECT.md.template](templates/PROJECT.md.template)（创建时直接读取该文件，避免扫描 reference.md）
 - 实现层格式源自 `code-to-wiki` skill 的规范（该 skill 不在本技能库中）；本 skill 已将所需规则完整内嵌为 R1–R7，自检不依赖外部文档与工具
 - 查找并复用本 skill 生成的专家资产（含多专家加载 + 增量更新），参见 [expert-lookup](../expert-lookup/SKILL.md)
-- 记录本 skill 产出模块与外部的强关联（Step 8.5），参见 [strong-relation](../strong-relation/SKILL.md)
+- 记录本 skill 产出模块与外部的强关联（Step 8.5），调用 `use_skill("strong-relation")`

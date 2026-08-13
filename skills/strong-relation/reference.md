@@ -1,12 +1,12 @@
 # 强关联记录参考
 
-详细 ki 写入 / 检索 API 与强关联识别细则。主指令见 SKILL.md。
+详细 ki 写入 API 与强关联识别细则。主指令见 SKILL.md。查询强关联记录请调用 `use_skill("relation-lookup")`。
 
 ## ki 写入与分组
 
 本 skill 用 ki 的 **group 分组**机制（非零散 `ki_store`），保证强关联按功能模块归档、可被 `ki_query_group` 整组检索。
 
-### 核心 API
+### 核心 API（写入侧）
 
 | API | 用途 | 关键参数 |
 |-----|------|----------|
@@ -14,9 +14,6 @@
 | `ki_store` | 简单文本向量存储（无分组） | `scope`、`text`、`tags` |
 | `ki_manage_index_create` | 手动建 group 节点 | `scope`、`name`、`parent` |
 | `ki_manage_index_list` | 列出所有 scope 及顶层 group | - |
-| `ki_query_group` | 检索某 group 的全部内容 | `scope`、`groups`（group 路径） |
-| `ki_search` | 语义检索 | `scope`、`query`、`tags`（过滤）、`limit`、`threshold` |
-| `ki_tag_list` | 列出 scope 下已用 tag | `scope` |
 
 ### 分组约定
 
@@ -82,6 +79,7 @@ ki_sync_relation
 
 | skill | 关系 |
 |-------|------|
+| relation-lookup | **查询侧**：本 skill（strong-relation）负责**写入**强关联，`relation-lookup` 负责**查询**（只查不写，SSOT），引用方 skill 都调用 relation-lookup |
 | expert-team | 产出的模块专家是其触发前置；本 skill 记录模块间强关联，与其专题记忆互补（专题记忆=模块内部路标；本 skill=模块间耦合） |
 | expert-lookup | expert-lookup 的 C4（数据流向与消费）记录模块**内部**的数据流向与消费方（模块级概括）；本 skill 记录**跨模块**的强关联（含多端代码位置、方向、强度）。同一消费关系若跨模块，C4 写模块内视角，本 skill 写跨模块视角，互补不重复 |
 | data-flow-model | data-flow-model 画"设计期未来"的数据流/ER 图；本 skill 记录"现存代码"的强耦合，不画图 |
