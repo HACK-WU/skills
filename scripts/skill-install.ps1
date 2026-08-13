@@ -59,7 +59,7 @@ function Write-Err($msg)  { Write-Host "[ERROR] $msg" -ForegroundColor Red; exit
 # ============================================================
 # 帮助
 # ============================================================
-if ($Help) {
+function Show-Help {
     Write-Host @"
 Skills 安装器 — 基于 npx skills 管理 AI Skills
 
@@ -70,7 +70,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
     update    更新管理源中已安装的 skill 并同步到目标目录
     remove    从管理源删除指定 skill 并同步删除所有目标
     list      列出管理源中已安装的 skill（含来源仓库）
-    -Help     显示此帮助
+    -h, --help  显示此帮助
 
 选项:
   -Target <path>      目标目录（可多次使用，与 -ConfigFile 互斥；update 时限定同步范围）
@@ -78,8 +78,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   -Repo <owner/repo>  指定仓库（可多次使用；install/update 指定安装源，list 按来源过滤）
   -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
 
-默认配置文件（不指定 -Target / -ConfigFile 时，优先读取当前目录 ./.skill-targets，
-  未找到再用家目录 $DefaultTargetsFile）:
+默认配置文件（不指定 -Target / -ConfigFile 时读取）:
   $DefaultTargetsFile
 
 管理目录:
@@ -97,12 +96,18 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
     exit 0
 }
 
+if ($Help) { Show-Help }
+
 # ============================================================
 # 确定操作（子命令：install/update/remove/list）
 # ============================================================
 $Action = "install"  # 默认安装
 if ($Command) {
     switch ($Command.ToLower()) {
+        "--help" { Show-Help }
+        "-help"  { Show-Help }
+        "-h"     { Show-Help }
+        "help"   { Show-Help }
         "update" { $Action = "update" }
         "remove" {
             $Action = "remove"
@@ -161,7 +166,6 @@ if ($NameFilter) {
 # 目标目录解析
 # ============================================================
 $TargetDirs = @()
-$script:UsedTargetsFile = $null
 
 function Resolve-Targets {
     if ($Target -and $ConfigFile) { Write-Err "-Target 和 -ConfigFile 不能同时使用" }
@@ -187,14 +191,9 @@ function Resolve-Targets {
         return
     }
 
-    # 默认配置文件：优先当前目录 ./.skill-targets，未找到再用家目录
-    $localTargetsFile = Join-Path (Get-Location) ".skill-targets"
-    $defaultFile = $null
-    if (Test-Path $localTargetsFile) { $defaultFile = $localTargetsFile }
-    elseif (Test-Path $DefaultTargetsFile) { $defaultFile = $DefaultTargetsFile }
-    if ($defaultFile) {
-        $script:UsedTargetsFile = $defaultFile
-        foreach ($line in (Get-Content $defaultFile -ErrorAction SilentlyContinue)) {
+    # 默认配置文件
+    if (Test-Path $DefaultTargetsFile) {
+        foreach ($line in (Get-Content $DefaultTargetsFile -ErrorAction SilentlyContinue)) {
             $trimmed = $line.Trim()
             if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
             $script:TargetDirs += $trimmed
@@ -259,7 +258,7 @@ function Sync-AllRecorded {
 function Do-Install {
     Resolve-Targets
     if ($script:TargetDirs.Count -eq 0) {
-        Write-Err "未指定目标目录。使用 -Target <path>、-ConfigFile <path>，或在当前目录 ./.skill-targets / $DefaultTargetsFile 配置。"
+        Write-Err "未指定目标目录。使用 -Target <path>、-ConfigFile <path>，或在 $DefaultTargetsFile 配置。"
     }
 
     Ensure-ManageDir
@@ -268,7 +267,6 @@ function Do-Install {
     Write-Host "   管理目录: $ManageDir"
     Write-Host "   安装源: $($Repo -join ', ')"
     Write-Host "   目标数量: $($script:TargetDirs.Count)"
-    if ($script:UsedTargetsFile) { Write-Host "   目标配置: $script:UsedTargetsFile" }
     if ($NameList.Count -gt 0) { Write-Host "   名称过滤: $($NameList -join ', ')" }
     Write-Host ""
 

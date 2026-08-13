@@ -42,7 +42,6 @@ error() { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
 # ============================================================
 ACTION=""
 TARGETS=()
-USED_TARGETS_FILE=""
 NAME_FILTER=""
 CONFIG_FILE=""
 POSITIONAL_TARGET=""
@@ -68,8 +67,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   --file <path>        从配置文件读取目标目录（与 -t 互斥）
   -h, --help           显示此帮助
 
-默认配置文件（不指定 -t / --file 时，优先读取当前目录 ./.skill-targets，
-  未找到再用家目录 $DEFAULT_TARGETS_FILE）:
+默认配置文件（不指定 -t / --file 时读取）:
   $DEFAULT_TARGETS_FILE
 
 管理目录:
@@ -197,21 +195,14 @@ resolve_targets() {
         return 0
     fi
 
-    # 默认配置文件：优先当前目录 ./.skill-targets，未找到再用家目录
-    local default_file=""
-    if [ -f "$PWD/.skill-targets" ]; then
-        default_file="$PWD/.skill-targets"
-    elif [ -f "$DEFAULT_TARGETS_FILE" ]; then
-        default_file="$DEFAULT_TARGETS_FILE"
-    fi
-    if [ -n "$default_file" ]; then
-        USED_TARGETS_FILE="$default_file"
+    # 默认配置文件
+    if [ -f "$DEFAULT_TARGETS_FILE" ]; then
         while IFS= read -r line; do
             line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
             [ -z "$line" ] && continue
             [[ "$line" =~ ^# ]] && continue
             TARGETS+=("$line")
-        done < "$default_file"
+        done < "$DEFAULT_TARGETS_FILE"
     fi
 }
 
@@ -288,7 +279,7 @@ sync_all_recorded() {
 do_install() {
     resolve_targets
     if [ ${#TARGETS[@]} -eq 0 ]; then
-        error "未指定目标目录。使用 -t <path>、--file <path>，或在当前目录 ./.skill-targets / $DEFAULT_TARGETS_FILE 配置。"
+        error "未指定目标目录。使用 -t <path>、--file <path>，或在 $DEFAULT_TARGETS_FILE 配置。"
     fi
 
     ensure_manage_dir
@@ -297,7 +288,6 @@ do_install() {
     echo "   管理目录: $MANAGE_DIR"
     echo "   安装源: ${REPOS[*]}"
     echo "   目标数量: ${#TARGETS[@]}"
-    [ -n "$USED_TARGETS_FILE" ] && echo "   目标配置: $USED_TARGETS_FILE"
     [ -n "$NAME_FILTER" ] && echo "   名称过滤: $NAME_FILTER"
     echo ""
 
@@ -311,7 +301,7 @@ do_install() {
             npx_args+=(--skill $names)
         fi
 
-        (cd "$MANAGE_DIR" && npx skills "${npx_args[@]}") || error "npx skills add 失败: $repo"
+        (cd "$MANAGE_DIR" && npx skills "${npx_args[@]}") </dev/null || error "npx skills add 失败: $repo"
     done
 
     echo ""
@@ -388,7 +378,7 @@ do_update() {
         info "  更新源: $repo → $skill_names"
         local npx_args=(add "$repo" --agent "$AGENT" -y)
         npx_args+=(--skill $skill_names)
-        (cd "$MANAGE_DIR" && npx skills "${npx_args[@]}") || error "npx skills add 失败: $repo"
+        (cd "$MANAGE_DIR" && npx skills "${npx_args[@]}") </dev/null || error "npx skills add 失败: $repo"
         updated_any=1
     done < <(LOCK_FILE="$LOCK_FILE" NAME_WANTED="$wanted" REPO_SCOPE="$repo_scope" node -e '
 const fs=require("fs");
