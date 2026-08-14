@@ -155,7 +155,7 @@ disable: false
 
 **触发条件**：仅当变更规模 ≥ 6 行时触发（口径见阶段 5 深度自适应表）。快速模式跳过。若涉及多个被修改模块，仅查询核心变更模块（最多 2 个）的强关联。
 
-**执行**：调用 `use_skill("relation-lookup")`（提取模块关键词 → `ki_search` / `ki_query_group` 检索 → 利用结果）。ki 查询参数细节一律以 relation-lookup 为准，本阶段不重复。
+**执行**：调用 `use_skill("ki-memory-lookup")`（提取模块关键词 → `ki_search` / `ki_query_group` 检索 → 利用结果）。ki 查询参数细节一律以 ki-memory-lookup 为准，本阶段不重复。
 
 **使用指导要点（code-review 特有衔接）**：
 

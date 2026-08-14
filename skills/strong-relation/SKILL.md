@@ -1,6 +1,6 @@
 ---
 name: strong-relation
-description: 识别并记录跨文件的强关联关系（契约/业务耦合），按功能模块分组写入 ki-search（本 skill 只写不查；查询调用 relation-lookup）。expert-team 创建专家资产后自动调用，也支持任意时机手动调用。触发短语："记录强关联"、"模块间强耦合"、"改A要连带改B"、"关联关系"。
+description: 识别并判定跨文件的强关联关系（契约/业务耦合），写 ki 的动作下沉到 ki-memory-write 的强关联策略（本 skill 只负责识别+判定方向，不内嵌写 ki 细节；查询调用 ki-memory-lookup）。expert-team 创建专家资产后自动调用，也支持任意时机手动调用。触发短语："记录强关联"、"模块间强耦合"、"改A要连带改B"、"关联关系"。
 ---
 
 # 强关联关系记录
@@ -14,7 +14,7 @@ description: 识别并记录跨文件的强关联关系（契约/业务耦合）
 **使用场景**：
 - expert-team 创建专家资产完成后，自动调用本 skill 记录该模块与外部的强关联
 - 手动指定模块/范围，记录其强关联
-- **查询**既有强关联记录（排查/重构/review 前了解模块间耦合），调用 `use_skill("relation-lookup")`（本 skill 只写不查）
+- **查询**既有强关联记录（排查/重构/review 前了解模块间耦合），调用 `use_skill("ki-memory-lookup")`（本 skill 只识别+判定，写 ki 下沉到 ki-memory-write，查询走 ki-memory-lookup）
 
 ## 定位
 
@@ -58,18 +58,18 @@ expert-team 落盘模块专家 → strong-relation（本 skill）→ 识别强�
 
 ## 核心原则
 
-1. **先查后记**：写入前先 ki-search 查该模块是否已有强关联记录，避免重复
+1. **先查后记**：写入前先查该模块是否已有强关联记录（查 `ki-memory-lookup`），避免重复
 2. **GitNexus 辅助 + 源码确认**：用 GitNexus 查调用/依赖关系定位候选，再读关键源码/数据结构确认真实耦合强度，不凭图谱臆断
 3. **方向性必标**：每条关联必须标明方向与强度（必改/建议改/可选）；方向沿「契约/结构线」与「语义/行为线」分别判定，两条线相反时都要记录，不得漏记反方向
 4. **够用即止**：粒度到类名/文件/关键接口，不深挖签名级细节
-5. **按模块分组**：所有原子按功能模块写入，统一父分组「关联关系」+ 按功能模块动态创建的子分组（不复用专题记忆名称）
+5. **写 ki 下沉**：所有 ki 写入动作（分组/tags/格式）统一下沉到 `ki-memory-write` 强关联策略，本 skill 只负责识别+判定方向，不重复声明写入细节
 6. **可分次写入**：关联多时一次写不完，可分多次原子写入同一 group，保持分组一致
 7. **ki 不可用降级**：ki 不可用时告知用户并给出关联清单（对话内），不阻塞流程
 
 ## 工作流
 
 ```
-Step 0 环境检测 → Step 1 定位模块 → Step 2 识别关联 → Step 3 判定方向强度 → Step 4 分组写入 ki → Step 5 校验
+Step 0 环境检测 → Step 1 定位模块 → Step 2 识别关联 → Step 3 判定方向强度 → Step 4 写 ki（下沉 ki-memory-write）→ Step 5 校验
 ```
 
 ### Step 0：环境检测
@@ -117,60 +117,30 @@ Step 0 环境检测 → Step 1 定位模块 → Step 2 识别关联 → Step 3 �
 
 > Step 3 是判定阶段的内部整理格式，用于 AI 归纳后再写入 Step 4 的 `module_info`。`→` 在此为概念表达，写入 ki 时 `relation` 名称用 `-` 连接（不含特殊字符）。
 
-### Step 4：分组写入 ki
+### Step 4：写 ki（下沉到 ki-memory-write）
 
-按功能模块分组，写入**统一父分组 + 动态子分组**：
+识别与判定完成后，写 ki 的动作**统一下沉到 `ki-memory-write`**：
 
-1. **确定 scope 与 group**：
-   - **scope** = 项目标识（与 expert-team 专题记忆一致）
-   - **group 父目录** = **统一固定名「关联关系」**（不复用专题记忆名称，作为所有强关联记录的根分组）
-   - **group 子目录** = **按功能模块动态创建**：`关联关系/{功能模块名}`，功能模块名由本次目标模块派生（如 `订单服务`、`支付系统`）；先 `ki_manage_index_list` 查是否已有该子分组，有则复用，无则新建，避免重复节点
-2. **每条关联一条原子**：用 `ki_sync_relation` 写入，`group` = `关联关系/{功能模块名}`，`relation` = 关联名（用连字符 `-` 连接两端模块名，如 `{模块A}-{模块B}`，不含 `→` 等特殊字符），`module_info` = 关联描述（**纯文本 + 列表，禁用 yaml 元数据，禁用 `##`/`###` 等 md 标题**——避免污染 ki-search 向量检索），**`tags` 统一为 `relation`**（固定，供查询侧用 `tags="relation"` 过滤）
-3. **多次写入**：关联多时，每条（或每小组）单独写一条原子，全部归入同一子分组，保持分组一致
-4. **写入内容模板**（`module_info`）：
+调用 `use_skill("ki-memory-write")` 的**强关联策略**，传入 Step 3 判定的三元组（或双向影响线）。ki 写入细节（`ki_sync_relation` API、分组约定「关联关系/{功能模块名}」、relation 命名、tags=`relation`、module_info 模板、格式硬约束）一律以 `ki-memory-write` 的 `reference-strong-relation.md` 为准，本 step 不重复声明。
 
-```markdown
-[强关联] {模块A} 与 {模块B}
-
-{单向关联：用下面一行强度，必须标注改动性质}：
-强度：{必改/建议改}——改{模块A}的{对外契约/内部实现}，{模块B}{必改/不用管}；改{模块B}的{对外契约/内部实现}，{模块A}{必改/不用管}
-
-{双向关联（两条依赖线方向相反）：用下面两行影响线替代上面的强度行，箭头=影响方向（改左端 → 右端必改）}：
-影响线1：改{模块A}的{对外契约/内部实现} → {模块B}必改；原因：{共享结构/接口契约/消息格式/行为语义}
-影响线2：改{模块B}的{对外契约/内部实现} → {模块A}必改；原因：{共享结构/接口契约/消息格式/行为语义}
-
-原因：{数据结构/接口契约/消息格式/业务规则}共享，一句话说明
-
-{模块A}端：
-- {类名/接口名} @ {文件路径}
-- {类名/接口名} @ {文件路径}
-- ...
-
-{模块B}端：
-- {类名/接口名} @ {文件路径}
-- {类名/接口名} @ {文件路径}
-- ...
-```
-
-> 一个功能模块通常涉及多个文件和类，两端用列表列出所有相关的类与文件位置，不限于单个。单向时 `{模块A}端` 即改动源、`{模块B}端` 即被影响方；双向时两端互为源目标，标签保持中性。
->
-> **格式硬约束**：`module_info` 写入 ki-search 时**不得包含 yaml 元数据**（`---` frontmatter）、**不得使用 `##`/`###` 等 md 标题**、不得含 `|` 表格分隔符等 markdown 结构语法；统一用**纯文本描述 + `-` 列表**（见模板），保证 ki-search 向量化时语义纯净、检索准确。
+> 本 skill 只负责"识别关联 + 判定方向强度"（Step 1~3 的核心价值），"写 ki"这个公共动作由 `ki-memory-write` 承载，避免与专题记忆等其它 ki 写入重复维护格式硬约束与 API 细节。
 
 ### Step 5：校验
 
 写入后，用 `ki_query_group`（group = `关联关系/{功能模块名}`）确认关联原子已归入正确子分组，抽查 1-2 条确认已可检索。
 
-> 校验是**写入侧**的自我验证（确认数据落盘），与对外**查询**（`use_skill("relation-lookup")`）不同；写入校验直接查 ki 结果，不需要走 relation-lookup。
+> 校验是**写入侧**的自我验证（确认数据落盘），与对外**查询**（`use_skill("ki-memory-lookup")`）不同；写入校验直接查 ki 结果，不需要走 ki-memory-lookup。
 
 校验不通过 → 回到 Step 4 修正；ki 校验异常时降级为对话内输出清单。
 
-## 查询强关联（调用 relation-lookup）
+## 查询强关联（调用 ki-memory-lookup）
 
-强关联的**查询**由独立的 `relation-lookup` skill 提供（只查不写，SSOT）。本 skill 需要查询存量记录时（如 Step 5 校验、Step 2 先查后记），调用 `use_skill("relation-lookup")`，ki 查询参数细节以 relation-lookup 为准，本 skill 不重复。
+强关联的**查询**由 `ki-memory-lookup` skill 提供（只查不写，SSOT）。本 skill 需要查询存量记录时（如 Step 5 校验、Step 2 先查后记），调用 `use_skill("ki-memory-lookup")`，ki 查询参数细节以 ki-memory-lookup 为准，本 skill 不重复。
 
 ## 更多资源
 
-- **查询**强关联记录，调用 `use_skill("relation-lookup")`
-- ki 写入/分组 API 细节，参见 [reference.md](reference.md)
+- **查询**强关联记录，调用 `use_skill("ki-memory-lookup")`
+- **写入**强关联记录（写 ki 动作），调用 `use_skill("ki-memory-write")`
+- 强关联识别细则（高概率/低概率模式），参见 [reference.md](reference.md)
 - 模块专家资产与专题记忆，参见 [expert-team](../expert-team/SKILL.md)
 - 查找复用专家资产，参见 [expert-lookup](../expert-lookup/SKILL.md)
