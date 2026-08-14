@@ -439,6 +439,27 @@ function Do-Remove {
         Pop-Location
     }
 
+    # 兜底：npx skills remove 在 lock 与内部集合漂移时可能静默失败（退出码仍为 0），
+    # 需主动校验并清理 lock 中残留条目 + 管理源目录，避免 list 仍显示、update 复活。
+    $staleNames = @()
+    foreach ($name in $NameList) {
+        $env:LOCK_FILE = $LockFile
+        $env:NAME = $name
+        & node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));process.exit(d.skills && d.skills[process.env.NAME] ? 0 : 1);'
+        if ($LASTEXITCODE -eq 0) { $staleNames += $name }
+        Remove-Item Env:LOCK_FILE, Env:NAME -ErrorAction SilentlyContinue
+    }
+    if ($staleNames.Count -gt 0) {
+        Write-Warn "npx 未删除 lock 条目（状态漂移），手动兜底清理: $($staleNames -join ', ')"
+        $env:LOCK_FILE = $LockFile
+        $env:STALE_NAMES = ($staleNames -join ' ')
+        & node -e 'const fs=require("fs");const f=process.env.LOCK_FILE;const d=JSON.parse(fs.readFileSync(f,"utf8"));for(const n of process.env.STALE_NAMES.split(" ")){delete d.skills[n];}fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");'
+        Remove-Item Env:LOCK_FILE, Env:STALE_NAMES -ErrorAction SilentlyContinue
+        foreach ($name in $staleNames) {
+            Remove-Item -Path (Join-Path $ManageSkillsDir $name) -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     Write-Host ""
     Write-Info "同步删除到所有已记录目标..."
     # 因 Sync-ToTarget 为增量同步（不删多余文件），此处显式删除目标中对应的 skill 目录

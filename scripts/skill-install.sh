@@ -435,6 +435,33 @@ do_remove() {
     local names="${NAME_FILTER//,/ }"
     (cd "$MANAGE_DIR" && npx skills remove $names -y) || error "npx skills remove 失败"
 
+    # 兜底：npx skills remove 在 lock 与内部集合漂移时可能静默失败（退出码仍为 0），
+    # 需主动校验并清理 lock 中残留条目 + 管理源目录，避免 list 仍显示、update 复活。
+    # node 退出码：0=有残留条目，1=lock 中已无该条目（视为干净）
+    local stale=""
+    for name in $names; do
+        if LOCK_FILE="$LOCK_FILE" NAME="$name" node -e '
+const fs=require("fs");
+const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));
+process.exit(d.skills && d.skills[process.env.NAME] ? 0 : 1);
+'; then
+            stale="$stale $name"
+        fi
+    done
+    if [ -n "$stale" ]; then
+        warn "npx 未删除 lock 条目（状态漂移），手动兜底清理:$stale"
+        LOCK_FILE="$LOCK_FILE" STALE_NAMES="${stale# }" node -e '
+const fs=require("fs");
+const f=process.env.LOCK_FILE;
+const d=JSON.parse(fs.readFileSync(f,"utf8"));
+for(const n of process.env.STALE_NAMES.split(" ")){ delete d.skills[n]; }
+fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");
+'
+        for name in $stale; do
+            rm -rf "${MANAGE_SKILLS_DIR:?}/$name" 2>/dev/null || true
+        done
+    fi
+
     echo ""
     info "同步删除到所有已记录目标..."
     # 因 sync_to_target 为增量同步（不删多余文件），此处显式删除目标中对应的 skill 目录
