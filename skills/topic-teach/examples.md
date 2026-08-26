@@ -99,6 +99,7 @@ flowchart LR
 # 第 2 课：Pod——k8s 的最小调度单位
 
 > 所属阶段：阶段 1《容器与 k8s 基础》｜ 水平：零基础 ｜ 本课知识点：Pod 概念、Pod YAML、多容器共享
+> 故事情节：主角发现容器能跑，但多个容器要一起调度、共享资源——引出 Pod。
 
 ## 🎯 本课目标
 
@@ -106,16 +107,35 @@ flowchart LR
 - 知道 Pod 里多个容器如何共享网络与存储
 - 能写出一个最简单的 Pod YAML
 
-## 从一个类比说起
-
-Pod ≈ 合租房间：容器是室友，共享网络（一根网线）和存储（一套水电）。
-k8s 不直接调度容器，而是调度"房间"（Pod）。
-
 ---
+
+## 第一幕：起源与场景引入
+
+公司服务用 Docker 跑得挺好，但业务拆成多个容器后，它们要共享网络与存储、要一起调度——一个个管容器太累。
+
+> 🎬 场景：多个容器需要"住进同一间房"一起管理
+
+## 第二幕：认知冲突
+
+> ❓ 问题：k8s 为什么不直接调度容器，而要包一层"Pod"？
+
+## 第三幕：层层揭示
 
 ### 知识点 1：Pod 概念
 
-#### 是什么
+> 本知识点关键点：最小调度单位、共享网络与存储、生命周期
+
+#### 一句话定义
+
+Pod 是 k8s 的最小调度单位，一个 Pod 内可运行 1~N 个共享网络与存储的容器。
+
+#### 直觉建立（类比）
+
+Pod ≈ 合租房间：容器是室友，共享一根网线（网络）和一套水电（存储）。
+
+> 💡 类比的边界：真实 Pod 中容器各自独立运行，仅共享声明过的资源。
+
+#### 核心原理
 
 ```mermaid
 graph TD
@@ -125,16 +145,40 @@ graph TD
     A --> E[共享：存储卷]
 ```
 
-- Pod 是 k8s 的最小调度单位，一个 Pod 可含 1~N 个容器。
-- 同 Pod 容器共享 localhost（同一网络命名空间），用 localhost 互访。
+- **最小调度单位**：k8s 只调度 Pod，不直接调度容器。
+- **共享网络**：同 Pod 容器用 localhost 互访（同一网络命名空间）。
+- **生命周期**：Pending → Running → Succeeded / Failed。
+
+#### 示例演示
+
+```bash
+kubectl get pods -o wide
+# 预期输出：nginx-demo  1/1  Running  10.0.0.3
+```
+
+#### 常见误区
+
+1. **以为一个 Pod 只能一个容器**：可多容器，但多数场景一 Pod 一容器。
 
 #### 一句话记住
 
 > Pod = 一组容器的"合租房间"，k8s 只调度房间不单挑室友。
 
+#### 官方文档
+
+- [Kubernetes 官方文档 · Pods](https://kubernetes.io/docs/concepts/workloads/pods/)
+
+---
+
 ### 知识点 2：Pod YAML
 
-#### 是什么
+> 本知识点关键点：四要素、容器字段、探针
+
+#### 一句话定义
+
+Pod YAML 用声明式描述一个 Pod 的期望状态。
+
+#### 核心原理
 
 ```yaml
 apiVersion: v1
@@ -149,36 +193,74 @@ spec:
 
 > 命令适用版本：k8s v1.20+（`kind: Pod` 长期稳定）。
 
-#### 怎么用
+- **四要素**：apiVersion / kind / metadata / spec。
+- **容器字段**：name、image 写在 spec.containers。
+- **探针**：livenessProbe / readinessProbe（本例省略）。
+
+#### 示例演示
 
 ```bash
-kubectl apply -f pod.yaml        # 创建
-kubectl get pods                 # 查看
-kubectl describe pod nginx-demo  # 看详情（含事件）
+kubectl apply -f pod.yaml
+kubectl get pods
+# 预期输出：nginx-demo  1/1  Running
 ```
-
-预期输出：`nginx-demo   1/1   Running`。
 
 #### 一句话记住
 
-> YAML 四要素：`apiVersion` / `kind` / `metadata` / `spec`，容器写在 `spec.containers`。
+> YAML 四要素：apiVersion / kind / metadata / spec，容器写在 spec.containers。
+
+#### 官方文档
+
+- [Kubernetes 官方文档 · Pod 与容器](https://kubernetes.io/docs/concepts/containers/)
+
+---
 
 ### 知识点 3：多容器共享
 
-#### 是什么
+> 本知识点关键点：localhost 互通、共享卷、sidecar 模式
+
+#### 一句话定义
+
+同 Pod 多容器共享网络命名空间与存储卷。
+
+#### 核心原理
 
 同 Pod 多容器共享：网络命名空间（localhost 互通）、存储卷（共享磁盘）、IPC / PID（可选）。
 
-#### 类比的边界
+#### 示例演示
 
-合租房间里室友各有手机号（独立进程），但共享宽带和水电（网络与存储）——真实 Pod 中容器各自独立运行，仅共享声明过的资源。
+```bash
+# sidecar 模式：业务容器 + 日志采集容器共享同一个卷
+kubectl logs nginx-demo -c log-agent
+# 预期输出：日志采集容器读到业务容器的日志
+```
+
+#### 一句话记住
+
+> 同一 Pod 的容器"同吃同住"——共享网络与存储，典型用法是 sidecar。
+
+---
+
+## 第四幕：实操验证
+
+```bash
+kubectl apply -f pod.yaml && kubectl get pods
+# 预期输出：nginx-demo  1/1  Running
+```
+
+> ✅ 回扣场景：一个 Pod 把多个容器"包"在一起调度，服务上线后多个容器天然共享网络与存储。
+
+## 第五幕：体系收束
+
+> 📍 全局定位：Pod 是 k8s 最小调度单位，是 Deployment / Job 等工作负载的底层。
+> 🔗 下一步：单 Pod 扛不住流量时，用 Deployment 管理副本与滚动更新。
 
 ---
 
 ## 🐞 常见误区
 
-1. **以为一个 Pod 只能一个容器**：可多容器，但多数场景一 Pod 一容器。
-2. **以为 Pod 名可随意改**：Pod 名全局唯一，创建后不可改（只能删了重建）。
+1. **以为 Pod 就是容器**：Pod 是容器之上的调度单元。
+2. **以为同 Pod 容器要用 IP 互访**：用 localhost 即可。
 
 ## 一图总结
 
@@ -1071,12 +1153,25 @@ flowchart LR
 
 ## 阶段 1：容器与 k8s 基础
 
-- [课 1：容器基础](stages/1-容器与k8s基础/lessons/lesson-01-容器基础.md)
-- [课 2：Pod](stages/1-容器与k8s基础/lessons/lesson-02-Pod.md)
+### [课 1：容器基础](stages/1-容器与k8s基础/lessons/lesson-01-容器基础.md)
+
+- 镜像与容器
+- 容器运行时
+- 隔离原理
+
+### [课 2：Pod](stages/1-容器与k8s基础/lessons/lesson-02-Pod.md)
+
+- Pod 概念
+- Pod YAML
+- 多容器共享
 
 ## 阶段 2：调度与工作负载
 
-- 课 3：Deployment（未编写）
+### 课 3：Deployment（未编写）
+
+- 副本管理
+- 滚动更新
+- 回滚
 
 ## 汇总手册
 
