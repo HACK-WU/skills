@@ -519,7 +519,7 @@ flowchart TD
 
 ### SVG 产出形式
 
-1. **独立 SVG 文件**（唯一形式）：写入各文档目录 `assets/`（如 `stages/1-基础知识/overview.md` 的图 → `stages/1-基础知识/assets/`），文档用 `![说明](./assets/xxx.svg)` 引用。GitHub 等主流平台均支持 `<img>` 引用 SVG 文件。
+1. **独立 SVG 文件**（唯一形式）：写入各文档目录 `assets/`（如 `stages/1-基础知识/overview.md` 的图 → `stages/1-基础知识/assets/`），文档用 `![说明](相对路径)` 引用。**引用路径按文档所在层级区分**：`overview.md`（阶段目录根）与 `{topic-slug}/` 根级文档（学习路径总览 / 课程手册）→ `./assets/xxx.svg`；`lessons/lesson-NN.md`（lessons 子目录）→ `../assets/xxx.svg`。GitHub 等主流平台均支持 `<img>` 引用 SVG 文件。
 2. ~~内联 SVG~~：不使用（GitHub 会剥离内联 `<svg>` 标签，读者将看到空白）。
 
 ### 配色与背景约束（mermaid + SVG 通用）
@@ -534,7 +534,7 @@ flowchart TD
 
 - 命名风格：kebab-case（全小写 + 短横线），如 `learning-path-overview.svg`
 - 语义化：`{图作用}-{图主题}.svg`，如 `stage-01-pod-path.svg`、`k8s-pod-structure.svg`、`hash-table-structure.svg`、`array-insert-step.svg`
-- 存放：与引用它的文档同目录的 `assets/` 下，路径与 `![...]` 引用一致
+- 存放：与引用它的文档同目录的 `assets/` 下，路径与 `![...]` 引用一致（lesson 文件在 `lessons/` 子目录，引用本阶段 `assets/` 须写 `../assets/xxx.svg`）
 - 禁用：中文、空格、大写、无意义命名（`img1.svg`）、过短缩写（`arch.svg`）
 - 一图一文件，同名复用直接引用同一文件，不复制副本
 

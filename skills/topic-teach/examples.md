@@ -389,7 +389,7 @@ flowchart LR
 ## 示例 5：B-1 数据结构内部结构 SVG（哈希表）
 
 > 场景：课程制讲解「哈希表」知识点时，文字描述"数组+链表"结构学习者难以脑补完整画面。触发 B-1 信号 → 产出 SVG 具象化内部构造图。
-> 文件存 `data-structures/stages/1-数据结构基础/assets/hash-table-structure.svg`，在课文中以 `![哈希表内部结构](./assets/hash-table-structure.svg)` 引用。
+> 文件存 `data-structures/stages/1-数据结构基础/assets/hash-table-structure.svg`，在课文中以 `![哈希表内部结构](../assets/hash-table-structure.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -398,7 +398,7 @@ flowchart LR
 
 文字讲不清？看图：
 
-![哈希表内部结构](./assets/hash-table-structure.svg)
+![哈希表内部结构](../assets/hash-table-structure.svg)
 
 > 上图：hash 函数将 key 映射到数组索引（0~7），每个桶（bucket）存放一个链表头指针；
 > 冲突的元素（如 "alice" 和 "bob" 都映射到索引 1）以链表形式挂在同一桶下。
@@ -502,7 +502,7 @@ flowchart LR
 ## 示例 6：B-2 算法执行过程 SVG（数组插入）
 
 > 场景：课程制讲解「数组插入操作」时，需演示"在索引 2 处插入元素后，后续元素如何逐步右移"。触发 B-2 信号 → 产出分步纵向排列的状态快照图。
-> 文件存 `data-structures/stages/1-数据结构基础/assets/array-insert-step.svg`，在课文中以 `![数组插入分步演示](./assets/array-insert-step.svg)` 引用。
+> 文件存 `data-structures/stages/1-数据结构基础/assets/array-insert-step.svg`，在课文中以 `![数组插入分步演示](../assets/array-insert-step.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -511,7 +511,7 @@ flowchart LR
 
 **问题**：数组是连续内存，中间不能有空洞。在索引 2 插入新元素后，原来的元素怎么办？
 
-![数组插入分步演示](./assets/array-insert-step.svg)
+![数组插入分步演示](../assets/array-insert-step.svg)
 
 > 如上图：
 > - **初始状态**：`[10, 20, 30, 40, 50]`，length = 5
@@ -660,7 +660,7 @@ flowchart LR
 ## 示例 7：B-3 层级结构 SVG（OSI 七层模型）
 
 :> 场景：课程制讲解「网络基础」时，需展示 OSI 七层模型的层级关系与各层职责。触发 B-3 信号（层级结构）→ 产出横向分层 + 层间交互箭头 + 每层职责标注的层级图。
-:> 文件存 `network-basics/stages/1-网络基础/assets/osi-seven-layers.svg`，在课文中以 `![OSI 七层模型](./assets/osi-seven-layers.svg)` 引用。
+:> 文件存 `network-basics/stages/1-网络基础/assets/osi-seven-layers.svg`，在课文中以 `![OSI 七层模型](../assets/osi-seven-layers.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -669,7 +669,7 @@ flowchart LR
 
 网络通信不是"一步到位"的，而是像发快递一样要经过多层处理：
 
-![OSI 七层模型](./assets/osi-seven-layers.svg)
+![OSI 七层模型](../assets/osi-seven-layers.svg)
 
 > 上图：数据从发送方**应用层**出发，逐层向下封装（每层加上自己的头部/尾部），
 > 到达物理层变成比特流；接收方从物理层逐层向上解封装，最终到达应用层。
@@ -805,7 +805,7 @@ flowchart LR
 ## 示例 8：B-4 多概念对比分类 SVG（线性 vs 非线性数据结构）
 
 :> 场景：课程制讲解「数据结构选型」时，需并排对比线性结构与非线性结构的特征差异、适用场景和时间复杂度。触发 B-4 信号 → 产出对比矩阵/分类卡片图。
-:> 文件存 `data-structures/stages/2-数据结构进阶/assets/linear-vs-nonlinear.svg`，在课文中以 `![线性 vs 非线性数据结构对比](./assets/linear-vs-nonlinear.svg)` 引用。
+:> 文件存 `data-structures/stages/2-数据结构进阶/assets/linear-vs-nonlinear.svg`，在课文中以 `![线性 vs 非线性数据结构对比](../assets/linear-vs-nonlinear.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -814,7 +814,7 @@ flowchart LR
 
 选数据结构不是"背下来就行"，而是要理解**为什么**有的快有的慢：
 
-![线性 vs 非线性数据结构对比](./assets/linear-vs-nonlinear.svg)
+![线性 vs 非线性数据结构对比](../assets/linear-vs-nonlinear.svg)
 
 > 上图：左侧是**线性结构**（一对一关系，像排队），右侧是**非线性结构**（一对多/多对多，像树和网）。
 >
@@ -984,7 +984,7 @@ flowchart LR
 ## 示例 9：B-5 数据可视化 SVG（时间复杂度曲线）
 
 :> 场景：课程制讲解「算法分析」时，需直观展示不同时间复杂度的增长趋势差异——O(1) 几乎平、O(log n) 缓慢爬升、O(n) 直线增长、O(n log n) 微曲上升、O(n²) 急剧飙升。触发 B-5 信号 → 产出坐标轴 + 曲线 + 关键点标注的数据图表。
-:> 文件存 `algorithms/stages/1-算法分析基础/assets/time-complexity-curves.svg`，在课文中以 `![时间复杂度曲线对比](./assets/time-complexity-curves.svg)` 引用。
+:> 文件存 `algorithms/stages/1-算法分析基础/assets/time-complexity-curves.svg`，在课文中以 `![时间复杂度曲线对比](../assets/time-complexity-curves.svg)` 引用。
 
 ### 知识点正文中的引用方式
 
@@ -993,7 +993,7 @@ flowchart LR
 
 光说"这个算法快"不够专业，我们需要一个**与硬件无关**的度量标准——时间复杂度：
 
-![时间复杂度曲线对比](./assets/time-complexity-curves.svg)
+![时间复杂度曲线对比](../assets/time-complexity-curves.svg)
 
 > 上图展示了常见时间复杂度随数据量 n 增长的趋势。
 >
