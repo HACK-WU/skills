@@ -301,24 +301,6 @@ function Do-Install {
 }
 
 
-# 从 lock 文件读取已安装 skill 的来源仓库（去重）
-# 用 node 解析（node 是本安装器的既有依赖，无需 python3）
-function Get-InstalledRepos {
-    if (-not (Test-Path $LockFile)) { return }
-    $env:LOCK_FILE = $LockFile
-    & node -e @'
-const fs=require("fs");
-try{
-  const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));
-  const r=new Set();
-  for(const i of Object.values(d.skills||{})){ if(i.source) r.add(i.source); }
-  console.log([...r].sort().join("\n"));
-}catch(e){}
-'@
-    Remove-Item Env:LOCK_FILE -ErrorAction SilentlyContinue
-}
-
-
 # ============================================================
 # 更新：重新拉取已安装 skill 的最新版本并同步到目标
 # ============================================================
@@ -334,12 +316,12 @@ function Do-Update {
     } else {
         $env:LOCK_FILE = $LockFile
         $repos = (& node -e @'
-const fs=require("fs");
+const fs=require('fs');
 try{
-  const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));
+  const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
   const r=new Set();
   for(const i of Object.values(d.skills||{})){ if(i.source) r.add(i.source); }
-  console.log([...r].sort().join("\n"));
+  console.log([...r].sort().join('\n'));
 }catch(e){}
 '@) | Where-Object { $_ -ne "" }
         Remove-Item Env:LOCK_FILE -ErrorAction SilentlyContinue
@@ -360,20 +342,20 @@ try{
     $env:NAME_WANTED = if ($NameList.Count -gt 0) { ($NameList -join ' ') } else { "" }
     $env:REPO_SCOPE = ($repos -join ' ')
     $mapOutput = & node -e @'
-const fs=require("fs");
-const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));
-const wanted=(process.env.NAME_WANTED||"").split(" ").filter(Boolean);
+const fs=require('fs');
+const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
+const wanted=(process.env.NAME_WANTED||'').split(' ').filter(Boolean);
 const wantSet=wanted.length?new Set(wanted):null;
-const scope=new Set((process.env.REPO_SCOPE||"").split(" "));
+const scope=new Set((process.env.REPO_SCOPE||'').split(' '));
 const out={};
 for(const[name,i]of Object.entries(d.skills||{})){
-  const s=i.source||"";
+  const s=i.source||'';
   if(!scope.has(s)) continue;
   if(wantSet&&!wantSet.has(name)) continue;
   (out[s]=out[s]||[]).push(name);
 }
 for(const s of Object.keys(out).sort()){
-  console.log(s+"|"+out[s].sort().join(" "));
+  console.log(s+'|'+out[s].sort().join(' '));
 }
 '@
     Remove-Item Env:LOCK_FILE, Env:NAME_WANTED, Env:REPO_SCOPE -ErrorAction SilentlyContinue
@@ -445,7 +427,11 @@ function Do-Remove {
     foreach ($name in $NameList) {
         $env:LOCK_FILE = $LockFile
         $env:NAME = $name
-        & node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));process.exit(d.skills && d.skills[process.env.NAME] ? 0 : 1);'
+        & node -e @'
+const fs=require('fs');
+const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
+process.exit(d.skills && d.skills[process.env.NAME] ? 0 : 1);
+'@
         if ($LASTEXITCODE -eq 0) { $staleNames += $name }
         Remove-Item Env:LOCK_FILE, Env:NAME -ErrorAction SilentlyContinue
     }
@@ -453,7 +439,13 @@ function Do-Remove {
         Write-Warn "npx 未删除 lock 条目（状态漂移），手动兜底清理: $($staleNames -join ', ')"
         $env:LOCK_FILE = $LockFile
         $env:STALE_NAMES = ($staleNames -join ' ')
-        & node -e 'const fs=require("fs");const f=process.env.LOCK_FILE;const d=JSON.parse(fs.readFileSync(f,"utf8"));for(const n of process.env.STALE_NAMES.split(" ")){delete d.skills[n];}fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");'
+        & node -e @'
+const fs=require('fs');
+const f=process.env.LOCK_FILE;
+const d=JSON.parse(fs.readFileSync(f,'utf8'));
+for(const n of process.env.STALE_NAMES.split(' ')){ delete d.skills[n]; }
+fs.writeFileSync(f, JSON.stringify(d, null, 2) + '\n');
+'@
         Remove-Item Env:LOCK_FILE, Env:STALE_NAMES -ErrorAction SilentlyContinue
         foreach ($name in $staleNames) {
             Remove-Item -Path (Join-Path $ManageSkillsDir $name) -Recurse -Force -ErrorAction SilentlyContinue
@@ -491,24 +483,24 @@ function Do-List {
     $env:LOCK_FILE = $LockFile
     $env:REPO_FILTER = if ($RepoSpecified) { ($Repo -join ' ') } else { "" }
     & node -e @'
-const fs=require("fs");
-const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8"));
+const fs=require('fs');
+const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
 const skills=d.skills||{};
-const rf=(process.env.REPO_FILTER||"").split(" ").filter(Boolean);
+const rf=(process.env.REPO_FILTER||'').split(' ').filter(Boolean);
 const repoFilter=rf.length?new Set(rf):null;
 const items={};
 for(const[name,i]of Object.entries(skills)){
-  const src=i.source||"unknown";
+  const src=i.source||'unknown';
   if(repoFilter&&!repoFilter.has(src)) continue;
   (items[src]=items[src]||[]).push(name);
 }
-console.log("管理源已安装的 skill:");
-console.log("");
-console.log("仓库来源:");
+console.log('管理源已安装的 skill:');
+console.log('');
+console.log('仓库来源:');
 for(const src of Object.keys(items).sort()){
   console.log(`  <- ${src}  (${items[src].length} 个)`);
 }
-console.log("");
+console.log('');
 let total=0;
 for(const src of Object.keys(items).sort()){
   console.log(`${src}:`);
@@ -516,9 +508,9 @@ for(const src of Object.keys(items).sort()){
     console.log(`  ${name}`);
     total++;
   }
-  console.log("");
+  console.log('');
 }
-if(total===0) console.log("  （无匹配的 skill）");
+if(total===0) console.log('  （无匹配的 skill）');
 console.log(`  共 ${total} 个 skill`);
 '@
     Remove-Item Env:LOCK_FILE, Env:REPO_FILTER -ErrorAction SilentlyContinue
