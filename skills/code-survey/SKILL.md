@@ -9,7 +9,7 @@ description: 在设计前对代码库进行按需调研，只调研与当前需�
 
 **目的**：在设计前充分了解当前代码库中与需求相关的信息，确保设计与现有代码风格、架构保持一致。
 
-**功能**：按需调研代码库的 13 个维度，根据需求特征自动筛选需要调研的维度，强制先使用 ki-search 查询相关项目记忆，并按 `expert-solution-workflow` 触发资产复用，代码搜索阶段 ≥ 2 个维度时自动调用 `task-dispatch` 并行搜索加速。
+**功能**：按需调研代码库的 13 个维度，根据需求特征自动筛选需要调研的维度，强制先使用 ki-search 查询相关项目记忆，并调用 use_skill("expert-solution-workflow") 触发资产复用，代码搜索阶段 ≥ 2 个维度时自动调用 `task-dispatch` 并行搜索加速。
 
 **使用场景**：
 - design-craft 技能执行前置信息收集阶段时
@@ -19,7 +19,7 @@ description: 在设计前对代码库进行按需调研，只调研与当前需�
 ## 核心原则
 
 1. **按需调研**：只调研与当前需求相关的维度，不相关的跳过
-2. **ki-search 与资产复用优先**：先使用 ki-search 查询相关项目记忆 → 按 `expert-solution-workflow` 触发资产复用（expert-lookup / solution-lookup）→ 代码搜索 → 语义检索兜底。禁止跳过 ki-search 直接搜代码
+2. **ki-search 与资产复用优先**：先使用 ki-search 查询相关项目记忆 → 调用 use_skill("expert-solution-workflow") 触发资产复用（expert-lookup / solution-lookup）→ 代码搜索 → 语义检索兜底。禁止跳过 ki-search 直接搜代码
 3. **必须执行**：ki-search 为必查项，即使觉得"不太可能有"，也要实际调用确认；**无论是否命中，都必须触发资产复用**
 4. **并行加速**：需代码搜索的维度 ≥ 2 时，自动调用 task-dispatch 并行搜索
 
@@ -74,7 +74,7 @@ ki-search 查询项目记忆 → 资产复用（专家/方案） → 代码搜�
 
 ### 第 2 步：资产复用（必查项）
 
-按 `expert-solution-workflow` 规则触发资产复用查询：
+调用 use_skill("expert-solution-workflow") 触发资产复用查询：
 
 - **业务模块类** → `expert-lookup`：有专家 → 加载契约层辅助调研；无专家 → 记录「无专家」
 - **具体技术问题类** → `solution-lookup`：有方案 → 按步骤参考；无方案 → 记录「无方案」

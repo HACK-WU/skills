@@ -16,7 +16,7 @@ description: 统一查询 ki-search 记忆的 SSOT（单一事实源）。封装
 - 专题记忆查询（供 expert-lookup 等检索）：知晓"有此专家 + 关键入口"
 - 接口信息查询：检索"某接口在哪定义 / 怎么调 / 谁提供"
 - 数据流查询：检索"某表/字段/消息谁写的 / 谁读的 / 干什么用"
-- 项目记忆查询（"遇事不决 ki-search"，按 `ki-search-first` 规则）
+- 项目记忆查询（"遇事不决 ki-search"，调用 use_skill("ki-search-first")）
 
 ## 定位
 
