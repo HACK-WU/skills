@@ -15,7 +15,7 @@
 - 不逐行转储代码，提炼模式与要点
 - 无内容的章节标注「该模块无此项」，不留空、不编造
 - 每个讲解点按 Phase 0 范围标注 `[通用]` 或 `[专用]`
-- **图表配色**：Mermaid / 图表 / HTML 页面背景禁用黑色或过深颜色，一律浅色背景（含白色）+ 深色文字；深色仅用于元素强调（其上文字用浅色）。Mermaid 保持默认浅色主题（`theme: "default"`）
+- **图表配色**：Mermaid / SVG 图表背景禁用黑色或过深颜色，一律浅色背景（含白色）+ 深色文字；深色仅用于元素强调（其上文字用浅色）。Mermaid 保持默认浅色主题（`theme: "default"`）
 
 ## 2. 知识范围标注约定
 
@@ -41,7 +41,6 @@
 - 目标模块：{root}
 - 知识范围：通用 / 专用 / 两者都含（默认：两者都含）
 - 学习目标：读懂（默认） / 改造 / 评审
-- 输出格式：HTML（默认） / Markdown
 
 ## 目录
 1. [职责边界](#职责边界)
@@ -266,118 +265,58 @@ stateDiagram-v2
 章节来源：[consumer.py](file://{root}/consumer.py#L1-L50)
 ```
 
-## 4. 最终 HTML 文档模板（06-最终文档.html）
+## 4. 最终文档 Markdown 模板（06-最终文档.md）
 
-复制此骨架，把各阶段内容填入对应 section，保留 Mermaid 渲染所需脚本。
+复制此骨架，把各阶段内容填入对应章节，Mermaid 以代码块内嵌、复杂图以 SVG 文件引用。
 
-```html
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<title>{模块名} · 模块讲解</title>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: true, theme: "default" });</script>
-<style>
-  :root { --fg:#1a1a1a; --muted:#666; --accent:#2563eb; --bg:#fff; --code:#f6f8fa; }
-  body { font:16px/1.7 -apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
-         color:var(--fg); max-width:860px; margin:auto; padding:48px 24px; background:var(--bg); }
-  h1 { font-size:30px; border-bottom:3px solid var(--accent); padding-bottom:8px; }
-  h2 { font-size:22px; margin-top:40px; color:var(--accent); }
-  h3 { font-size:18px; }
-  a { color:var(--accent); text-decoration:none; }
-  code { background:var(--code); padding:2px 6px; border-radius:4px; font-size:14px; }
-  pre { background:var(--code); padding:16px; border-radius:8px; overflow:auto; }
-  .tag { display:inline-block; font-size:12px; padding:1px 8px; border-radius:10px; margin-left:6px; }
-  .tag.general { background:#e0f2fe; color:#0369a1; }
-  .tag.specific { background:#fef3c7; color:#92400e; }
-  .callout { border-left:4px solid var(--accent); background:#f0f7ff; padding:12px 16px; margin:16px 0; border-radius:0 8px 8px 0; }
-  details { border:1px solid #e5e7eb; border-radius:8px; padding:8px 16px; margin:16px 0; }
-  summary { cursor:pointer; font-weight:600; }
-  nav.toc { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:16px 24px; }
-  nav.toc a { display:block; margin:4px 0; }
-</style>
-</head>
-<body>
+````markdown
+# {模块名} · 模块讲解
 
-<h1>{模块名} · 模块讲解</h1>
+## 目录
+1. [能力大纲](#能力大纲)
+2. [代码 Wiki](#代码-wiki)
+3. [正确性核对](#正确性核对)
+4. [功能推演](#功能推演)
+5. [应用场景](#应用场景)
+6. [数据流](#数据流)
+<!-- 仅改造或评审模式追加：7. 改造风险点 / 7. 潜在问题清单 -->
 
-<nav class="toc">
-  <strong>目录</strong>
-  <a href="#outline">1. 能力大纲</a>
-  <a href="#wiki">2. 代码 Wiki</a>
-  <a href="#verify">3. 正确性核对</a>
-  <a href="#function">4. 功能推演</a>
-  <a href="#scenario">5. 应用场景</a>
-  <a href="#dataflow">6. 数据流</a>
-  <!-- 仅改造或评审模式显示 -->
-  <a href="#rework" style="display:none">7. 改造风险点</a>  <!-- 改造模式 -->
-  <a href="#review" style="display:none">7. 潜在问题清单</a>  <!-- 评审模式 -->
-  <a href="#check" style="display:none">8. 知识点对齐</a>  <!-- 可选 -->
-</nav>
-
-<h2 id="outline">1. 能力大纲</h2>
+## 1. 能力大纲
 <!-- 来自 00-能力大纲.md，提炼要点 -->
+> 提示：本模块对外职责是 `...`。
 
-<h2 id="wiki">2. 代码 Wiki</h2>
+## 2. 代码 Wiki
 <!-- 来自 01-代码wiki.md -->
-<div class="callout">提示：本模块对外职责是 <code>...</code>。</div>
 
-<h2 id="verify">3. 正确性核对</h2>
+## 3. 正确性核对
 <!-- 来自 02-正确性核对.md，列核对结论；如有修正务必写明 -->
 
-<h2 id="function">4. 功能推演</h2>
+## 4. 功能推演
 <!-- 来自 03-功能推演.md -->
-<pre class="mermaid">
+```mermaid
 flowchart LR
   R[请求] --> V[校验] --> B[业务] --> S[落库]
-</pre>
+```
+图表来源：[core.py](file://{root}/core.py#L30-L90)
 
-<h2 id="scenario">5. 应用场景</h2>
+## 5. 应用场景
 <!-- 来自 04-应用场景.md -->
-<details>
-  <summary>何时不该使用本模块？</summary>
-  <p>...</p>
-</details>
 
-<h2 id="dataflow">6. 数据流</h2>
+## 6. 数据流
 <!-- 来自 05-数据流.md -->
-<pre class="mermaid">
+```mermaid
 flowchart TD
   In[入口] --> T1[变换] --> Store[(存储)] --> Out[出口]
-</pre>
-
-<!-- ===== 以下为可选区段，按学习目标显示 ===== -->
-
-<!-- 改造模式：追加本节 -->
-<h2 id="rework">7. 改造风险点与建议切入点</h2>
-<!-- 来自 Phase 7 改造附加内容 -->
-<h3>高风险区</h3>
-<ul><li>...</li></ul>
-<h3>中风险区</h3>
-<ul><li>...</li></ul>
-<h3>安全重构区</h3>
-<ul><li>...</li></ul>
-<h3>建议切入点</h3>
-<ol><li>...</li></ol>
-
-<!-- 评审模式：追加本节 -->
-<h2 id="review">7. 潜在问题清单与改进建议</h2>
-<!-- 来自 Phase 7 评审附加内容 -->
-<h3>安全性</h3>
-<ul><li>...</li></ul>
-<h3>性能</h3>
-<ul><li>...</li></ul>
-<h3>可维护性</h3>
-<ul><li>...</li></ul>
-<h3>可测试性</h3>
-<ul><li>...</li></ul>
-
-</body>
-</html>
 ```
+图表来源：[controller.py](file://{root}/controller.py#L20-L70)
 
-> Mermaid 走 CDN，本地用浏览器打开即可渲染；若离线环境，将 `mermaid.min.js` 下载到 `.teach/{module-slug}/assets/` 并改 `<script src>` 为本地路径。
+<!-- ===== 以下为可选区段，按学习目标追加 ===== -->
+
+## 7. 改造风险点与建议切入点   <!-- 改造模式 -->
+## 7. 潜在问题清单与改进建议   <!-- 评审模式 -->
+````
+
+> Mermaid 以代码块嵌入，GitHub 或支持 Mermaid 的 Markdown 阅读器可直接渲染；复杂图（结构 / 过程 / 对比类）用独立 SVG 文件，入 `.teach/{module-slug}/assets/` 并以 `![说明](./assets/xxx.svg)` 引用，选型规则见下节 SVG 图表规范。
 
 ## 5. 常用 Mermaid 图类型速查
 
@@ -389,4 +328,26 @@ flowchart TD
 | 类图 | `classDiagram` | 类关系 |
 | 架构图 | `graph TD` | 组件依赖 |
 
-每图后必须紧跟 `图表来源：[文件](file://相对路径#Lx-Ly)`（写在 HTML 中可用注释 `<!-- 图表来源：... -->` 或文字说明）。
+每图后必须紧跟 `图表来源：[文件](file://相对路径#Lx-Ly)`。
+
+## 6. SVG 图表规范（复杂图双引擎）
+
+> **SSOT 声明**：完整规范（选型决策因子、B 类信号细则、配色、命名、动画、AI 能力边界）以 [topic-teach reference.md「SVG 图表规范」](../topic-teach/reference.md) 为准，此处仅列模块讲解场景的执行要点；两处不一致时以 topic-teach 为准。
+
+**选型**：默认 Mermaid；仅当出现以下任一触发信号才改用 SVG，不得因"更精美"随意替换简单图：
+
+- **A 类：图形复杂度信号**——分支/回环密集、交叉连线多、需泳道/分区语义、扇入/扇出大、需精确位置/方向控制
+- **B 类：教学认知难度信号**（"文字讲不清、学习者脑补累"的场景，不以复杂度为门槛）——数据结构内部结构（内存布局 / 节点关系）、算法执行过程（分步状态变化 / 递归栈展开）、抽象概念映射与分层架构（如中间件链 / 协议栈）、多概念对比分类、复杂度 / 趋势曲线等轻量数据可视化
+
+**模块讲解高频 SVG 场景**：
+
+| 场景 | SVG 表达形式 |
+|------|--------------|
+| 数据结构内部构造（如哈希表索引→桶→链表） | 具象化内部构造图（格子 / 框 / 箭头精确对齐） |
+| 递归 / 算法执行过程 | 分步纵向状态快照，关键变化高亮 |
+| 分层架构 / 复杂依赖拓扑 | 层级图 / 泳道拓扑 |
+| 性能复杂度对比（O(n) vs O(n²)） | 轻量曲线图（坐标轴 + 曲线 + 关键点标注，单图数据点 ≤ 10、无交互） |
+
+**产出形式**：独立 SVG 文件，写入 `.teach/{module-slug}/assets/`（子模块产物放 `.teach/{module-slug}/sub-modules/{sub-slug}/assets/`），文档以 `![说明](相对路径)` 引用；不使用内联 `<svg>`（GitHub 会剥离）。
+**命名**：kebab-case，`{图作用}-{图主题}.svg`（如 `order-state-flow.svg`）；禁用中文、空格、大写、无意义命名。
+**配色**：与 Mermaid 通用——浅色背景 + 深色文字，深色仅用于元素强调（其上文字用浅色）。
