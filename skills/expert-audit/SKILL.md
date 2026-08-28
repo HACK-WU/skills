@@ -56,7 +56,7 @@ description: 站在使用者视角审查 expert-team 产出的专家资产，核
 | 必出文件 | `agent.md` + `C0-使用总览.md` + `C1-能力契约.md` + `implementation/01-架构.md` + `02-实现.md` 存在且非空 | P0 |
 | 条件必出 | 有数据落地 → `C4-数据流向与消费.md` 存在；**模块有测试时** → `implementation/06-测试.md` + `test/known-failures.md` 存在（**PROJECT.md 标注「❌ 无法运行 / 无测试」的服务除外**——按「测试不可运行跳过」规则不强制必出） | P1 |
 | 层级规则 | 子专家仅一级（`sub-experts/` 下无嵌套）；专题不嵌套、不含 `implementation/`、含 `topic.md` + `T0-专题总览.md` | P1 |
-| INDEX 记录 | 该专家/专题在 INDEX.md 有记录，且含**匹配关键词**行（8~15 个） | P1 |
+| INDEX 记录 | 该专家/专题在 INDEX.md 有记录，且含**匹配关键词**行（8~15 个）与 **git commit 基线**行（语义见 expert-team「文档说明·资产基线 commit」；旧资产缺失不判违规，建议合并补全时刷新补上） | P1 |
 | 命名规范 | 契约层 C 前缀、专题层 T 前缀、实现层数字前缀、目录中文业务名 | P2 |
 | 无 CHANGELOG | 资产目录内不应存在 CHANGELOG（已废止机制） | P2 |
 | 项目共享资产 | `PROJECT.md`（存在时）：含项目信息/技术栈/架构形态/核心功能/核心服务清单（含代码位置/**测试可执行性**）/配套服务关系/架构图/数据流向图/运行环境 | P2（**仅显式声明时检查**） |
@@ -83,7 +83,7 @@ description: 站在使用者视角审查 expert-team 产出的专家资产，核
 
 - **实现层**：R1–R7（cite 块 / 中文锚点目录 / 章节来源含 file:// 路径 + 关键符号 / 图表来源 / file:// 前缀 / 符号真实可 grep / ≥2 设计维度 + Mermaid）
 - **契约层**：CR1–CR9（C0 四要素 / C1 六要素含行为语义与真实示例 / 无实现细节 / 契约来源为类名方法签名 / 已知坑三要素 / C4 黑盒消费视角）
-- **INDEX**：记录格式与 expert-team Step 7 的模板一致，关键词行齐全
+- **INDEX**：记录格式与 expert-team Step 7 的模板一致，关键词行齐全；**基线一致性**：INDEX 的 git commit 与 agent.md/topic.md 出处行的基线一致（不一致 → P1，修复路径：expert-team 合并补全时刷新；禁止本 skill 代改——基线须真实对应资产创建/更新时刻，代填 HEAD 会掩盖未核对变更）
 - **测试信息**：`06-测试.md` 含测试可执行性（运行命令/环境依赖/已知失败）；`test/known-failures.md` 切面级标注（子专家/功能域各自标注）且每条含**执行方式**（运行该测试的完整命令）
 - error 级违规 → P1；warning 级违规 → P2（与轨道A 重叠的项不重复计，如 R6 符号真实性已由测试 4 覆盖）
 
@@ -157,3 +157,4 @@ description: 站在使用者视角审查 expert-team 产出的专家资产，核
 5. 删掉 INDEX 关键词行 → Step 1 报 P1 且自动补建
 6. 对专题审查 → 覆盖专题层 + 其下全部专家，层级违规可检出
 7. 显式声明审查 PROJECT.md 时 → 内容完整性可检出（服务清单/配套关系/架构图/数据流向图/运行环境）；默认不审时不被触发
+8. INDEX 缺 git commit 基线行 / INDEX 与 agent.md·topic.md 基线不一致 → 可检出（P1）且修复路径指向 expert-team 刷新，本 skill 不代改
