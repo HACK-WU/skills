@@ -238,7 +238,7 @@ flowchart TD
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
-| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 HTML 的学习材料，支持课程制/速览双模式 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF" |
+| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG 的学习材料，支持课程制/速览双模式、结课综合实战项目、实战经验与排障速查手册 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 | **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |
 
