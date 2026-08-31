@@ -202,8 +202,8 @@ flowchart TD
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 | **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memory-write | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
-| **[ki-memory-write](./skills/ki-memory-write/SKILL.md)** | 统一往 ki-search 写记忆的 SSOT，按类型分发：专题记忆（expert-team 调用）、接口信息、数据流与强关联（strong-relation 调用） | "写专题记忆"、"写 ki 记忆"、"ki memory write" |
-| **[ki-memory-lookup](./skills/ki-memory-lookup/SKILL.md)** | 统一查 ki-search 记忆的 SSOT，按类型分发：专题记忆（模块内路标）、接口信息（对外 API）、数据流（数据实体流向）与强关联（跨模块耦合） | "查记忆"、"查强关联"、"改A要连带改B吗"、"这个模块牵动哪些" |
+| **[ki-memory-write](./skills/ki-memory-write/SKILL.md)** | 统一往 ki-search 写记忆的 SSOT，按类型分发七类：专题记忆 / 接口信息 / 数据流 / 决策记忆（expert-team 调用）、强关联（strong-relation 调用）、错误库（debug / solution-capture 调用）、待生效变更（code-review 调用，纯 KB 不向量化） | "写专题记忆"、"写 ki 记忆"、"记录决策"、"登记待生效变更"、"ki memory write" |
+| **[ki-memory-lookup](./skills/ki-memory-lookup/SKILL.md)** | 统一查 ki-search 记忆的 SSOT，按类型分发七类：专题记忆（模块内路标）、接口信息（对外 API）、数据流（数据实体流向）、强关联（跨模块耦合）、决策记忆、错误库、待生效变更（待合入资产变更台账，只能目录直查） | "查记忆"、"查强关联"、"改A要连带改B吗"、"这个模块牵动哪些"、"这个报错见过吗" |
 
 ### 质量与优化
 
