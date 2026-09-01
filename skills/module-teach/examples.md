@@ -190,3 +190,57 @@ flowchart TD
 2. 再处理中风险区（notify → logger），确保接口契约不变
 3. 最后才动高风险区（state → transaction），需完整的回归测试覆盖
 ```
+
+## 示例 7：变更讲解片段（commit 类 · 精简模式）
+
+> 讲解对象：commit `a1b2c3d`「fix: 修复并发下重复下单」。以下为 `01-逐处解读.md` 的一个改动组片段，重点展示**意图分级标注**与**影响面实证**两条纪律。
+
+````markdown
+## 改动组 1：用唯一索引 + 幂等键堵住并发重复下单
+
+**改动模式**：从"应用层先查后插"改为"数据库唯一约束兜底"，3 个文件按同一意图联动。
+
+### `order/dao.py` — 订单表新增唯一索引
+
+**before → after**
+
+| | 代码 |
+|---|---|
+| before | `CREATE INDEX idx_order_user ON orders (user_id);` |
+| after | `CREATE UNIQUE INDEX uk_order_idem ON orders (user_id, idempotency_key);` |
+
+- **改了什么**：普通索引 → 唯一索引，把幂等性从"应用层判断"下沉到"数据库约束"
+- **为什么改**：`[显式]` commit message 原文——"并发下单时先查后插存在竞态，两个请求都能通过存在性检查"
+- **影响谁**：`OrderService.createOrder()`（[order/service.py](file://order/service.py#L88-L120)），经 `impact` 确认为唯一调用方；另有定时任务 `job/repair.py` 直接写表，**未同步改**（见文末待确认）
+- **范围**：`[专用]`（本项目订单幂等约定）
+
+章节来源：[order/dao.py](file://order/dao.py#L30-L45)
+
+### `order/service.py` — 捕获唯一键冲突转业务异常
+
+**before → after**
+
+| | 代码 |
+|---|---|
+| before | `if self.dao.exists(user_id, key): raise DuplicateOrder()`<br>`return self.dao.insert(order)` |
+| after | `try: return self.dao.insert(order)`<br>`except IntegrityError: raise DuplicateOrder()` |
+
+- **改了什么**：删掉"先查后插"，改为直接插入并捕获唯一键冲突
+- **为什么改**：`[显式]` 同上（commit message 明确说明竞态原因）
+- **影响谁**：`OrderController.create()`（[api/order.py](file://api/order.py#L42-L60)）需处理 `DuplicateOrder`——grep 确认该处已 catch，无遗漏
+- **范围**：`[通用]`（用数据库唯一约束做幂等是跨项目通用做法，见 [PostgreSQL 文档 · UNIQUE 约束](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS)）
+
+章节来源：[order/service.py](file://order/service.py#L88-L120)
+
+### 待确认
+
+| 调用方 | 为什么认为未覆盖 | 建议确认 |
+|--------|------------------|---------|
+| `job/repair.py` | `impact` 显示它直接 `INSERT INTO orders`，绕过了 `service.py` 的新逻辑 | 该任务是否会产生无 `idempotency_key` 的记录？若会，唯一索引会因 NULL 而失效 |
+````
+
+> **本例示范的三条纪律**：
+>
+> 1. **意图分级**：两处都是 `[显式]`（commit message 有原文可引）。若某处改动 message 未提、只能从代码反推，**必须标 `[推断]` 并写明推断依据**——把推断写成显式就是编造作者动机。
+> 2. **影响面实证**：`OrderService.createOrder()` 标了取证方式（`impact`）；`job/repair.py` 是**在 diff 之外发现的**调用方——只读 diff 看不到它。
+> 3. **只描述不裁决**：末表只写"建议确认"，**不写"这个改动有 bug / 不该合"**——判定权归 `code-review` 与用户。

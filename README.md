@@ -187,7 +187,7 @@ flowchart TD
 | **[code-survey](./skills/code-survey/SKILL.md)** | 设计前对代码库按需调研 13 个维度，ki 优先，≥2 个维度时 task-dispatch 并行搜索 | "代码调研"、"了解现有代码" |
 | **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速 | "生成代码骨架"、"搭骨架" |
 | **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证 | "编码实施"、"填充骨架"、"实现代码" |
-| **[module-teach](./skills/module-teach/SKILL.md)** | 按渐进流程分析讲解代码模块，区分通用与专用知识，产出含 Mermaid 图与 HTML 的学习材料 | "讲讲这个模块"、"学习代码"、"帮我搞懂这块代码" |
+| **[module-teach](./skills/module-teach/SKILL.md)** | 系统讲解代码，两类对象——**模块讲解**（能力大纲→代码 wiki→功能推演→数据流）与**变更讲解**（commit / PR / 任意 diff 范围：变更大纲→逐处解读→影响面→意图与权衡）。设正确性核对质量闸门与 course-reviewer 双视角评审，产出 Markdown 学习材料（Mermaid 内嵌 + 复杂图 SVG 独立文件） | "讲讲这个模块"、"学习代码"、"帮我搞懂这块代码"、"讲讲这个 commit/PR 做了什么"、"这个改动是什么意思" |
 
 ### 代码质量
 
