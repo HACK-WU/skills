@@ -32,7 +32,12 @@ curl.exe -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/s
 
 ```powershell
 .\skill-install.ps1 -Target C:\projects\my-app
+
+# 多个目标 / 多个 skill 用逗号分隔的数组语法（PowerShell 不允许同一参数重复指定）
+.\skill-install.ps1 -n module-teach,topic-teach -Target C:\projects\app,C:\projects\api
 ```
+
+> 注意：PowerShell 版多值参数**不能**像 bash 版那样重复传参（`-n a -n b` 会报 `ParameterAlreadyBound`），详见下文「命令与参数说明」的 PowerShell 注意。
 
 ## 直接使用 npx skills 安装
 
@@ -72,6 +77,8 @@ npx skills add HACK-WU/skills --list -y
 | `-t <path>` | 指定目标目录，可多次使用（与 `--file` 互斥；`update` 时限定同步范围） |
 | `--repo <owner/repo>` | 指定安装源仓库，可多次使用；`install`/`update` 指定安装源，`list` 按来源过滤；默认 `HACK-WU/skills` |
 | `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
+
+> **PowerShell 注意**：PowerShell 不允许同一参数重复指定（bash 式的 `-n a -n b` 会报 `ParameterAlreadyBound`）。`-Target` / `-NameFilter` / `-Repo` 的多个值一律用**逗号分隔的数组语法**单次传入，如 `-n code-review,design-craft`、`-Target C:\a,C:\b`。「可多次使用」仅适用于 bash 版 `skill-install.sh`。
 
 > 不带任何参数运行即显示完整帮助。默认操作为 `install`。
 
@@ -127,7 +134,7 @@ bash skill-install.sh remove code-review,design-craft
 
 | 方式 | 示例 |
 |------|------|
-| `-t` 直接指定（支持多个） | `-t ~/projects/app -t ~/projects/api` |
+| `-t` 直接指定（支持多个） | bash: `-t ~/projects/app -t ~/projects/api`；PowerShell: `-Target C:\a,C:\b`（不可重复传参） |
 | `--file` 配置文件 | `--file ~/my-targets.txt`（每行一个目录，`#` 注释） |
 | 不指定，读默认配置 | 家目录 `~/.skill-targets` |
 

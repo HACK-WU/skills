@@ -73,9 +73,9 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
     -h, --help  显示此帮助
 
 选项:
-  -Target <path>      目标目录（可多次使用，与 -ConfigFile 互斥；update 时限定同步范围）
+  -Target <paths>     目标目录，多个用逗号分隔（如 -Target C:\a,C:\b；与 -ConfigFile 互斥；update 时限定同步范围）
   -NameFilter <names> 指定 skill（逗号分隔，如 -NameFilter code-review,design-craft）
-  -Repo <owner/repo>  指定仓库（可多次使用；install/update 指定安装源，list 按来源过滤）
+  -Repo <owner/repo>  指定仓库，多个用逗号分隔（如 -Repo r1/skills,r2/skills；install/update 指定安装源，list 按来源过滤）
   -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
 
 默认配置文件（不指定 -Target / -ConfigFile 时读取）:
