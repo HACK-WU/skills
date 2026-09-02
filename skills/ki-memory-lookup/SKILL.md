@@ -41,7 +41,25 @@ description: 统一查询 ki-search 记忆的 SSOT（单一事实源）。封装
    - **两级导航**：① `ki_query_group(subtree="{根分组}")` 列出所有模块子分组 → ② `ki_query_group(groups="{根分组}/{模块名}", mode="full")` 列出该模块全部条目。**不要凭代码目录名猜模块名**（代码模块名与 ki 功能模块名常不一致，如 `order-service` vs `订单服务`）
    - ⚠️ **`groups` 必须显式 `mode="full"`**：默认 `mode="hot"` + `hot_count=5`，**只返回最热 5 条**，比语义检索漏得更多，且不报错（`auto_fallback` 静默兜底）。**`subtree` 不受此限制**（返回的是结构而非条目），也无需 `mode="full"`
    - ⚠️ **`subtree` 不支持逗号分隔多值**：传多值会被当整体模糊匹配，可能静默匹配到不相关 group；且近似匹配会跑偏，**须核对返回头部的 💡 提示行**确认实际解析出的路径
-   - 拿到清单后：**清单信息已够判断就不必逐条取**，不够再用 `ki_get_module_info`（`relation` 为精确匹配，从清单复制名称）取原文
+   - 拿到清单后：**清单信息已够判断就不必取原文**，要取就用 `ki_get_module_info`（`relation` / `relations` 均为**精确匹配，名称从清单复制**）
+   - ✅ **取多条一律用 `relations` 数组，一次提交**（与 `relation` 二选一）：同 group 下 **≤10 条**一次调用返回，逐条出 `results`，**部分失败不影响其他条**。**无论"全取"还是"筛出候选后取"，都用 `relations` 一次提交**，不该拆成 N 次单条调用
+     - ⚠️ **必须同 group**：`relations` 不接受跨 group，跨模块拉取按 group 分多次调用（每次一个 group）
+     - ⚠️ **≤10 条是硬上限，超限报错**：超过就按每批 10 条切分调用，**不要为省调用数丢条目**
+     - ⚠️ **逐条核对 `results`**：某条名称写错时**只该项失败、不整体报错**（批量是"部分失败不影响其他"），须确认每条都返回了内容，失败的补单条重试——否则会误以为"全取到了"
+     - ⚠️ **批量会放大 group 解析错误**：`group` 走模糊匹配，解析错了**整批结果全错却看似正常**——批量前用第 2 级返回的 group 路径原样复制，不手打
+   - **取多少条，取决于有没有「变更上下文」**（**双路并行 vs 全取**，强关联 / 决策记忆适用）：
+     - **有变更上下文**（`code-review` / `bug-impact-analysis`——手上有**完整** diff；**只有片段按"无"处理**）→ **双路并行**：A 筛候选（目标 **≤5 条**）+ B **同时** `ki_search` 语义检索 → **取并集**核对
+     - **无变更上下文**（改前评估 / 点查 / 设计阶段——只知模块名，不知改哪）→ **全取**：全量取后按方向/强度逐条核对（数量有限，成本可接受）
+     - **A 路的筛子按优先级取**（不是"看着像就挑"）：① **另一端**模块是否落在**本次改动涉及的模块集合**内 → ② 另一端模块名 / 功能域是否出现在 diff 触及的**文件 / 符号 / 调用链**里 → ③ relation 名与改动主题的字面 / 语义重合度
+       - ⚠️ **"是否涉及被改模块"不是筛子**：group 本身就是 `关联关系/{被改模块}`，**组内每条都已涉及该模块**，拿它筛一条都筛不掉。要筛的是**另一端**
+     - ⚠️ **筛不动就全取，别硬截到 5 条**：单模块改动、耦合方全在外部时，三条筛子可能全部失效——此时"挑 5 条"= 随机挑 5 条，漏审风险高于省下的开销。**≤5 是筛得动时的目标，不是硬配额**
+     - ⚠️ **B 路是并行补位，不是兜底**：与目录路**同时发起**；**B 路命中的条目即使不在 A 的候选里也纳入核对**
+     - ⚠️ **"0 命中才退回全取"不够——任一路为"空"都要警惕**：B 路返回空通常不是"没有相关"而是 query 没写好 → **改写 query 重试一次**，仍空则退回全取；A 空但 B 有 → 用 B 的结果，并回看 A 的筛选条件是否写歪
+     - ⚠️ **省不得的场景直接全取**：改动涉及**对外契约 / 公共 API / 数据 schema / 权限 / 资金 / 持久化**时，漏一条的代价远高于多取几条 → 跳过筛选
+     - ⚠️ **判据是"手上有无完整 diff"，不是 skill 名**：`request-guard` 常常只有一句口头提议（**无 diff**）、`bug-impact-analysis` 在「只有 Bug 描述、还没修复代码」时也**无 diff** → 走全取
+     - ⚠️ **决策记忆的 A 路筛选力弱于强关联**：relation 名不含代码符号，且决策约束的是**方案选择**而非具体符号；决策记忆里两路**权重接近**，B 路不能当配角
+     - **多模块改动时 A 路按 group 分组调用**（`relations` 不接受跨 group），各组独立筛后**合并取并集**
+     - **待生效变更不在此列**：需逐条判定结账且 `vector=false` 无语义路，**永远全取**
 4. **符号提准**：走 `ki_search` 时，query 中带上关键代码符号（类名/方法名/接口名等），显著提高检索准确度
 5. **降级不阻塞**：ki 不可用 / 无可用记录 / 未命中 → 静默跳过，不阻塞调用方主流程
 6. **记录以代码为准**：记忆是辅助参考，与代码实际不符时以代码为准
@@ -54,11 +72,11 @@ description: 统一查询 ki-search 记忆的 SSOT（单一事实源）。封装
 
 | 记忆类型 | 典型场景 | 策略 reference | 检索 API |
 |----------|----------|---------------|----------|
-| 强关联 | 改代码前感知牵动、code review、排错、设计 | [reference-strong-relation.md](reference-strong-relation.md) | **首选** `ki_query_group` 两级导航（`subtree` 找模块 → `groups`+`mode=full` 列条目，**全取不挑**）/ 辅助 `ki_search`（tags=relation） |
+| 强关联 | 改代码前感知牵动、code review、排错、设计 | [reference-strong-relation.md](reference-strong-relation.md) | **首选** `ki_query_group` 两级导航（`subtree` 找模块 → `groups`+`mode=full` 列条目；**按场景取：无变更上下文→全取 / 有→双路并行**）/ 辅助 `ki_search`（tags=relation；**有变更上下文时与目录路并行发起**） |
 | 专题记忆 | 知晓有此专家 + 关键入口 | [reference-topic-memory.md](reference-topic-memory.md) | `ki_search`（无 tags） |
 | 接口信息 | 查接口在哪定义/怎么调/谁提供 | [reference-api.md](reference-api.md) | `ki_search`（tags=api）/ `ki_query_group` |
 | 数据流 | 查某表/字段/消息谁写谁读 | [reference-data-flow.md](reference-data-flow.md) | `ki_search`（tags=data）/ `ki_query_group` |
-| 决策记忆 | 当初为什么这么定、砍了什么备选、该不该重新评估 | [reference-decision.md](reference-decision.md) | **首选** `ki_query_group` 两级导航（`subtree` 找模块 → `groups`+`mode=full` 列条目；**评审场景全看**）/ 辅助 `ki_search`（tags=decision） |
+| 决策记忆 | 当初为什么这么定、砍了什么备选、该不该重新评估 | [reference-decision.md](reference-decision.md) | **首选** `ki_query_group` 两级导航（`subtree` 找模块 → `groups`+`mode=full` 列条目；**按场景取：无变更上下文→全看 / 有→双路并行**）/ 辅助 `ki_search`（tags=decision；决策记忆里两路**权重接近**，非配角） |
 | 错误库 | 贴报错堆栈查"这个报错怎么解" | [reference-error.md](reference-error.md) | `ki_search`（tags=error，语义优先）/ `ki_query_group` |
 | 待生效变更 | 有没有已合入、该结账的变更登记 | [reference-pending-change.md](reference-pending-change.md) | **只能** `ki_query_group` 两级导航（`vector=false` 不进向量，`ki_search` 无效） |
 
@@ -71,11 +89,17 @@ description: 统一查询 ki-search 记忆的 SSOT（单一事实源）。封装
 | 路径 | 需要准备 |
 |------|----------|
 | **目录优先**（强关联 / 决策记忆 / 待生效变更） | 只需**根分组名**——由记忆类型决定，固定为 `关联关系` / `决策记录` / `待生效变更`。**模块名不需预提取**：由第 1 级 `subtree` 列出子分组后从中挑选，避免代码模块名与 ki 功能模块名不一致导致猜错 |
-| **语义检索**（其余四类 + 目录路径的兜底） | 提取**功能模块名 + 关键代码符号**（2-3 个）。代码符号按实际情况选取最能标识目标的一端——类名、方法名、接口名、函数名、枚举/常量名等；核心是选"写入记忆时会出现的、能唯一定位的符号"，带上能显著提高检索准确度 |
+| **语义检索**（其余四类 + 目录路径的**兜底 / 并行补位**） | 提取**功能模块名 + 关键代码符号**（2-3 个）。代码符号按实际情况选取最能标识目标的一端——类名、方法名、接口名、函数名、枚举/常量名等；核心是选"写入记忆时会出现的、能唯一定位的符号"，带上能显著提高检索准确度。**并行补位模式下还要带上本次改动的关键符号** |
 
 ### Step 2：按策略检索
 
-加载对应策略 reference，按其检索方式执行。**强关联、决策记忆、待生效变更先走「目录优先」两级导航**（① `subtree` 列出模块子分组 → ② `groups`+`mode="full"` 列举该模块全部条目 → 按 relation 名判断 → `ki_get_module_info` 取内容），`ki_search` 仅在两级都取不到时作语义补位——**待生效变更无此补位，目录查不到就是没有**。
+加载对应策略 reference，按其检索方式执行。**强关联、决策记忆、待生效变更先走「目录优先」两级导航**（① `subtree` 列出模块子分组 → ② `groups`+`mode="full"` 列举该模块全部条目 → 按 relation 名判断 → `ki_get_module_info` 取内容，**取多条用 `relations` 一次批量**）。
+
+`ki_search` 在其中的角色**按有无变更上下文分两种**（详见核心原则 3）：
+
+- **无变更上下文** → **兜底**：仅在两级导航都取不到时补位
+- **有变更上下文**（手上有 diff）→ **并行补位**：与目录路**同时发起**，与按名筛选的候选**取并集**
+- **待生效变更** → 无此角色（`vector=false` 无语义路，目录查不到就是没有）
 
 ### Step 3：利用结果
 
@@ -90,11 +114,11 @@ description: 统一查询 ki-search 记忆的 SSOT（单一事实源）。封装
 
 ## 更多资源
 
-- 强关联查询策略（**目录优先** `mode="full"` 精确列举 + **必须全取不挑**），参见 [reference-strong-relation.md](reference-strong-relation.md)
+- 强关联查询策略（**目录优先** `mode="full"` 精确列举 + **按场景：全取 / 双路并行筛选**），参见 [reference-strong-relation.md](reference-strong-relation.md)
 - 专题记忆查询策略，参见 [reference-topic-memory.md](reference-topic-memory.md)
 - 接口信息查询策略（tags=api 过滤），参见 [reference-api.md](reference-api.md)
 - 数据流查询策略（tags=data 过滤），参见 [reference-data-flow.md](reference-data-flow.md)
-- 决策记忆查询策略（**目录优先** `mode="full"` 精确列举 + 避免重复讨论已否决方案），参见 [reference-decision.md](reference-decision.md)
+- 决策记忆查询策略（**目录优先** `mode="full"` 精确列举 + **按场景：全看 / 双路并行筛选** + 避免重复讨论已否决方案），参见 [reference-decision.md](reference-decision.md)
 - 错误库查询策略（tags=error 过滤 + 贴整段堆栈检索），参见 [reference-error.md](reference-error.md)
 - 待生效变更查询策略（**只能**目录直查 + 结账判定 + 结账执行顺序），参见 [reference-pending-change.md](reference-pending-change.md)
 - 记忆的**写入**（SSOT），调用 `use_skill("ki-memory-write")`
