@@ -312,6 +312,7 @@ docs/         # 文档（安装指南 / req CLI / 需求文档）
 | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | 专为 AI 代理设计的前端框架技能集合，提升 AI 生成界面的设计质量 |
 | [QoderAI/better-harness](https://github.com/QoderAI/better-harness) | 审查与改进 AI 编码工作流的工具，本项目的 loop-discovery / harness-review 及证据状态纪律借鉴自此 |
 | [zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill) | 网络安全技能路由包，AI 自动路由 APK/二进制/前端 JS/CTF/渗透等约 25 种逆向与安全场景，按需自举工具链（jadx/Frida/IDA/BurpSuite）并沉淀实战经验库，内置授权范围确认机制，仅用于授权渗透测试与安全研究 |
+| [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | 面向科研的即用型 Agent Skills 库（163+ 技能），覆盖生物信息/基因组、化学与药物发现、蛋白质组、临床证据、神经科学、机器学习、材料/物理、工程仿真、数据分析可视化、实验室自动化、多组学、蛋白质工程、科学交流、科学数据库（100+ 库）、基础设施、研究方法与规划、法规标准等；兼容 Cursor/Claude Code/Codex/Antigravity 等开放 Agent Skills 标准 |
 
 > 如果你有好的技能项目，欢迎提 PR 添加到这里。
 
