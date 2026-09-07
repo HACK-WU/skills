@@ -242,6 +242,37 @@ flowchart TD
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 | **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |
 
+### 可选技能（依赖第三方）
+
+`skills-optional/` 存放**依赖第三方 skill 或模块**才能工作的技能：技能本身由本仓库维护，但离开外部依赖就没有意义，因此不参与默认全量安装。
+
+与 `skills/` 的区别：
+
+| 目录 | 外部依赖 | 默认安装 | 触发方式 |
+|---|---|---|---|
+| `skills/` | 无（自包含） | ✅ | 按 description 自动触发 |
+| `skills-optional/` | 依赖第三方 skill / 模块 | ❌ 需显式指定 | 建议仅显式调用 |
+
+**入驻约定**：
+
+1. 必须声明依赖哪个第三方 skill / 模块、缺失时如何提示用户
+2. 缺失依赖时优雅降级，不得静默失败；**提示用户自行安装，不自动安装**
+3. 建议仅显式调用——第三方 skill 的 description 常含同类关键词，自动触发易撞车
+4. 一个技能一个目录，目录名 = 技能名
+
+**已知限制（待 `skill-install.sh` 实现）**：设计上全量安装应跳过 `skills-optional/`，该排除逻辑尚未实现。且 `npx skills` 会自动发现所有含 `SKILL.md` 的目录，绕过安装器直接使用 `npx skills add HACK-WU/skills` 时本目录技能**仍会被安装**。
+
+| 技能 | 第三方依赖 | 作用 |
+|------|-----------|------|
+| **[archify-svg-export](./skills-optional/archify-svg-export/SKILL.md)** | [archify](https://github.com/tt-a1i/archify) + 本地 Chrome/Chromium | 把 archify 生成的图表 HTML 无头导出为 SVG，复用其内置的官方导出代码。**不自动触发**，仅显式调用 |
+
+安装依赖示例（archify，需用户自行执行）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh | \
+  bash -s -- --repo tt-a1i/archify
+```
+
 <a id="rules"></a>
 ## 📜 规则
 
@@ -280,7 +311,8 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/insta
 ## 🗂️ 项目结构
 
 ```
-skills/       # AI 技能定义（技能一览见上）
+skills/           # AI 技能定义（技能一览见上）
+skills-optional/  # 依赖第三方的可选技能（不默认安装，见"可选技能"节）
 rules/        # 通用 AI 规则（详见"规则"节）
 agents/       # 子 Agent 提示词与专属规则
 scripts/      # 一键安装器 + 需求管理 CLI（req）
