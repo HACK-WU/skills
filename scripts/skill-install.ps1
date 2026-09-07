@@ -8,6 +8,7 @@
 #
 # 用法:
 #   .\skill-install.ps1 install -Target C:\projects\app
+#   .\skill-install.ps1 install -Optional -Target C:\projects\app    # 只装可选技能
 #   .\skill-install.ps1 update [-Target ...] [-NameFilter names] [-Repo owner/repo]
 #   .\skill-install.ps1 remove code-review
 #   .\skill-install.ps1 list [-Repo owner/repo]
@@ -31,6 +32,8 @@ param(
 
     [string[]]$Repo,
 
+    [switch]$Optional,
+
     [switch]$Help
 )
 
@@ -42,6 +45,13 @@ else {
     # 支持逗号分隔多仓库（-Repo a,b）
     $Repo = $Repo | ForEach-Object { $_ -split ',' } | Where-Object { $_ -ne '' }
     $RepoSpecified = $true
+}
+
+# -Optional 别名：等价于 -Repo <可选技能目录>（依赖第三方 skill/模块的技能）
+$OptionalRepoUrl = "https://github.com/HACK-WU/skills/tree/master/skills-optional"
+if ($Optional) {
+    if ($RepoSpecified) { $Repo += $OptionalRepoUrl }
+    else { $Repo = @($OptionalRepoUrl); $RepoSpecified = $true }
 }
 $Agent = "openclaw"
 # 兼容 Windows（USERPROFILE）与 Unix（HOME）
@@ -76,6 +86,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   -Target <paths>     目标目录，多个用逗号分隔（如 -Target C:\a,C:\b；与 -ConfigFile 互斥；update 时限定同步范围）
   -NameFilter <names> 指定 skill（逗号分隔，如 -NameFilter code-review,design-craft）
   -Repo <owner/repo>  指定仓库，多个用逗号分隔（如 -Repo r1/skills,r2/skills；install/update 指定安装源，list 按来源过滤）
+  -Optional           别名，等价于 -Repo $OptionalRepoUrl
+                      （可选技能目录：依赖第三方 skill/模块的技能）
   -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
 
 默认配置文件（不指定 -Target / -ConfigFile 时读取）:
@@ -87,6 +99,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 示例:
   .\skill-install.ps1 -Target C:\projects\app
   .\skill-install.ps1 install -NameFilter code-review,design-craft -Target C:\projects\app
+  .\skill-install.ps1 install -Optional -Target C:\projects\app    # 只装可选技能
+  .\skill-install.ps1 install -Repo HACK-WU/skills -Optional -Target C:\projects\app  # 主技能+可选技能
   .\skill-install.ps1 update -Target C:\projects\app
   .\skill-install.ps1 update -NameFilter code-review -Repo HACK-WU/skills
   .\skill-install.ps1 remove code-review

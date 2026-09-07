@@ -244,14 +244,14 @@ flowchart TD
 
 ### 可选技能（依赖第三方）
 
-`skills-optional/` 存放**依赖第三方 skill 或模块**才能工作的技能：技能本身由本仓库维护，但离开外部依赖就没有意义，因此不参与默认全量安装。
+`skills-optional/` 存放**依赖第三方 skill 或模块**才能工作的技能：技能本身由本仓库维护，但离开外部依赖就没有意义，因此单独安装，不混在主技能里分发。
 
 与 `skills/` 的区别：
 
 | 目录 | 外部依赖 | 默认安装 | 触发方式 |
 |---|---|---|---|
 | `skills/` | 无（自包含） | ✅ | 按 description 自动触发 |
-| `skills-optional/` | 依赖第三方 skill / 模块 | ❌ 需显式指定 | 建议仅显式调用 |
+| `skills-optional/` | 依赖第三方 skill / 模块 | ❌ 用 `--optional` 单独安装 | 建议仅显式调用 |
 
 **入驻约定**：
 
@@ -260,7 +260,13 @@ flowchart TD
 3. 建议仅显式调用——第三方 skill 的 description 常含同类关键词，自动触发易撞车
 4. 一个技能一个目录，目录名 = 技能名
 
-**已知限制（待 `skill-install.sh` 实现）**：设计上全量安装应跳过 `skills-optional/`，该排除逻辑尚未实现。且 `npx skills` 会自动发现所有含 `SKILL.md` 的目录，绕过安装器直接使用 `npx skills add HACK-WU/skills` 时本目录技能**仍会被安装**。
+**安装**（`--optional` 是 `--repo https://github.com/HACK-WU/skills/tree/master/skills-optional` 的别名；PowerShell 用 `-Optional`）：
+
+```bash
+bash scripts/skill-install.sh install --optional -t /path/to/project
+```
+
+**已知限制**：不带参数的默认安装仍指向仓库根 `HACK-WU/skills`，会连本目录一起装上。要真正排除，需把默认源改为 `.../tree/master/skills`（尚未改动）。
 
 | 技能 | 第三方依赖 | 作用 |
 |------|-----------|------|

@@ -20,7 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 
 ## 安装（Windows / PowerShell）
 
-参数映射：`-t` → `-Target`，`-n` → `-NameFilter`，`--file` → `-ConfigFile`。
+参数映射：`-t` → `-Target`，`-n` → `-NameFilter`，`--file` → `-ConfigFile`，`--optional` → `-Optional`。
 
 一键下载并执行（PowerShell 中 `curl` 是 `Invoke-WebRequest` 的别名，需使用 `curl.exe` 调用真正的 curl）：
 
@@ -75,7 +75,8 @@ npx skills add HACK-WU/skills --list -y
 |------|------|
 | `-n <names>` | 指定 skill，多个用逗号分隔（如 `-n code-review,design-craft`） |
 | `-t <path>` | 指定目标目录，可多次使用（与 `--file` 互斥；`update` 时限定同步范围） |
-| `--repo <owner/repo>` | 指定安装源仓库，可多次使用；`install`/`update` 指定安装源，`list` 按来源过滤；默认 `HACK-WU/skills` |
+| `--repo <owner/repo>` | 指定安装源仓库，可多次使用；`install`/`update` 指定安装源，`list` 按来源过滤；默认 `HACK-WU/skills`。也接受仓库子路径 URL（如 `https://github.com/HACK-WU/skills/tree/master/skills-optional`），只装该子目录下的 skill |
+| `--optional` | `--repo https://github.com/HACK-WU/skills/tree/master/skills-optional` 的别名，用于安装依赖第三方 skill/模块的**可选技能**；可与 `--repo` 同时使用 |
 | `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
 
 > **PowerShell 注意**：PowerShell 不允许同一参数重复指定（bash 式的 `-n a -n b` 会报 `ParameterAlreadyBound`）。`-Target` / `-NameFilter` / `-Repo` 的多个值一律用**逗号分隔的数组语法**单次传入，如 `-n code-review,design-craft`、`-Target C:\a,C:\b`。「可多次使用」仅适用于 bash 版 `skill-install.sh`。

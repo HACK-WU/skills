@@ -27,6 +27,9 @@ LOCK_FILE="${MANAGE_DIR}/skills-lock.json"
 TARGETS_FILE="${MANAGE_DIR}/targets.list"
 DEFAULT_TARGETS_FILE="$HOME/.skill-targets"
 
+# 可选技能目录：存放依赖第三方 skill/模块的技能（--optional 的别名目标）
+OPTIONAL_REPO_URL="https://github.com/HACK-WU/skills/tree/master/skills-optional"
+
 # 颜色
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -64,6 +67,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   -t <path>            目标目录（可多次使用，与 --file 互斥；update 时限定同步范围）
   -n <names>           指定 skill（逗号分隔，如 -n code-review,design-craft）
   --repo <owner/repo>  指定仓库（可多次使用；install/update 指定安装源，list 按来源过滤）
+  --optional           别名，等价于 --repo $OPTIONAL_REPO_URL
+                       （可选技能目录：依赖第三方 skill/模块的技能）
   --file <path>        从配置文件读取目标目录（与 -t 互斥）
   -h, --help           显示此帮助
 
@@ -77,6 +82,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
 示例:
   bash skill-install.sh -t ~/projects/app
   bash skill-install.sh install -n code-review,design-craft -t ~/projects/app
+  bash skill-install.sh install --optional -t ~/projects/app    # 只装可选技能
+  bash skill-install.sh install --repo HACK-WU/skills --optional -t ~/app  # 主技能+可选技能
   bash skill-install.sh update -t ~/projects/app
   bash skill-install.sh update -n code-review --repo HACK-WU/skills
   bash skill-install.sh remove code-review
@@ -112,6 +119,11 @@ while [ $# -gt 0 ]; do
             REPOS_SPECIFIED=1
             ;;
         --repo=*) REPOS+=("${arg#*=}"); REPOS_SPECIFIED=1 ;;
+        --optional)
+            # 别名，等价于 --repo "$OPTIONAL_REPO_URL"
+            REPOS+=("$OPTIONAL_REPO_URL")
+            REPOS_SPECIFIED=1
+            ;;
         --file)
             shift
             [ $# -eq 0 ] && error "--file 需要参数"
