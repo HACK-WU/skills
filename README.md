@@ -239,7 +239,7 @@ flowchart TD
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
-| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG 的学习材料，支持课程制/速览双模式、结课综合实战项目、实战经验与排障速查手册、场景解法库 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
+| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG（含数据流全链路图）的学习材料，支持课程制/速览双模式、大纲教学效果推演、结课综合实战项目、实战经验与排障速查手册、场景解法库 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 | **[web-index](./skills/web-index/SKILL.md)** | 给需要反复查阅的网站/文档站建本地网页索引：抓 `llms.txt` / `sitemap.xml` / 导航，产出「我要做什么 → 去哪一页（含锚点）」的路由表落到 `.web-index/{site}/`（INDEX.md 登记表 + index.md 总表 + topics/ 分区）。双模式：已索引站点查表即走（消费模式，不重跑脚本），未索引站点才采集建库（建造模式）。只索引链接与用途、不镜像正文，一次性快照，配套抓取脚本 | "给这个网站建个索引"、"整理一下这个文档的链接"、"网页索引"、"web index"、"这个站后面要反复参考"、"查一下网页索引" |
 | **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |
