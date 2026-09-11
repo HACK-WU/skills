@@ -144,5 +144,5 @@ Step 0 环境检测 → Step 1 定位模块 → Step 2 识别关联 → Step 3 �
 - **查询**强关联记录，调用 `use_skill("ki-memory-lookup")`
 - **写入**强关联记录（写 ki 动作），调用 `use_skill("ki-memory-write")`
 - 强关联识别细则（高概率/低概率模式），参见 [reference.md](reference.md)
-- 模块专家资产与专题记忆，参见 [expert-team](../expert-team/SKILL.md)
-- 查找复用专家资产，参见 [expert-lookup](../expert-lookup/SKILL.md)
+- 模块专家资产与专题记忆，参见 `use_skill("expert-team")`
+- 查找复用专家资产，参见 `use_skill("expert-lookup")`

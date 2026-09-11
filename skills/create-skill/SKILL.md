@@ -242,6 +242,8 @@ PDF（便携式文档格式）文件是一种常见的文件格式，包含文�
 
 **保持引用层级为一层** - 从 SKILL.md 直接链接到参考文件。深层嵌套引用可能导致部分读取。
 
+> **只适用于同 skill 内**：引用**其他 skill** 时不要写相对路径（skill 可被单独安装，兄弟目录不保证存在），改用 `use_skill("<skill>")` 形式——见「应避免的反模式 6」。
+
 ### 4. 设置适当的自由度
 
 根据任务的脆弱性匹配具体程度：
@@ -433,6 +435,25 @@ python scripts/validate.py fields.json
 ### 5. 模糊的技能名称
 - ✅ 正确：`processing-pdfs`、`analyzing-spreadsheets`
 - ❌ 避免：`helper`、`utils`、`tools`
+
+### 6. 跨 skill / 跨 agent 引用写成相对路径
+
+skill 与 agent 都是**可被单独安装 / 加载**的单元，兄弟目录**不保证存在**——相对路径在运行时可能指向虚空。
+
+- ❌ 避免：`[web-index SKILL.md](../web-index/SKILL.md)「规模判断」`、`按 agents/course-reviewer/agent.md 的维度评审`
+- ✅ 使用：`use_skill("web-index")` 的「规模判断」、`use_agent(course-reviewer)` 的维度
+
+**分界线（关键）**：
+
+| 引用方向 | 写法 | 原因 |
+|---|---|---|
+| **同 skill 内**（SKILL.md ↔ `reference.md` / `examples.md` / `assets/`） | 相对路径 ✅ | 它们随 skill 一起分发，永远同级 |
+| **跨 skill** | `use_skill("<skill>")` ✅ | 对方目录不保证存在 |
+| **跨 agent**（引用某个子 agent 的能力 / 维度定义） | `use_agent(<agent-name>)` ✅ | 不写文件路径、不重复 agent 内容 |
+
+**目标不是对方 SKILL.md 时**（而是其 `reference.md`、`templates/` 等）：写成 `use_skill("<skill>")` → 其 `reference.md` ——`use_skill` 只加载对方 SKILL.md，再由它导向细则文件。
+
+> **约定 SSOT**：skill 侧见本条；**agent 侧见 `use_skill("create-sub-agent")` 的「其他 skill 如何引用本 agent」**（`use_agent(<agent-name>)` 且不带引号），本条不重复其细节。
 
 ---
 

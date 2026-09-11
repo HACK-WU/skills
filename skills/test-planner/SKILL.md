@@ -493,5 +493,5 @@ description: 读取测试来源文档，自动生成结构化测试计划。支�
 - 测试策略定义（需求文档模式）：`references/test-strategies.md`
 - 设计文档模式策略：[strategies/design.md](strategies/design.md)
 - API 设计模式策略：[strategies/api.md](strategies/api.md)
-- 测试落盘位置判断方式参考：[expert-team](../expert-team/SKILL.md)（测试信息采集 / 切面级标注 / 四态可执行性 / 测试不可运行跳过）
+- 测试落盘位置判断方式参考：`use_skill("expert-team")`（测试信息采集 / 切面级标注 / 四态可执行性 / 测试不可运行跳过）
 - 对比例子：`references/examples/`

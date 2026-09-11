@@ -49,7 +49,7 @@ description: 站在使用者视角审查 expert-team 产出的专家资产，核
 
 ### Step 1：结构清点
 
-对照 expert-team 的组织模型逐项核对（规范原文见 [expert-team/SKILL.md](../expert-team/SKILL.md)）：
+对照 expert-team 的组织模型逐项核对（规范原文见 `use_skill("expert-team")`）：
 
 | 检查项 | 要求 | 级别 |
 |---|---|---|

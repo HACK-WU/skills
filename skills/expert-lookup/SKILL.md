@@ -516,7 +516,7 @@ description: 查找并复用已沉淀的"业务专家"资产包（由 expert-tea
 
 ## 更多资源
 
-- 专家资产的生成与结构规范（含子专家机制），参见 [expert-team](../expert-team/SKILL.md)
-- 契约层文档模板（C0/C1/C2/C3/C4）与 CR1-CR9 规则、实现层切面 Wiki 格式，参见 [expert-team/reference.md](../expert-team/reference.md)
-- 项目全局资产（PROJECT.md）模板独立存储，参见 [expert-team/templates/PROJECT.md.template](../expert-team/templates/PROJECT.md.template)（了解 PROJECT.md 应包含的字段与结构）
-- 多专家并行模式创建子 agent 的调度能力，参见 [task-dispatch](../task-dispatch/SKILL.md)
+- 专家资产的生成与结构规范（含子专家机制），参见 `use_skill("expert-team")`
+- 契约层文档模板（C0/C1/C2/C3/C4）与 CR1-CR9 规则、实现层切面 Wiki 格式，参见 `use_skill("expert-team")` → 其 `reference.md`
+- 项目全局资产（PROJECT.md）模板独立存储，参见 `use_skill("expert-team")` → 其 `templates/PROJECT.md.template`（了解 PROJECT.md 应包含的字段与结构）
+- 多专家并行模式创建子 agent 的调度能力，参见 `use_skill("task-dispatch")`

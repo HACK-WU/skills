@@ -495,5 +495,5 @@ AI 自主推导（依据：需求/设计文档 → 模块代码 → 对外契约
 
 - 指标推导细则、三层证据执行细节、commit 采集、场景观察记录模板：[reference.md](reference.md)
 - 完整验收示例（模块级 + 功能级）：[examples.md](examples.md)
-- L3 执行依赖：[e2e-testing](../e2e-testing/SKILL.md)
-- L1 落盘位置判断参考：[test-planner](../test-planner/SKILL.md)
+- L3 执行依赖：`use_skill("e2e-testing")`
+- L1 落盘位置判断参考：`use_skill("test-planner")`

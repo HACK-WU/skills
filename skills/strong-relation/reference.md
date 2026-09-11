@@ -1,6 +1,6 @@
 # 强关联记录参考
 
-本 skill 的**识别细则**。主指令见 SKILL.md。ki 写入细节（API/分组/tags/模板/格式硬约束）下沉到 `ki-memory-write` 的强关联策略，见 [ki-memory-write/reference-strong-relation.md](../ki-memory-write/reference-strong-relation.md)；查询强关联记录调用 `use_skill("ki-memory-lookup")`。
+本 skill 的**识别细则**。主指令见 SKILL.md。ki 写入细节（API/分组/tags/模板/格式硬约束）下沉到 `ki-memory-write` 的强关联策略，见 `use_skill("ki-memory-write")` → 其 `reference-strong-relation.md`；查询强关联记录调用 `use_skill("ki-memory-lookup")`。
 
 ## 强关联识别细则
 

@@ -368,4 +368,4 @@ tests/e2e/experience/                 # 动态体验产物根目录
 
 - 各 Step 类型完整契约、Context 解析、安全门禁细节：[reference.md](reference.md)
 - 完整示例旅程（注册下单 + UI 混合）：[examples.md](examples.md)
-- HTTP API 步骤约定来源：[api-testing](../api-testing/SKILL.md)
+- HTTP API 步骤约定来源：`use_skill("api-testing")`

@@ -654,7 +654,7 @@ description: 派出多专家子 agent 并行深挖单个业务模块，产出含
 
 ### Step 6：Auto-Review 评估审核
 
-Step 5 自检通过后，调用 [auto-review](../auto-review/SKILL.md) skill 对全部专家资产（含子专家）进行质量审查与优化闭环。**auto-review 重点审查 Step 5 不覆盖的维度**（逻辑一致性、可读性、内容质量、引用完整性），格式自检已在 Step 5 完成，不在此重复。
+Step 5 自检通过后，调用 `use_skill("auto-review")` 对全部专家资产（含子专家）进行质量审查与优化闭环。**auto-review 重点审查 Step 5 不覆盖的维度**（逻辑一致性、可读性、内容质量、引用完整性），格式自检已在 Step 5 完成，不在此重复。
 
 1. **审查范围**：专家根目录下所有文件，包括：
    - `agent.md`（专家名片）
@@ -842,6 +842,6 @@ Step 5 自检通过后，调用 [auto-review](../auto-review/SKILL.md) skill 对
 - 各切面调研清单与 code-to-wiki 格式产出模板 + 契约层文档模板（C0/C1/C2/C3/C4）+ 子专家创建指引，参见 [reference.md](reference.md)
 - 项目全局资产（PROJECT.md）模板**独立存储**，参见 [templates/PROJECT.md.template](templates/PROJECT.md.template)（创建时直接读取该文件，避免扫描 reference.md）
 - 实现层格式源自 `code-to-wiki` skill 的规范（该 skill 不在本技能库中）；本 skill 已将所需规则完整内嵌为 R1–R7，自检不依赖外部文档与工具
-- 查找并复用本 skill 生成的专家资产（含多专家加载 + 增量更新），参见 [expert-lookup](../expert-lookup/SKILL.md)
+- 查找并复用本 skill 生成的专家资产（含多专家加载 + 增量更新），参见 `use_skill("expert-lookup")`
 - 记录本 skill 产出模块与外部的强关联（Step 8.5），调用 `use_skill("strong-relation")`
 - 写专题记忆（Step 8）、接口信息（Step 8.3）、数据流（Step 8.4）与强关联（Step 8.5）的 ki 写入动作，统一走 `use_skill("ki-memory-write")`
