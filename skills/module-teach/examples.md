@@ -70,6 +70,15 @@
 | 分阶段固化产物 | 可中断、可续学、可反复查阅 | 比一次性问答慢；产物会占仓库空间 |
 | 设正确性核对闸门 | 结论回读代码校验，幻觉难存活 | 多一道流程，讲解周期变长 |
 
+## 2. 讲解路线
+
+| 顺序 | 讲什么 | 对应产物 |
+|---|---|---|
+| 1 | 这个模块能做什么（职责与能力） | 00-能力大纲.md |
+| 2 | 它长什么样（结构与依赖） | 01-代码wiki.md |
+| 3 | 怎么跑起来（行为与边界） | 03-功能推演.md |
+| 4 | 数据怎么流 | 05-数据流.md |
+
 ## 6. 数据流
 
 ```mermaid
@@ -240,6 +249,12 @@ flowchart TD
 - **范围**：`[通用]`（用数据库唯一约束做幂等是跨项目通用做法，见 [PostgreSQL 文档 · UNIQUE 约束](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS)）
 
 章节来源：[order/service.py](file://order/service.py#L88-L120)
+
+**术语对标**
+
+| 项目叫法（人话） | 业界标准叫法 | 代码位置 | 代价 / 注意事项 |
+|---|---|---|---|
+| 用唯一索引堵重复下单 | 幂等键（Idempotency Key）+ 唯一约束兜底 | [order/dao.py](file://order/dao.py#L30-L45) | 幂等从应用层下沉到 DB；代价是 NULL 不参与唯一性约束（见「待确认」） |
 
 ### 待确认
 
