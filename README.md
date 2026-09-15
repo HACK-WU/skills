@@ -169,7 +169,7 @@ flowchart TD
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
-| **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
+| **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化；快速实现路径默认交接 `plan-track` 建档 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
 | **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
 | **[work-breakdown](./skills/work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
@@ -239,7 +239,7 @@ flowchart TD
 | **[migrate-to-codehub](./skills/migrate-to-codehub/SKILL.md)** | 从其他项目提取优秀设计，迁移到 CodeHub | "迁移到 CodeHub" |
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
-| **[plan-track](./skills/plan-track/SKILL.md)** | 复杂任务的执行台账：`.plans/` 下建 plan.md（目标/完成判据/工作项+证据）与 checklist.md（自评审清单），执行中按证据更新、完成后逐条自评审；由 plan-track 规则识别场景后调用（也可用户直接要求），纯文件操作、零外部依赖、不绑定上下游 | "列个计划"、"创建计划文档"、"跟踪进度"、"做完自检" |
+| **[plan-track](./skills/plan-track/SKILL.md)** | 复杂任务的执行台账：`.plans/` 下建 plan.md（目标/完成判据/工作项+证据）与 checklist.md（自评审清单），执行中按证据更新、完成后逐条自评审；由 plan-track 规则识别场景后调用（也可用户直接要求，或由上游 skill 交接，如 requirement-mining 快速实现路径），纯文件操作、零外部依赖、不绑定上下游 | "列个计划"、"创建计划文档"、"跟踪进度"、"做完自检" |
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG（含数据流全链路图）的学习材料，支持课程制/速览双模式、大纲教学效果推演、结课综合实战项目、实战经验与排障速查手册、场景解法库 | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 | **[web-index](./skills/web-index/SKILL.md)** | 给需要反复查阅的网站/文档站建本地网页索引：抓 `llms.txt` / `sitemap.xml` / 导航，产出「我要做什么 → 去哪一页（含锚点）」的路由表落到 `.web-index/{site}/`（INDEX.md 登记表 + index.md 总表 + topics/ 分区）。双模式：已索引站点查表即走（消费模式，不重跑脚本），未索引站点才采集建库（建造模式）。只索引链接与用途、不镜像正文，一次性快照，配套抓取脚本 | "给这个网站建个索引"、"整理一下这个文档的链接"、"网页索引"、"web index"、"这个站后面要反复参考"、"查一下网页索引" |
@@ -293,7 +293,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[ki-search-first](./rules/ki-search-first.md)** | 项目记忆优先规则，遇事不决 ki-search；已定位要改的代码/已修改时必查强关联关系（ki-memory-lookup） | 任何任务/问题开始前、改代码时 |
 | **[proactive-extension](./rules/proactive-extension.md)** | 解决小问题后主动联想关联功能，主动补充优化而非等用户逐个提出 | 解决小问题/小需求后 |
 | **[temp-and-timeout](./rules/temp-and-timeout.md)** | 调试/验证用临时文件统一建在 workspace temp 目录且只增不删；耗时命令加 timeout 防挂起 | 调试/验证涉及临时文件、执行耗时命令时 |
-| **[plan-track](./rules/plan-track.md)** | **plan 模式的场景识别与触发**：六类场景（多文件 / 多模块 / 多阶段 / 跨轮续做 / 需中途可见进度 / 前置文档落地）识别到即调用 plan-track skill；并定义进入后的节奏与四条不可妥协，执行细则以 skill 为准 | 复杂任务开始前、执行中、完成后 |
+| **[plan-track](./rules/plan-track.md)** | **plan 模式的场景识别与触发**：七类场景（多文件 / 多模块 / 多阶段 / 跨轮续做 / 需中途可见进度 / 前置文档落地 / 上游 skill 交接）识别到即调用 plan-track skill；并定义进入后的节奏与四条不可妥协，执行细则以 skill 为准 | 复杂任务开始前、执行中、完成后 |
 | **[task-delegation](./agents/sub-agent/rules/task-delegation.md)** | 任务分级委派，低认知密度任务默认委派子 Agent，主 Agent 聚焦核心决策与核心代码 | 默认生效 |
 | **[disable-task-delegation](./agents/sub-agent/rules/disable-task-delegation.md)** | 关闭任务分级委派，主 Agent 退回全包模式 | 需停用委派机制时 |
 
