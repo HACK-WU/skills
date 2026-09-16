@@ -6,6 +6,7 @@
 
 - [示例 1：速览模式 overview.md 成品](#示例-1速览模式-overviewmd-成品)
 - [示例 2：课程制单课 lesson-02 成品（知识点粒度）](#示例-2课程制单课-lesson-02-成品知识点粒度)
+- [示例 2b：应用实战独立文件与索引（4.2 正文的落盘形态）](#示例-2b应用实战独立文件与索引42-正文的落盘形态)
 - [示例 3：学习档案（知识点级进度 + 评审记录 + 大纲调整）](#示例-3学习档案知识点级进度--评审记录--大纲调整)
 - [示例 4：学习路径总览与 SVG 用法](#示例-4学习路径总览与-svg-用法)
 - [示例 5：B-1 数据结构内部结构 SVG（哈希表）](#示例-5b-1-数据结构内部结构-svg哈希表)
@@ -295,12 +296,19 @@ kubectl logs nginx-demo -c log-agent
 
 ## 第四幕：实操验证
 
+### 4.1 机制验证
+
 ```bash
 kubectl apply -f pod.yaml && kubectl get pods
 # 预期输出：nginx-demo  1/1  Running
 ```
 
 > ✅ 回扣场景：一个 Pod 把多个容器"包"在一起调度，服务上线后多个容器天然共享网络与存储。
+
+### 4.2 应用实战：给 Web 容器配上"健康检查 + 日志采集"（入口）
+
+> 🎯 **本课应用实战独立成篇**：[第 2 课实战 · 健康检查 + 日志采集](../../../应用实战/02-Pod.md)
+> 含分步设计图（每步一张：这一版长什么样、比上一版改了什么）与"基础 → 综合"的完整演进与代码；通览全部：📚 [应用实战索引](../../../应用实战/INDEX.md)
 
 ## 第五幕：体系收束
 
@@ -362,8 +370,108 @@ flowchart LR
 
 ➡️ **下一课**：[课 3：Deployment](../../2-进阶实战/lessons/lesson-03-Deployment.md)
 
-📚 **返回目录**：[课程目录](../../02-课程目录.md)
+📚 **返回目录**：[课程目录](../../../02-课程目录.md)
 ```
+
+---
+
+## 示例 2b：应用实战独立文件与索引（4.2 正文的落盘形态）
+
+> 课内 4.2 只留入口块（见示例 2）；实战正文独立成篇于 `应用实战/`——下面是同一份实战的完整落盘形态与一键跳转索引（片段）。
+
+### `应用实战/02-Pod.md`（成品）
+
+````markdown
+# 应用实战 · Pod
+
+> 对应课程：[第 2 课：Pod](../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md) ｜ 覆盖知识点：Pod 概念、Pod YAML、多容器共享
+> 定位：**会用，不上生产**——课里学完，在这里动手。
+> 📖 结论已按官方文档核对（核对于 2026-09 ｜ 来源：kubernetes.io/docs）
+
+## 场景 1：给 Web 容器配上"健康检查 + 日志采集"
+
+**场景**：服务"跑起来了"不等于"能上线"——进程挂了没人知道、容器删了日志就没了。用本课学的 Pod 能力补上这两件事。
+
+**全貌一句话**：生产上还会用 DaemonSet 收全集群日志（属 Deployment 之后的课），本课只需 Pod 内做到自包含。
+
+**① 基础实现（能跑但幼稚）**：
+
+![基础版设计：单容器裸 Pod](./assets/app-step1-pod-health-log.svg)
+
+> 看图：这一版只有一个业务容器——没有"自检"，也没有"日志出口"。
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+spec:
+  containers:
+    - name: web
+      image: nginx:1.27
+```
+
+> ⚠️ **它的问题**：① 进程卡死时 k8s 毫无察觉，kubelet 还会继续把流量转进来；② 日志只在容器文件系统里，容器一重建就丢了。
+
+**② 综合实现（被问题逼出来的下一步）**：
+
+![综合版设计：探针 + sidecar（高亮 = 本步新增）](./assets/app-step2-pod-health-log.svg)
+
+> 看图：与上一张相比新增了两处（高亮）——就绪探针（没通过就不接流量）和日志采集容器（与 web 共享卷，实时读日志）。
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+spec:
+  containers:
+    - name: web
+      image: nginx:1.27
+      volumeMounts:
+        - name: logs          # 日志目录挂给采集容器
+          mountPath: /var/log/nginx
+      readinessProbe:         # 就绪探针：没通过就不接流量
+        httpGet: { path: /, port: 80 }
+    - name: log-collector     # sidecar：与 web 共享卷，实时读日志
+      image: busybox:1.36
+      command: ["sh", "-c", "tail -f /logs/access.log"]
+      volumeMounts:
+        - name: logs
+          mountPath: /logs
+  volumes:
+    - name: logs
+      emptyDir: {}
+```
+
+> 🎯 **会用标志**：能说清"探针和 sidecar 各解决什么问题、为什么不用两个独立 Pod"。
+
+## 🧭 导航
+
+- ⬅️ 回到课程：[第 2 课：Pod](../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md)
+- 📚 全部实战：[应用实战索引](INDEX.md)
+- ➡️ 下一课实战：[03 · Deployment](03-Deployment.md)（示例，未编写）
+````
+
+### `应用实战/INDEX.md`（一键跳转索引 · 片段）
+
+````markdown
+# k8s 基础 应用实战索引
+
+> **一键跳转**：本课程全部应用实战——学到哪课就点哪篇；复习时从这里横向挑着练。
+> 活文档：随课程进度更新（与 `02-课程目录.md` 同节奏）。
+
+## 阶段 1：容器与 k8s 基础
+
+| 课 | 实战场景 | 覆盖知识点 | 应用实战 |
+|----|---------|-----------|---------|
+| 课 1：[容器基础](../stages/1-容器与k8s基础/lessons/lesson-01-容器基础.md) | 用一个容器跑起 Web 服务 | 镜像与容器、容器运行时 | [01 · 跑起第一个容器](01-容器基础.md) |
+| 课 2：[Pod](../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md) | 健康检查 + 日志采集 | Pod YAML、多容器共享 | [02 · 健康检查 + 日志采集](02-Pod.md) |
+
+## 汇总
+
+- 已编写 2 / 5 篇
+````
 
 ---
 
