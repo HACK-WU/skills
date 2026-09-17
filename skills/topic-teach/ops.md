@@ -99,7 +99,7 @@ git -C {产物仓库根} status --porcelain -- "{topic-slug}/"
 | 文件 / 目录 | 状态 | 分类 | 理由 |
 |---|---|---|---|
 | `lessons/lesson-03-{课名}.md` | `??` | ✅ 要提交 | 课程正文 |
-| `assets/03-架构.svg` | `??` | ✅ 要提交 | 教学配图 |
+| `assets/03-architecture.svg` | `??` | ✅ 要提交 | 教学配图（SVG 名用英文 kebab-case，见「文件命名规范」） |
 | `node_modules/` | `??` | 🚫 要忽略 | pnpm 依赖目录，可再生 |
 | `.DS_Store` | `??` | 🚫 要忽略 | 系统残留 |
 | `scratch/` | `??` | ⚠️ 存疑 | 不确定是过程草稿还是示例目录，请确认 |
