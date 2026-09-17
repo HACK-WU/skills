@@ -193,7 +193,7 @@ timeout 30s python3 {skill-dir}/scripts/fetch_site_map.py {起始URL} \
 ```
 
 > **执行约定**：网络请求类命令前置 `timeout`（Linux `timeout 30s` / Mac `gtimeout 30s`）；中间产物落在工作空间的 `temp/` 下（`temp/` 不存在则先创建），**只增不删**，完成后向用户报告中间文件位置，清理由用户决定。
-> **Python 运行方式**（`{skill-dir}` 为本技能安装目录）：项目有既有的 venv / `requirements.txt` 时按其命令执行，否则优先 `uv run python`；**uv 不存在时不擅自安装**，直接退回系统 `python3`。本脚本零依赖无需建环境。完整约定 SSOT 见 `topic-teach` 的「运行环境约定」章节。
+> **Python 运行方式**（`{skill-dir}` 为本技能安装目录）：项目有既有的 venv / `requirements.txt` 时按其命令执行，否则优先 `uv run python`；**uv 不存在时不擅自安装**，直接退回系统 `python3`。本脚本零依赖无需建环境。完整约定 SSOT 见 `topic-teach` 的 `ops.md`「运行环境约定」章节。
 
 脚本按四级优先链自动降级，退出码与处置见下表（完整细节见 `reference.md`）：
 
