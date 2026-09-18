@@ -40,7 +40,8 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 
 ```bash
 bash skill-install.sh install --repo anthropics/skills -t /path/to/your-project
-# → 安装 anthropics/skills 的技能；多个 --repo 混合安装到同一管理源（默认 HACK-WU/skills）
+# → 只把 anthropics/skills 的技能装到目标；多个 --repo 共享同一管理源（默认 HACK-WU/skills），
+#    同步范围 = 本次指定的仓库，不会把管理源里其他仓库的 skill 带过去
 ```
 
 ### 管理已装技能
@@ -52,14 +53,15 @@ bash skill-install.sh install --repo anthropics/skills -t /path/to/your-project
 | `install`（默认） | 安装/更新 skill 到目标目录 |
 | `update` | 更新管理源已装 skill 的最新版本并同步目标 |
 | `remove <names>` | 从管理源删除 skill 并同步删除所有目标 |
+| `prune` | 清理目标中不属于其来源的 skill（默认预演，`-y` 执行） |
 | `list` | 查看已装 skill（含来源仓库），支持 `--repo` 过滤 |
 
 ```bash
 # 安装（默认命令，可省略 install）
-bash skill-install.sh install -t ~/project-a            # 安装全部到目标
+bash skill-install.sh install -t ~/project-a            # 安装默认仓库全部技能到目标
 bash skill-install.sh install -n code-review -t ~/app   # 只装指定 skill
 
-# 更新：只更新已装的，不追加新 skill
+# 更新：只更新已装的，不追加新 skill（同步范围 = 各目标自己的来源记录）
 bash skill-install.sh update                             # 更新并同步所有已记录目标
 bash skill-install.sh update -n code-review -t ~/app     # 限定 skill 与目标
 bash skill-install.sh update --repo anthropics/skills    # 只更新指定仓库
@@ -70,9 +72,14 @@ bash skill-install.sh list --repo anthropics/skills      # 只显示该仓库的
 
 # 删除：管理源 + 所有目标同步删除
 bash skill-install.sh remove code-review,design-craft
+
+# 清理：删除目标中"装过但不属于其来源"的 skill（预演 → -y 执行）
+bash skill-install.sh prune
+bash skill-install.sh prune -t ~/app -y
+bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y   # 显式指定期望来源并纠正记录
 ```
 
-> 参数：`-t <path>` 目标目录（可多次）；`-n <names>` 指定 skill（逗号分隔）；`--repo <owner/repo>` 安装源/过滤仓库（默认 `HACK-WU/skills`）。Windows PowerShell 用 `-Target` / `-NameFilter` / `-Repo`。完整参数见[安装指南](./docs/installation.md)。
+> 参数：`-t <path>` 目标目录（可多次）；`-n <names>` 指定 skill（逗号分隔）；`--repo <owner/repo>` 安装源 / 同步范围 / 过滤仓库（默认 `HACK-WU/skills`）；`-y` 让 `prune` 真正执行删除。Windows PowerShell 用 `-Target` / `-NameFilter` / `-Repo` / `-Yes`。完整参数见[安装指南](./docs/installation.md)。
 
 也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
 
@@ -240,7 +247,7 @@ flowchart TD
 | **[requirement-doc-store](./skills/requirement-doc-store/SKILL.md)** | 需求相关文档通用存储规范，按文档类型自动决定存储路径 | 需求文档落盘时自动触发 |
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
 | **[plan-track](./skills/plan-track/SKILL.md)** | 复杂任务的执行台账：`.plans/` 下建 plan.md（目标/完成判据/工作项+证据）与 checklist.md（自评审清单），执行中按证据更新、完成后逐条自评审；由 plan-track 规则识别场景后调用（也可用户直接要求，或由上游 skill 交接，如 requirement-mining 快速实现路径），纯文件操作、零外部依赖、不绑定上下游 | "列个计划"、"创建计划文档"、"跟踪进度"、"做完自检" |
-| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG（含数据流全链路图）的学习材料，支持课程制/速览双模式、大纲教学效果推演、环境准备课、课级应用实战（按需配套、第四幕渐进演进）、多角色主题拆子教程、结课综合实战项目、实战经验与排障速查手册、场景解法库（设计题独立成册：多解法 + 代码 + 替代路线 + 结构变化必配设计图）、源码解析（按需配套 · 独立成册：读真实库源码 + 至少 1 张图）、双段质量闸门 + 源码探索（文档不足时下沉源码求证 · 求证 + 使用扩展） | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
+| **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG（含数据流全链路图）的学习材料，支持课程制/速览双模式、大纲教学效果推演、环境准备课、课级应用实战（按需配套、第四幕渐进演进、每步一张分步设计图）、多角色主题拆子教程、结课综合实战项目、实战经验与排障速查手册、场景解法库（设计题独立成册：多解法 + 代码 + 替代路线 + 结构变化必配设计图）、源码解析（按需配套 · 独立成册：读真实库源码 + 至少 1 张图）、双段质量闸门 + 源码探索（文档不足时下沉源码求证 · 求证 + 使用扩展） | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 | **[web-index](./skills/web-index/SKILL.md)** | 给需要反复查阅的网站/文档站建本地网页索引：抓 `llms.txt` / `sitemap.xml` / 导航，产出「我要做什么 → 去哪一页（含锚点）」的路由表落到 `.web-index/{site}/`（INDEX.md 登记表 + index.md 总表 + topics/ 分区）。双模式：已索引站点查表即走（消费模式，不重跑脚本），未索引站点才采集建库（建造模式）。只索引链接与用途、不镜像正文，一次性快照，配套抓取脚本 | "给这个网站建个索引"、"整理一下这个文档的链接"、"网页索引"、"web index"、"这个站后面要反复参考"、"查一下网页索引" |
 | **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |

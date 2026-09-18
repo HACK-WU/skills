@@ -5,12 +5,21 @@
 # 管理目录: ~/.hackwu-skills/
 #   ├── skills/              # npx 安装的 skill（openclaw 映射 = cwd/skills/）
 #   ├── skills-lock.json     # npx 生成的跟踪文件（update/remove/list 依据）
-#   └── targets.list         # 已安装目标目录记录（update/remove 同步依据）
+#   └── targets.list         # 目标目录记录: <目标目录>[\t<仓库1> <仓库2> ...]
+#                            #   仓库列 = 该目标的来源意图（install 写入/合并），
+#                            #   update/prune 据此圈定范围；老记录（无仓库列）
+#                            #   首次使用时按目标现有 skill 反查来源并写回
+#
+# 同步范围: 管理源是多仓库共享池（--repo 只往池里追加），同步到目标时按
+#           "本次操作的仓库"圈定范围，不会把其他仓库的 skill 带到目标。
+#           （install 未指定 --repo 时 = 默认仓库 HACK-WU/skills；
+#             update 未指定 --repo/-n 时 = 各目标自己的来源记录）
 #
 # 用法:
 #   bash skill-install.sh install -t /path/to/target     # 安装（默认）
 #   bash skill-install.sh update [-t ...] [-n names] [--repo ...]  # 更新并同步
 #   bash skill-install.sh remove <names>                  # 删除 + 同步
+#   bash skill-install.sh prune [-t ...] [-y]             # 清理目标中不属于其来源的 skill
 #   bash skill-install.sh list [--repo ...]               # 列出已装 skill
 #   bash skill-install.sh --help
 #
@@ -49,6 +58,7 @@ NAME_FILTER=""
 CONFIG_FILE=""
 POSITIONAL_TARGET=""
 REPOS_SPECIFIED=0
+PRUNE_APPLY=0
 
 show_help() {
     cat << EOF
@@ -60,24 +70,34 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
     install   安装 skill 到目标目录（默认操作，可省略）
     update    更新管理源中已安装的 skill 并同步到目标目录
     remove    从管理源删除指定 skill 并同步删除所有目标
+    prune     清理目标中"安装器装过但不属于该目标来源"的 skill（默认预演，-y 执行）
     list      列出管理源中已安装的 skill（含来源仓库）
     --help    显示此帮助
 
 选项:
-  -t <path>            目标目录（可多次使用，与 --file 互斥；update 时限定同步范围）
+  -t <path>            目标目录（可多次使用，与 --file 互斥；update/prune 时限定处理的目标目录）
   -n <names>           指定 skill（逗号分隔，如 -n code-review,design-craft）
-  --repo <owner/repo>  指定仓库（可多次使用；install/update 指定安装源，list 按来源过滤）
+  --repo <owner/repo>  指定仓库（可多次使用；install/update 指定安装源，prune 指定期望来源，list 按来源过滤）
   --optional           别名，等价于 --repo $OPTIONAL_REPO_URL
                        （可选技能目录：依赖第三方 skill/模块的技能）
   --file <path>        从配置文件读取目标目录（与 -t 互斥）
+  -y, --yes            prune 时真正执行删除（不加则只预演列出）
   -h, --help           显示此帮助
+
+同步范围:
+  管理源是多仓库共享池，同步到目标时按"本次操作的仓库"圈定范围：
+  指定 --repo 时只同步这些仓库的 skill（可再叠加 -n 收窄名称）；
+  install 未指定 --repo 时 = 默认仓库 HACK-WU/skills；
+  update 未指定 --repo / -n 时 = 各目标自己的来源记录
+  （记录在 $MANAGE_DIR/targets.list 每行的仓库列；老记录首次使用时按
+   目标现有 skill 反查来源并写回；判定不出则跳过，不做全量复制）。
 
 默认配置文件（不指定 -t / --file 时读取）:
   $DEFAULT_TARGETS_FILE
 
 管理目录:
   $MANAGE_DIR
-  （npx skills 的安装/跟踪工作目录，update/remove/list 基于此持续管理）
+  （npx skills 的安装/跟踪工作目录，update/remove/prune/list 基于此持续管理）
 
 示例:
   bash skill-install.sh -t ~/projects/app
@@ -87,6 +107,10 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills
   bash skill-install.sh update -t ~/projects/app
   bash skill-install.sh update -n code-review --repo HACK-WU/skills
   bash skill-install.sh remove code-review
+  bash skill-install.sh prune                      # 预演：列出各目标中外来的 skill
+  bash skill-install.sh prune -t ~/app -y          # 执行清理指定目标
+  bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
+                                                   # 以 --repo 为期望来源清理，并纠正该目标记录
   bash skill-install.sh list
   bash skill-install.sh list --repo anthropics/skills
 
@@ -130,7 +154,8 @@ while [ $# -gt 0 ]; do
             CONFIG_FILE="$1"
             ;;
         --file=*) CONFIG_FILE="${arg#*=}" ;;
-        install|update|remove|list)
+        -y|--yes) PRUNE_APPLY=1 ;;
+        install|update|remove|prune|list)
             [ -n "$ACTION" ] && error "已指定操作 $ACTION，不能同时指定 $arg"
             ACTION="$arg"
             if [ "$arg" = "remove" ]; then
@@ -218,24 +243,255 @@ resolve_targets() {
     fi
 }
 
-# 记录目标到 targets.list（去重，bash 3.2 兼容）
-record_target() {
-    local t="$1"
-    [ -f "$TARGETS_FILE" ] || touch "$TARGETS_FILE"
-    while IFS= read -r existing; do
-        [ "$existing" = "$t" ] && return 0
-    done < "$TARGETS_FILE"
-    echo "$t" >> "$TARGETS_FILE"
+# 目标目录 → 实际落盘目录（目标名以 skills 结尾时直接用，否则拼 /skills）
+target_dest() {
+    local t="$1" leaf="${t%/}"
+    leaf="${leaf##*/}"
+    if [ "$leaf" = "skills" ]; then
+        printf '%s' "$t"
+    else
+        printf '%s/skills' "$t"
+    fi
 }
 
-# 输出所有已记录目标（每行一个）
+# ============================================================
+# 目标记录（targets.list）
+# 格式: <目标目录>[\t<仓库1> <仓库2> ...]
+#   仓库列 = "这个目标要装哪些仓库"的意图记录（install 写入 / 合并），
+#   也是 update / prune 圈定同步范围的依据 —— 管理源是多仓库共享池，
+#   不按目标记来源就只能全量复制（会把其他仓库的 skill 带进目标）。
+#   老记录（无 \t）视为来源未知：首次使用时按目标现有 skill 反查 lock
+#   来源并写回（见 resolve_target_repos），判定不出则跳过同步。
+# ============================================================
+# 仓库列表并集（保持原顺序；仓库标识不含空格）
+merge_repo_list() {
+    local out="" w
+    for w in $1 $2; do
+        case " $out " in
+            *" $w "*) ;;
+            *) out="$out $w" ;;
+        esac
+    done
+    printf '%s' "${out# }"
+}
+
+# 写入/更新某目标的仓库列：mode = merge（合并，记录意图）| set（覆盖，纠正记录）
+# merge 且仓库无变化时不重写文件（少动状态文件，收敛并发写窗口）
+_write_target_record() {
+    local t="$1" mode="$2" add="$3"
+    [ -f "$TARGETS_FILE" ] || touch "$TARGETS_FILE"
+
+    # 已是目标值则直接返回（merge 模式下 add ⊆ 现有 也算已是）
+    local cur
+    cur="$(target_repos_from_file "$t")"
+    if [ "$mode" = "set" ] && [ "$cur" = "$add" ]; then
+        return 0
+    fi
+    if [ "$mode" = "merge" ] && [ "$(merge_repo_list "$cur" "$add")" = "$cur" ] && [ -n "$cur" ]; then
+        return 0
+    fi
+
+    local tmp="${TARGETS_FILE}.tmp.$$"
+    local found=0 p rest newv
+    : > "$tmp"
+    while IFS=$'\t' read -r p rest; do
+        [ -z "$p" ] && continue
+        if [ "$p" = "$t" ]; then
+            found=1
+            if [ "$mode" = "set" ]; then
+                newv="$add"
+            else
+                newv="$(merge_repo_list "$rest" "$add")"
+            fi
+            if [ -n "$newv" ]; then
+                printf '%s\t%s\n' "$p" "$newv" >> "$tmp"
+            else
+                printf '%s\n' "$p" >> "$tmp"
+            fi
+        elif [ -n "$rest" ]; then
+            printf '%s\t%s\n' "$p" "$rest" >> "$tmp"
+        else
+            printf '%s\n' "$p" >> "$tmp"
+        fi
+    done < "$TARGETS_FILE"
+    if [ "$found" = "0" ]; then
+        if [ -n "$add" ]; then
+            printf '%s\t%s\n' "$t" "$add" >> "$tmp"
+        else
+            printf '%s\n' "$t" >> "$tmp"
+        fi
+    fi
+    mv "$tmp" "$TARGETS_FILE"
+}
+
+# 记录/合并目标及其仓库来源（去重，bash 3.2 兼容）
+record_target() {
+    local t="$1"
+    shift
+    _write_target_record "$t" merge "$*"
+}
+
+# 覆盖写入目标的仓库来源（prune --repo 纠正记录用）
+set_target_repos() {
+    local t="$1"
+    shift
+    _write_target_record "$t" set "$*"
+}
+
+# 输出所有已记录目标路径（每行一个，去掉仓库列）
 get_recorded_targets() {
     [ ! -f "$TARGETS_FILE" ] && return 0
-    local t
-    while IFS= read -r t; do
-        [ -z "$t" ] && continue
-        echo "$t"
+    local line p
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        p="${line%%$'\t'*}"
+        [ -n "$p" ] && echo "$p"
     done < "$TARGETS_FILE"
+}
+
+# 读某目标记录中的仓库列表
+target_repos_from_file() {
+    [ -f "$TARGETS_FILE" ] || return 0
+    local want="$1" p rest
+    while IFS=$'\t' read -r p rest; do
+        if [ "$p" = "$want" ]; then
+            printf '%s' "$rest"
+            return 0
+        fi
+    done < "$TARGETS_FILE"
+}
+
+# lock 中所有 skill 的 "name<TAB>source" 清单（供来源反查 / prune 分类）
+lock_name_sources() {
+    [ ! -f "$LOCK_FILE" ] && return 0
+    LOCK_FILE="$LOCK_FILE" node -e '
+const fs=require("fs");
+let d;
+try{ d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8")); }catch(e){ process.exit(0); }
+for(const name of Object.keys(d.skills||{}).sort()){
+  console.log(name+"\t"+((d.skills[name]||{}).source||"unknown"));
+}
+'
+}
+
+# 反查：目标里已有哪些 skill → 它们在 lock 中的来源仓库（并集）
+infer_target_repos() {
+    local dest="$1"
+    [ -d "$dest" ] || return 0
+    local names map
+    names="$(ls -1 "$dest" 2>/dev/null | tr '\n' ' ')"
+    [ -n "$names" ] || return 0
+    map="$(lock_name_sources)"
+    [ -n "$map" ] || return 0
+    local name n s out=""
+    for name in $names; do
+        [ -d "$dest/$name" ] || continue
+        while IFS=$'\t' read -r n s; do
+            if [ "$n" = "$name" ] && [ -n "$s" ]; then
+                out="$(merge_repo_list "$out" "$s")"
+                break
+            fi
+        done <<< "$map"
+    done
+    printf '%s' "$out"
+}
+
+# 解析目标的来源仓库：记录优先；老记录/无记录则反查并写回（自愈）
+resolve_target_repos() {
+    local t="$1" repos
+    repos="$(target_repos_from_file "$t")"
+    if [ -n "$repos" ]; then
+        printf '%s' "$repos"
+        return 0
+    fi
+    repos="$(infer_target_repos "$(target_dest "$t")")"
+    if [ -n "$repos" ]; then
+        record_target "$t" $repos
+        warn "目标记录缺少来源仓库，已按目标现有 skill 反查并写回: $t → $repos"
+    fi
+    printf '%s' "$repos"
+}
+
+# ============================================================
+# 同步范围（scope）：只同步来源匹配本次操作仓库的 skill
+# ============================================================
+# 管理源 ~/.hackwu-skills/skills/ 是多仓库共享池（--repo 只是往里追加），
+# 所以同步前必须按来源仓库圈定范围，否则会把池里其他仓库的 skill 一并复制到目标。
+SYNC_SCOPE_ACTIVE=0
+SYNC_NAMES=""
+
+# 计算范围内的 skill 名（每行一个）
+# 依据 lock 的 source（来源仓库）与 skillPath（仓库内路径）过滤；参数 = 允许的仓库列表
+compute_sync_names() {
+    [ ! -f "$LOCK_FILE" ] && return 0
+    LOCK_FILE="$LOCK_FILE" REPO_SPECS="$*" NAME_WANTED="${NAME_FILTER//,/ }" node -e '
+const fs=require("fs");
+let d;
+try{ d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,"utf8")); }catch(e){ process.exit(0); }
+const skills=d.skills||{};
+// 归一化仓库标识：抹平协议前缀/git@/scp 形式/.git/尾斜杠差异，并拆出 tree 子路径
+function norm(s){
+  let v=String(s||"").trim();
+  if(!v) return null;
+  v=v.replace(/^[a-z][a-z0-9+.-]*:\/\//i,"").replace(/^git@/i,"");
+  v=v.replace(/^([^/]+):(?!\/)/,"$1/");
+  v=v.replace(/\/-\/tree\//,"/tree/");
+  let sub="";
+  const m=v.match(/\/tree\/([^/]+)(?:\/(.*))?$/);
+  if(m){ sub=m[2]||""; v=v.slice(0,m.index); }
+  v=v.replace(/\.git$/i,"").replace(/\/+$/,"");
+  return {repo:v.toLowerCase(),sub:sub.replace(/^\/+|\/+$/g,"").toLowerCase()};
+}
+function sameRepo(a,b){ return a===b||a.endsWith("/"+b)||b.endsWith("/"+a); }
+// 整仓库安装（未指定子路径）时 npx 只收录这些容器下的 skill，
+// 如 skills-optional/ 下的 skill 不会被 "npx skills add owner/repo" 收录
+const CONTAINERS=["skills","plugins"];
+function inPlainLayout(p){
+  const seg=p.split("/");
+  if(seg.length<=2) return true;
+  if(CONTAINERS.indexOf(seg[0])>=0) return true;
+  return seg[0].charAt(0)==="."&&seg[1]==="skills";
+}
+const specs=String(process.env.REPO_SPECS||"").split(/\s+/).filter(Boolean).map(norm).filter(Boolean);
+const wanted=(process.env.NAME_WANTED||"").split(/\s+/).filter(Boolean);
+const wantSet=wanted.length?new Set(wanted):null;
+const out=new Set();
+for(const x of specs){
+  const cand=[];
+  for(const name of Object.keys(skills)){
+    if(wantSet&&!wantSet.has(name)) continue;
+    const e=skills[name]||{};
+    const src=norm(e.source);
+    if(!src||!sameRepo(src.repo,x.repo)) continue;
+    const sp=String(e.skillPath||"").toLowerCase();
+    if(x.sub){ if(sp.indexOf(x.sub+"/")===0) cand.push({name:name,plain:true}); }
+    else cand.push({name:name,plain:inPlainLayout(sp)});
+  }
+  // 指定子路径的仓库：命中即为范围；整仓库：优先排除同仓库其他子目录的 skill，
+  // 若据此筛空（第三方仓库的目录布局不在常见容器内）则退回该仓库全部命中，避免漏同步
+  const pruned=cand.filter(function(c){ return c.plain; });
+  for(const c of (pruned.length?pruned:cand)) out.add(c.name);
+}
+const names=[...out].sort();
+process.stdout.write(names.length?names.join("\n")+"\n":"");
+'
+}
+
+# 圈定同步范围（参数 = 本次操作的仓库列表；未指定 --repo 时传默认仓库）
+set_sync_scope() {
+    # 兜底 || true：解析失败时退化为空范围（下方会警告并跳过同步），而不是让整个脚本中断
+    SYNC_NAMES="$(compute_sync_names "$@" | tr "\n" " " || true)"
+    SYNC_NAMES="${SYNC_NAMES% }"
+    SYNC_SCOPE_ACTIVE=1
+}
+
+# 范围内 skill 数量
+scope_count() {
+    local n=0 name
+    for name in $SYNC_NAMES; do
+        n=$((n + 1))
+    done
+    echo "$n"
 }
 
 # ============================================================
@@ -245,13 +501,7 @@ get_recorded_targets() {
 sync_to_target() {
     local target="$1"
     local dest
-    local leaf="${target%/}"
-    leaf="${leaf##*/}"
-    if [ "$leaf" = "skills" ]; then
-        dest="$target"
-    else
-        dest="$target/skills"
-    fi
+    dest="$(target_dest "$target")"
 
     mkdir -p "$dest"
 
@@ -261,7 +511,28 @@ sync_to_target() {
     fi
 
     # 优先 rsync（增量同步：覆盖更新，不删除多余文件）
+    local has_rsync=0
     if command -v rsync &>/dev/null; then
+        has_rsync=1
+    fi
+
+    if [ "$SYNC_SCOPE_ACTIVE" = "1" ]; then
+        # 只同步范围内（本次操作仓库）的 skill：管理源是多仓库共享池，
+        # 全量复制会把池里其他仓库的 skill 一并带到目标
+        local name
+        for name in $SYNC_NAMES; do
+            [ -d "$MANAGE_SKILLS_DIR/$name" ] || continue
+            if [ "$has_rsync" = "1" ]; then
+                rsync -a "$MANAGE_SKILLS_DIR/$name/" "$dest/$name/"
+            else
+                mkdir -p "$dest/$name"
+                cp -r "$MANAGE_SKILLS_DIR/$name/"* "$dest/$name/" 2>/dev/null || true
+            fi
+        done
+        return 0
+    fi
+
+    if [ "$has_rsync" = "1" ]; then
         rsync -a "$MANAGE_SKILLS_DIR/" "$dest/"
     else
         # 降级 cp：直接覆盖复制（不先清空目标）
@@ -269,13 +540,37 @@ sync_to_target() {
     fi
 }
 
+# 按目标自己的来源记录圈定同步范围；返回 1 = 判定不出（调用方应跳过而非全量兜底）
+scope_for_target() {
+    local t="$1" repos
+    repos="$(resolve_target_repos "$t")"
+    [ -n "$repos" ] || return 1
+    set_sync_scope $repos
+    [ -n "$SYNC_NAMES" ] || return 1
+    return 0
+}
+
+# 同步所有已记录目标
+# 参数 "1" = 调用方已用 set_sync_scope 设定显式范围（--repo / -n），对所有目标适用；
+# 否则按各目标自己的来源记录圈定范围（无记录则反查；判定不出则跳过，不做全量兜底）
 sync_all_recorded() {
+    local fixed="${1:-0}"
     local count=0 total=0
     while IFS= read -r t; do
         [ -z "$t" ] && continue
         total=$((total + 1))
         if [ ! -d "$t" ]; then
             warn "目标目录不存在，跳过: $t"
+            continue
+        fi
+        if [ "$fixed" = "1" ]; then
+            if [ -z "$SYNC_NAMES" ]; then
+                warn "同步范围为 0，跳过: $t"
+                continue
+            fi
+        elif ! scope_for_target "$t"; then
+            warn "无法判定目标的来源仓库，跳过同步（避免把管理源全量复制）: $t"
+            warn "  可用 'install --repo <repo> -t $t' 重建记录"
             continue
         fi
         sync_to_target "$t"
@@ -317,17 +612,25 @@ do_install() {
     done
 
     echo ""
-    info "同步到目标目录..."
-    for t in "${TARGETS[@]}"; do
-        mkdir -p "$t"
-        sync_to_target "$t"
-        record_target "$t"
-        echo "  [SYNC] $t"
-    done
+    # 圈定同步范围：只同步本次安装源（REPOS）的 skill
+    set_sync_scope "${REPOS[@]}"
+    if [ -z "$SYNC_NAMES" ]; then
+        warn "同步范围为 0：管理源中没有匹配安装源（${REPOS[*]}）的 skill，已跳过同步"
+        warn "  管理源是多仓库共享池，全量同步会把其他仓库的 skill 复制到目标；可用 'list --repo <repo>' 检查"
+    else
+        info "同步到目标目录（范围: $(scope_count) 个 skill · 来源 ${REPOS[*]}）..."
+        for t in "${TARGETS[@]}"; do
+            mkdir -p "$t"
+            sync_to_target "$t"
+            # 记录/合并该目标的来源仓库（供 update / prune 圈定范围）
+            record_target "$t" "${REPOS[@]}"
+            echo "  [SYNC] $t"
+        done
 
-    echo ""
-    info "已安装并同步到 ${#TARGETS[@]} 个目标"
-    info "管理命令: update（更新）/ remove <names>（删除）/ list（查看）"
+        echo ""
+        info "已安装并同步到 ${#TARGETS[@]} 个目标"
+    fi
+    info "管理命令: update（更新）/ remove <names>（删除）/ prune（清理）/ list（查看）"
 }
 
 
@@ -414,19 +717,37 @@ for(const s of Object.keys(out).sort()){
         warn "管理源中没有可更新的 skill。"
     fi
 
+    # 同步范围：
+    #   显式指定 --repo / -n 时 = 该范围（对本次涉及的目标统一生效）
+    #   否则 = 各目标自己的来源记录（无记录则反查自愈；判定不出则跳过，不做全量兜底）
+    local explicit_scope=0
+    if [ "$REPOS_SPECIFIED" = "1" ] || [ -n "$NAME_FILTER" ]; then
+        explicit_scope=1
+        set_sync_scope "${repos[@]}"
+    fi
+
     echo ""
     info "同步到目标目录..."
     if [ ${#TARGETS[@]} -gt 0 ]; then
         # -t 指定了目标，只同步这些
         for t in "${TARGETS[@]}"; do
             mkdir -p "$t"
+            if [ "$explicit_scope" = "0" ] && ! scope_for_target "$t"; then
+                warn "无法判定目标的来源仓库，跳过同步（避免把管理源全量复制）: $t"
+                warn "  可用 'install --repo <repo> -t $t' 重建记录"
+                continue
+            fi
+            if [ -z "$SYNC_NAMES" ]; then
+                warn "同步范围为 0：管理源中没有匹配（${repos[*]}${NAME_FILTER:+ · -n $NAME_FILTER}）的 skill，跳过: $t"
+                continue
+            fi
             sync_to_target "$t"
             record_target "$t"
             echo "  [SYNC] $t"
         done
     else
-        # 未指定 -t，同步所有已记录目标
-        sync_all_recorded
+        # 未指定 -t，同步所有已记录目标（显式范围统一适用，否则按各目标记录）
+        sync_all_recorded "$explicit_scope"
     fi
 
     echo ""
@@ -480,21 +801,128 @@ fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");
     while IFS= read -r t; do
         [ -z "$t" ] && continue
         [ ! -d "$t" ] && continue
-        local leaf="${t%/}"
-        leaf="${leaf##*/}"
         local dest
-        if [ "$leaf" = "skills" ]; then
-            dest="$t"
-        else
-            dest="$t/skills"
-        fi
+        dest="$(target_dest "$t")"
         for name in $names; do
             rm -rf "${dest:?}/$name" 2>/dev/null || true
         done
     done < <(get_recorded_targets)
-    sync_all_recorded
+    # 此处不再全量重同步：管理源是多仓库共享池，全量同步会把池里其他仓库的
+    # skill 复制进这些目标（删除已在上面的循环中逐目标完成）
     echo ""
     info "删除完成"
+}
+
+# ============================================================
+# 清理：删除目标中"安装器管理过、但不属于该目标来源范围"的 skill
+# ============================================================
+# 用于修复历史污染（早期版本按全量复制，目标里混进了其他仓库的 skill）。
+# 只处理 lock 中登记过的 skill（＝安装器管理过的），手工新增目录一律保留；
+# 默认预演只列出，加 -y 才真正删除；判定不出来源则拒绝执行（避免误删）。
+do_prune() {
+    ensure_manage_dir
+    [ ! -f "$LOCK_FILE" ] && error "管理源为空，无判定依据。请先 install。"
+
+    local targets=()
+    resolve_targets
+    if [ ${#TARGETS[@]} -gt 0 ]; then
+        targets=("${TARGETS[@]}")
+    else
+        while IFS= read -r t; do
+            [ -n "$t" ] && targets+=("$t")
+        done < <(get_recorded_targets)
+    fi
+    [ ${#targets[@]} -eq 0 ] && error "未指定目标（-t <path>），且无已记录目标"
+
+    echo "🧹 skill-install.sh prune"
+    echo "   管理目录: $MANAGE_DIR"
+    echo "   目标数量: ${#targets[@]}"
+    echo "   模式: $([ "$PRUNE_APPLY" = "1" ] && echo "执行删除" || echo "预演（仅列出，加 -y 执行）")"
+    echo ""
+
+    # 期望来源：显式 --repo 时以它为准（可纠正老记录/被污染记录里的来源），
+    # 否则按该目标自己的记录（无记录则反查自愈）
+    local explicit=0
+    if [ "$REPOS_SPECIFIED" = "1" ]; then
+        explicit=1
+    fi
+
+    local map
+    map="$(lock_name_sources)"
+
+    local t dest repos name n s src kept
+    local total_removed=0 total_targets=0
+    for t in "${targets[@]}"; do
+        dest="$(target_dest "$t")"
+        if [ ! -d "$dest" ]; then
+            warn "目标目录不存在，跳过: $t"
+            continue
+        fi
+        if [ "$explicit" = "1" ]; then
+            repos="${REPOS[*]}"
+            set_sync_scope "${REPOS[@]}"
+            if [ -z "$SYNC_NAMES" ]; then
+                warn "指定的仓库（$repos）在管理源中没有匹配的 skill，跳过: $t"
+                continue
+            fi
+        else
+            repos="$(resolve_target_repos "$t")"
+            if [ -z "$repos" ]; then
+                warn "无法判定目标的来源仓库，跳过（避免误删）: $t"
+                warn "  可用 'prune -t <目标> --repo <期望仓库>' 指定期望来源后再清理"
+                continue
+            fi
+            set_sync_scope $repos
+        fi
+        total_targets=$((total_targets + 1))
+        local removed=0
+        echo "  $dest（保留来源: $repos）"
+        for name in $(ls -1 "$dest" 2>/dev/null); do
+            [ -d "$dest/$name" ] || continue
+            # 只清理 lock 中登记过的 skill（安装器管理过的），手工目录一律保留
+            src=""
+            while IFS=$'\t' read -r n s; do
+                if [ "$n" = "$name" ]; then
+                    src="$s"
+                    break
+                fi
+            done <<< "$map"
+            [ -n "$src" ] || continue
+            # 属于该目标来源范围 → 保留
+            case " $SYNC_NAMES " in
+                *" $name "*) continue ;;
+            esac
+            if [ "$PRUNE_APPLY" = "1" ]; then
+                rm -rf "${dest:?}/$name" 2>/dev/null || true
+                echo "    [DEL]  $name  （来源: $src）"
+            else
+                echo "    [待删] $name  （来源: $src）"
+            fi
+            removed=$((removed + 1))
+        done
+        [ "$removed" = "0" ] && echo "    （无外来 skill）"
+        total_removed=$((total_removed + removed))
+        # 显式指定期望来源时同步纠正记录（预演阶段只提示，-y 才写）
+        if [ "$explicit" = "1" ]; then
+            if [ "$PRUNE_APPLY" = "1" ]; then
+                set_target_repos "$t" "${REPOS[@]}"
+                echo "    [记录] 该目标来源已更新为: $repos"
+            else
+                echo "    [记录] 加 -y 时会把该目标来源更新为: $repos"
+            fi
+        fi
+    done
+
+    echo ""
+    if [ "$PRUNE_APPLY" = "1" ]; then
+        info "已从 $total_targets 个目标清理 $total_removed 个不属于其来源范围的 skill"
+    else
+        info "预演：$total_targets 个目标共 $total_removed 个外来 skill 待清理（确认后加 -y 执行）"
+        if [ "$total_removed" = "0" ] && [ "$explicit" = "0" ]; then
+            info "提示：若目标里混有历史污染、但反查把它算成了'目标自己的来源'，"
+            info "  可用 'prune -t <目标> --repo <期望仓库> -y' 显式指定期望来源后再清理"
+        fi
+    fi
 }
 
 # ============================================================
@@ -561,6 +989,7 @@ case "$ACTION" in
     install) do_install ;;
     update)  do_update ;;
     remove)  do_remove ;;
+    prune)   do_prune ;;
     list)    do_list ;;
     *)       error "未知操作: $ACTION" ;;
 esac
