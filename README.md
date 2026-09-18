@@ -54,7 +54,10 @@ bash skill-install.sh install --repo anthropics/skills -t /path/to/your-project
 | `update` | 更新管理源已装 skill 的最新版本并同步目标 |
 | `remove <names>` | 从管理源删除 skill 并同步删除所有目标 |
 | `prune` | 清理目标中不属于其来源的 skill（默认预演，`-y` 执行） |
+| `self-update` | 更新**脚本自身**到最新版本（默认每次运行已自检，发现新版只提示） |
 | `list` | 查看已装 skill（含来源仓库），支持 `--repo` 过滤 |
+
+> **脚本自更新**：每次运行自检一次（默认 24h 节流），发现新版本默认**只提示不覆盖**（提示里给出更新命令）；要全自动设 `SKILL_INSTALL_SELF_UPDATE=auto`，要静默用 `--no-self-update`。管道执行（`curl | bash`）与 git 工作树内的副本不会被覆盖。
 
 ```bash
 # 安装（默认命令，可省略 install）

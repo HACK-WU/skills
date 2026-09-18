@@ -70,6 +70,7 @@ npx skills add HACK-WU/skills --list -y
 | `update` | 更新管理源中已安装的 skill 并同步到目标目录 |
 | `remove <names>` | 从管理源删除指定 skill 并同步删除所有目标 |
 | `prune` | 清理目标中"安装器装过但不属于该目标来源"的 skill（默认预演，`-y` 执行） |
+| `self-update` | 更新**脚本自身**到最新版本（默认每次运行已自动自检，见下文） |
 | `list` | 列出管理源中已安装的 skill（含来源仓库） |
 
 | 参数 | 作用 |
@@ -80,6 +81,9 @@ npx skills add HACK-WU/skills --list -y
 | `--optional` | `--repo https://github.com/HACK-WU/skills/tree/master/skills-optional` 的别名，用于安装依赖第三方 skill/模块的**可选技能**；可与 `--repo` 同时使用 |
 | `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
 | `-y` / `--yes` | `prune` 时真正执行删除（不加则只预演列出） |
+| `--no-self-update` | 本次不检查脚本自身版本（等价环境变量 `SKILL_INSTALL_NO_SELF_UPDATE=1`） |
+| `--force` | `self-update` 时允许降级 / 覆盖 git 工作树内的副本 |
+| `--version` | 显示脚本版本 |
 
 > **PowerShell 注意**：PowerShell 不允许同一参数重复指定（bash 式的 `-n a -n b` 会报 `ParameterAlreadyBound`）。`-Target` / `-NameFilter` / `-Repo` 的多个值一律用**逗号分隔的数组语法**单次传入，如 `-n code-review,design-craft`、`-Target C:\a,C:\b`。「可多次使用」仅适用于 bash 版 `skill-install.sh`。
 
@@ -147,6 +151,40 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 > 只删除"**在 `skills-lock.json` 中登记过**（＝安装器管理过的）**且不属于该目标来源范围**"的目录。手工新增的目录、目标来源范围内的 skill 一律保留；判定不出来源时拒绝执行（不会误删）。
 
 > **何时需要 `--repo`**：若目标只有老记录（无仓库列），来源靠"按现有内容反查"得出——历史污染会被一并算成"目标自己的来源"，此时 `prune` 会报"无外来 skill"。用 `--repo <期望仓库>` 显式声明该目标**应该**有哪些来源，即可清掉其余项，并把记录纠正为期望值（之后 `prune`/`update` 都以它为准）。
+
+### 脚本自身的更新
+
+安装器每次运行会**自检脚本版本**（默认 24h 一次），发现新版本时**只提示、不自动覆盖**：
+
+```text
+[WARN] 脚本有新版本：2026-09-18.1 → 2026-09-18.2（本次仍按旧版本执行）
+[INFO]   更新: bash skill-install.sh self-update    （或重新执行一键安装命令）
+[INFO]   关闭提示: --no-self-update 或 SKILL_INSTALL_NO_SELF_UPDATE=1；
+[INFO]   自动更新: SKILL_INSTALL_SELF_UPDATE=auto
+```
+
+| 档位 | 开启方式 | 行为 |
+|------|----------|------|
+| **提示（默认）** | — | 有新版只打印上面几行，本次操作继续用旧版本 |
+| **手动更新** | `self-update` 子命令 | 检查并覆盖自身（留 `<脚本>.bak`），忽略 24h 节流 |
+| **全自动** | `SKILL_INSTALL_SELF_UPDATE=auto` | 有新版自动覆盖，并用新脚本继续本次操作 |
+| 关闭自检 | `--no-self-update` / `SKILL_INSTALL_NO_SELF_UPDATE=1` | 完全不检查（也不提示） |
+
+> **为什么默认不自动覆盖**：脚本可能被内网 fork、本地改过，或装在只想保持稳定的项目里——静默改写"用户正在用的脚本"超出预期。要全自动有显式开关。
+
+**保险（各档位一致）**：
+
+| 保险 | 行为 |
+|------|------|
+| 管道执行（`curl \| bash`） | 不检查也不提示——一键安装拿到的本来就是最新版 |
+| 脚本在 git 工作树内 | 不覆盖，提示在该仓库 `git pull` |
+| 下载物校验 | 必须通过「版本哨兵 + 语法校验」才允许落盘（防 HTML 错误页 / 半截文件） |
+| 版本方向 | 远端不高于本地不覆盖（`--force` 才允许降级） |
+| 回滚 | 覆盖前留 `<脚本>.bak` |
+
+环境变量：`SKILL_INSTALL_SELF_UPDATE_TTL=<秒>`（默认 86400，`0` = 每次检查）、`SKILL_INSTALL_SCRIPT_URL=<脚本 URL>`（默认 GitHub raw + jsDelivr 镜像兜底，可指向内网镜像；**非 https 的源会提示"无传输加密"**）。
+
+> 自检用**短超时快速失败**（连接 3s / 单源 8s）：断网或被墙时不会让本次操作白等；只有显式 `self-update` 才容忍慢链路（5s / 20s）。
 
 **注意事项**：
 
