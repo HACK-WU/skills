@@ -14,9 +14,9 @@
 #           （install 未指定 -Repo 时 = 默认仓库 HACK-WU/skills；
 #             update 未指定 -Repo/-NameFilter 时 = 各目标自己的来源记录）
 #
-# 脚本自更新: 每次运行自检一次（TTL 节流）；发现新版默认只提示不覆盖，
-#             用 self-update 子命令更新（SKILL_INSTALL_SELF_UPDATE=auto 可改全自动）。
-#             拿不到自身路径（管道执行）与 git 工作树内的副本不覆盖（后者用 git pull）。
+# 脚本自更新: 每次运行自检一次（24h 节流）；发现新版只提示不覆盖，
+#             要更新执行 self-update 子命令（-NoSelfUpdate 可跳过自检）。
+#             拿不到自身路径（管道执行）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
 #
 # 用法:
 #   .\skill-install.ps1 install -Target C:\projects\app
@@ -86,11 +86,11 @@ $DefaultTargetsFile = Join-Path $HomeDir ".skill-targets"
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：前缀定宽 → 序数比较即版本序
 $ScriptVersion = "2026-09-18.1"
-# 自更新来源（可用 SKILL_INSTALL_SCRIPT_URL 覆盖为镜像/内网地址；默认 raw + jsDelivr 兜底）
+# 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 $SelfUrlDefault = "https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1"
 $SelfUrlMirror = "https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.ps1"
-# 自检间隔（秒，默认 24h；0 = 每次都查）；SKILL_INSTALL_NO_SELF_UPDATE=1 可整体关闭
-$SelfUpdateTtl = if ($env:SKILL_INSTALL_SELF_UPDATE_TTL) { $env:SKILL_INSTALL_SELF_UPDATE_TTL } else { 86400 }
+# 自检间隔（秒；0 = 每次都查）——脚本内常量，不做成环境变量
+$SelfCheckTtl = 86400
 
 function Write-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
@@ -135,13 +135,11 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $ScriptVe
    目标现有 skill 反查来源并写回；判定不出则跳过，不做全量复制）。
 
 脚本自更新:
-  每次运行做一次自检（默认 24h 一次，节流戳记 $SelfCheckFile）；
-  发现新版本默认只提示（不覆盖自身），用 self-update 子命令更新到最新版。
-  拿不到自身路径（管道执行）与 git 工作树内的副本不覆盖（后者请用 git pull）。
-  关闭提示: -NoSelfUpdate 或 SKILL_INSTALL_NO_SELF_UPDATE=1
-  自动更新: SKILL_INSTALL_SELF_UPDATE=auto（覆盖自身并留 <脚本>.bak）
-  间隔: SKILL_INSTALL_SELF_UPDATE_TTL=<秒>（0 = 每次检查）
-  来源: SKILL_INSTALL_SCRIPT_URL=<脚本 URL>（默认 GitHub raw + jsDelivr 镜像兜底）
+  每次运行做一次自检（24h 一次），发现新版本只提示、不覆盖自身；
+  要更新就执行 self-update 子命令（覆盖前留 <脚本>.bak）。
+  拿不到自身路径（管道执行）与 git 工作树内的副本不检查/不覆盖（后者请用 git pull）。
+  -NoSelfUpdate       本次不做自检
+  -Force              self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 默认配置文件（不指定 -Target / -ConfigFile 时读取）:
   $DefaultTargetsFile
@@ -244,11 +242,12 @@ if ($NameFilter) {
 # 脚本自更新（self-update）
 # ============================================================
 # 原则：宁可不动，也不许把用户本地的东西搞坏。
-#   ⓪ 默认「只提示、不覆盖」：自检发现新版即打印更新指引（静默改写用户正在用的脚本
-#      超出预期，且可能存在内网 fork / 本地改动）；要全自动需 SKILL_INSTALL_SELF_UPDATE=auto
-#   ① 拿不到自身路径（管道执行等）不覆盖、也不提示；② git 工作树内一律不覆盖（提示 git pull）
-#   ③ 下载物必须先过「哨兵 + PowerShell 语法校验」；④ 禁止降级（-Force 才强制）
-#   ⑤ 可关：-NoSelfUpdate / SKILL_INSTALL_NO_SELF_UPDATE=1；节流见 SKILL_INSTALL_SELF_UPDATE_TTL
+#   ① 自检（每次运行）只提示、不覆盖：静默改写"用户正在用的脚本"超出预期
+#      （内网 fork / 本地改动）；真要更新就显式执行 self-update
+#   ② 拿不到自身路径（管道执行等）不检查也不提示
+#   ③ git 工作树内一律不覆盖（提示 git pull）
+#   ④ 下载物必须先过「哨兵 + PowerShell 语法校验」；⑤ 禁止降级（-Force 才强制）
+#   ⑥ 无环境变量开关：本次关闭自检用 -NoSelfUpdate；节流为 SelfCheckTtl 常量
 # 落盘用「备份 + 同目录 Move-Item 替换」；PowerShell 启动时已把脚本整体读入内存，
 # 替换正在运行的 .ps1 是安全的（不要用 Set-Content 直接覆写）。
 $SelfCheckFile = Join-Path $ManageDir ".last-self-check"
@@ -315,28 +314,14 @@ function Test-InGitWorktree($dir) {
     return ("$out".Trim() -eq "true")
 }
 
-# 自动模式下用新脚本重跑本次操作（按已绑定参数重建命令行）
-function Get-ReExecArgs {
-    $a = @()
-    if ($Command) { $a += $Command }
-    if ($TargetPath) { $a += $TargetPath }
-    if ($Target) { $a += @("-Target", ($Target -join ',')) }
-    if ($ConfigFile) { $a += @("-ConfigFile", $ConfigFile) }
-    if ($NameFilter) { $a += @("-NameFilter", ($NameFilter -join ',')) }
-    if ($RepoSpecified) { $a += @("-Repo", ($Repo -join ',')) }
-    if ($Optional) { $a += "-Optional" }
-    if ($Yes) { $a += "-Yes" }
-    return $a
-}
-
-# 自更新主流程
-#   auto     —— 每次运行的自检（受 TTL / 开关约束）。默认只提示不覆盖；
-#               SKILL_INSTALL_SELF_UPDATE=auto 时才覆盖并用新脚本重跑本次操作
-#   explicit —— self-update 子命令（忽略 TTL，直接覆盖；$Force 允许降级 / 覆盖 git 工作树内副本）
+# 自更新主流程（只有两条路，没有环境变量开关）
+#   notify —— 每次运行的自检（受 SelfCheckTtl 节流）：有新版本只提示，绝不覆盖
+#   apply  —— self-update 子命令：真的覆盖（$Force 允许降级 / 覆盖 git 工作树内副本）
 function Invoke-SelfUpdate($Mode, $Force) {
     $path = Get-SelfPath
+    # 拿不到自身路径（管道执行等）：一键安装拿到的本来就是最新版，无需提示
     if (-not $path) {
-        if ($Mode -eq "explicit") {
+        if ($Mode -eq "apply") {
             Write-Warn "拿不到脚本自身路径，无法自更新"
             Write-Info "请重新下载脚本，或执行一键安装命令获取最新版"
             return $false
@@ -344,10 +329,10 @@ function Invoke-SelfUpdate($Mode, $Force) {
         return $true
     }
 
-    # 自检节流：TTL 内不重复检查（explicit 忽略）
+    # 自检节流：TTL 内不重复检查（apply 忽略）
     $ttl = 0
-    if (-not [int64]::TryParse("$SelfUpdateTtl", [ref]$ttl)) { $ttl = 86400 }
-    if ($Mode -eq "auto" -and $ttl -gt 0 -and (Test-Path $SelfCheckFile)) {
+    if (-not [int64]::TryParse("$SelfCheckTtl", [ref]$ttl)) { $ttl = 86400 }
+    if ($Mode -eq "notify" -and $ttl -gt 0 -and (Test-Path $SelfCheckFile)) {
         $last = [int64]0
         [void][int64]::TryParse((Get-Content $SelfCheckFile -ErrorAction SilentlyContinue | Select-Object -First 1), [ref]$last)
         $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
@@ -362,11 +347,8 @@ function Invoke-SelfUpdate($Mode, $Force) {
     # 本地没有版本号（更早的版本/被改过）→ 不猜，静默跳过（可用 self-update 手动确认）
     if (-not $lver) { return $true }
 
-    # 依次尝试：显式指定的源（唯一）→ 默认 raw → jsDelivr 镜像
-    $urls = @()
-    if ($env:SKILL_INSTALL_SCRIPT_URL) { $urls = @($env:SKILL_INSTALL_SCRIPT_URL) }
-    else { $urls = @($SelfUrlDefault, $SelfUrlMirror) }
-    # 非 https 源（本地回环/测试除外）没有传输加密：明确提示，不静默
+    $urls = @($SelfUrlDefault, $SelfUrlMirror)
+    # 非 https 源（改常量指向内网镜像时可能碰到）没有传输加密：明确提示，不静默
     foreach ($u in $urls) {
         if ($u -match '^https://') { continue }
         if ($u -match '^https?://(127\.0\.0\.1|localhost)') { continue }
@@ -377,8 +359,8 @@ function Invoke-SelfUpdate($Mode, $Force) {
     # 注意两个坑：① 不要用点开头的临时名 —— pwsh 在 Linux 上把点前缀文件当 Hidden，
     # Get-Item/Get-Content 默认看不到（本轮实测踩到）；② 随机名而非 PID（防预置符号链接劫持）
     $tmp = [System.IO.Path]::GetTempFileName()
-    # 自检（auto）快失败：断网/被墙时不要让用户白等；显式 self-update 才容忍慢链路
-    if ($Mode -eq "explicit") { $ct = 5; $max = 20 } else { $ct = 3; $max = 8 }
+    # 自检快失败：断网/被墙时不要让用户白等；显式 self-update 才容忍慢链路
+    if ($Mode -eq "apply") { $ct = 5; $max = 20 } else { $ct = 3; $max = 8 }
     $rver = ""
     foreach ($u in $urls) {
         if ((Get-RemoteScript $u $tmp $ct $max) -and (Test-ScriptFile $tmp)) {
@@ -388,7 +370,7 @@ function Invoke-SelfUpdate($Mode, $Force) {
     }
     if (-not $rver) {
         Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-        if ($Mode -eq "explicit") {
+        if ($Mode -eq "apply") {
             Write-Warn "无法获取远端脚本（网络不可达，或返回内容未通过校验）"
             return $false
         }
@@ -397,16 +379,16 @@ function Invoke-SelfUpdate($Mode, $Force) {
 
     if ($rver -eq $lver) {
         Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-        if ($Mode -eq "explicit") { Write-Info "已是最新版本（$lver）" }
+        if ($Mode -eq "apply") { Write-Info "已是最新版本（$lver）" }
         return $true
     }
 
     if (-not (Test-VersionGt $rver $lver)) {
-        if ($Mode -eq "explicit" -and $Force) {
+        if ($Mode -eq "apply" -and $Force) {
             Write-Info "远端版本（$rver）不高于本地（$lver），-Force 指定：仍按远端覆盖"
         } else {
             Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-            if ($Mode -eq "explicit") {
+            if ($Mode -eq "apply") {
                 Write-Warn "远端版本（$rver）不高于本地（$lver），未覆盖（确需强制加 -Force）"
                 return $false
             }
@@ -415,34 +397,25 @@ function Invoke-SelfUpdate($Mode, $Force) {
     }
 
     # ---- 到这里的语义：远端版本更高 ----
-    # 默认（自检）只提示、不覆盖：静默改写"用户正在用的脚本"超出预期，
-    # 且可能存在内网 fork / 本地改动。要全自动可显式设 SKILL_INSTALL_SELF_UPDATE=auto。
-    if ($Mode -eq "auto" -and ($env:SKILL_INSTALL_SELF_UPDATE -ne "auto")) {
+    # 自检只提示、绝不覆盖：静默改写"用户正在用的脚本"超出预期（内网 fork / 本地改动），
+    # 要更新就显式执行 self-update。
+    if ($Mode -eq "notify") {
         Remove-Item $tmp -Force -ErrorAction SilentlyContinue
         if (Test-InGitWorktree (Split-Path -Parent $path)) {
             Write-Warn "脚本有新版本（$lver → $rver）：当前副本在 git 工作树内，请在该仓库执行 git pull 更新"
         } else {
             Write-Warn "脚本有新版本：$lver → $rver（本次仍按旧版本执行）"
             Write-Info "  更新: .\skill-install.ps1 self-update    （或重新执行一键安装命令）"
+            Write-Info "  关闭本次自检: -NoSelfUpdate"
         }
-        Write-Info "  关闭提示: -NoSelfUpdate 或 SKILL_INSTALL_NO_SELF_UPDATE=1；"
-        Write-Info "  自动更新: SKILL_INSTALL_SELF_UPDATE=auto"
         return $true
     }
 
-    # git 工作树内的副本：不覆盖（保护未提交改动），提示 git pull；显式模式需 -Force
-    if (Test-InGitWorktree (Split-Path -Parent $path)) {
-        if ($Mode -eq "auto") {
-            Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-            Write-Warn "脚本有新版本（$lver → $rver），但当前副本在 git 工作树内，不做自动覆盖"
-            Write-Warn "  请在该仓库执行 git pull 更新"
-            return $true
-        }
-        if (-not $Force) {
-            Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-            Write-Warn "脚本位于 git 工作树内（$path），未覆盖：请用 git pull 更新；确需覆盖加 -Force"
-            return $false
-        }
+    # git 工作树内的副本：不覆盖（保护未提交改动），提示 git pull；需 -Force 才覆盖
+    if ((Test-InGitWorktree (Split-Path -Parent $path)) -and (-not $Force)) {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        Write-Warn "脚本位于 git 工作树内（$path），未覆盖：请用 git pull 更新；确需覆盖加 -Force"
+        return $false
     }
 
     # 落盘：备份 + 同目录随机名替换（随机名防预置符号链接；同卷 Move-Item 才是替换）
@@ -455,27 +428,22 @@ function Invoke-SelfUpdate($Mode, $Force) {
         Remove-Item $tmpLocal -Force -ErrorAction SilentlyContinue
         Remove-Item $tmp -Force -ErrorAction SilentlyContinue
         Write-Warn "脚本无法自动更新（目录不可写？）：$path"
-        if ($Mode -eq "explicit") { Write-Info "可换有写权限的账号，或重新执行一键安装命令" }
+        Write-Info "可换有写权限的账号，或重新执行一键安装命令"
         return $false
     }
     Remove-Item $tmp -Force -ErrorAction SilentlyContinue
 
     Write-Info "脚本已更新：$lver → $rver（旧版备份 $path.bak）"
-    if ($Mode -eq "explicit") { return $true }
-    # 自动模式：用新脚本重跑本次操作（置防重入标记，避免再次自检）
-    $env:SKILL_INSTALL_SELF_UPDATED = "1"
-    & $path @(Get-ReExecArgs)
-    exit 0
+    return $true
 }
 
 function Do-SelfUpdate {
     Write-Host "🔄 skill-install.ps1 self-update"
     Write-Host "   当前版本: $ScriptVersion"
     Write-Host "   脚本路径: $(Get-SelfPath)"
-    $srcDesc = if ($env:SKILL_INSTALL_SCRIPT_URL) { $env:SKILL_INSTALL_SCRIPT_URL } else { "$SelfUrlDefault (+ $SelfUrlMirror)" }
-    Write-Host "   来源: $srcDesc"
+    Write-Host "   来源: $SelfUrlDefault (+ $SelfUrlMirror)"
     Write-Host ""
-    [void](Invoke-SelfUpdate "explicit" $Force)
+    [void](Invoke-SelfUpdate "apply" $Force)
     Write-Host ""
     Write-Info "当前版本: $(Get-ScriptVersionOf (Get-SelfPath))"
 }
@@ -1193,9 +1161,9 @@ console.log(`  共 ${total} 个 skill`);
 # ============================================================
 # 主流程
 # ============================================================
-# 脚本自检（默认开启，TTL 节流；拿不到自身路径 / git 工作树内不覆盖，见 Invoke-SelfUpdate）
-if ($Action -ne "self-update" -and (-not $NoSelfUpdate) -and ($env:SKILL_INSTALL_NO_SELF_UPDATE -ne "1") -and ($env:SKILL_INSTALL_SELF_UPDATED -ne "1")) {
-    [void](Invoke-SelfUpdate "auto" $false)
+# 脚本自检（默认开启，TTL 节流；只提示不覆盖；-NoSelfUpdate 可关，见 Invoke-SelfUpdate）
+if ($Action -ne "self-update" -and (-not $NoSelfUpdate)) {
+    [void](Invoke-SelfUpdate "notify" $false)
 }
 
 switch ($Action) {

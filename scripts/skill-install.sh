@@ -15,9 +15,9 @@
 #           （install 未指定 --repo 时 = 默认仓库 HACK-WU/skills；
 #             update 未指定 --repo/-n 时 = 各目标自己的来源记录）
 #
-# 脚本自更新: 每次运行自检一次（TTL 节流）；发现新版默认只提示不覆盖，
-#             用 self-update 子命令更新（SKILL_INSTALL_SELF_UPDATE=auto 可改全自动）。
-#             管道执行（curl | bash）与 git 工作树内的副本不覆盖（后者用 git pull）。
+# 脚本自更新: 每次运行自检一次（24h 节流）；发现新版只提示不覆盖，
+#             要更新执行 self-update 子命令（--no-self-update 可跳过自检）。
+#             管道执行（curl | bash）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
 #
 # 用法:
 #   bash skill-install.sh install -t /path/to/target     # 安装（默认）
@@ -40,13 +40,15 @@ REPOS=()
 # 前缀定宽 → 字典序即版本序（LC_ALL=C 下比较，见 version_gt）
 SCRIPT_VERSION="2026-09-18.1"
 
-# 自更新来源（可用 SKILL_INSTALL_SCRIPT_URL 覆盖为镜像/内网地址；默认 raw + jsDelivr 兜底）
+# 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 SELF_URL_DEFAULT="https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh"
 SELF_URL_MIRROR="https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.sh"
-# 自检间隔（秒，默认 24h；0 = 每次都查）；SKILL_INSTALL_NO_SELF_UPDATE=1 可整体关闭
-SELF_UPDATE_TTL="${SKILL_INSTALL_SELF_UPDATE_TTL:-86400}"
+# 自检间隔（秒；0 = 每次都查）——脚本内常量，不做成环境变量
+SELF_CHECK_TTL=86400
 
 MANAGE_DIR="${HOME}/.hackwu-skills"
+# 自检节流戳记（放在顶部：帮助文本会引用它，必须在 show_help 执行前已定义）
+SELF_CHECK_FILE="${MANAGE_DIR}/.last-self-check"
 MANAGE_SKILLS_DIR="${MANAGE_DIR}/skills"
 LOCK_FILE="${MANAGE_DIR}/skills-lock.json"
 TARGETS_FILE="${MANAGE_DIR}/targets.list"
@@ -68,7 +70,6 @@ error() { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
 # ============================================================
 # 参数解析
 # ============================================================
-ORIG_ARGS=("$@")   # 原始参数（自更新后用新脚本重跑本次操作时用）
 ACTION=""
 TARGETS=()
 NAME_FILTER=""
@@ -117,13 +118,11 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $SCRIPT_V
    目标现有 skill 反查来源并写回；判定不出则跳过，不做全量复制）。
 
 脚本自更新:
-  每次运行做一次自检（默认 24h 一次，节流戳记 $SELF_CHECK_FILE）；
-  发现新版本默认只提示（不覆盖自身），用 self-update 子命令更新到最新版。
-  管道执行（curl | bash）与 git 工作树内的副本不覆盖（后者请用 git pull）。
-  关闭提示: --no-self-update 或 SKILL_INSTALL_NO_SELF_UPDATE=1
-  自动更新: SKILL_INSTALL_SELF_UPDATE=auto（覆盖自身并留 <脚本>.bak）
-  间隔: SKILL_INSTALL_SELF_UPDATE_TTL=<秒>（0 = 每次检查）
-  来源: SKILL_INSTALL_SCRIPT_URL=<脚本 URL>（默认 GitHub raw + jsDelivr 镜像兜底）
+  每次运行做一次自检（24h 一次），发现新版本只提示、不覆盖自身；
+  要更新就执行 self-update 子命令（覆盖前留 <脚本>.bak）。
+  管道执行（curl | bash）与 git 工作树内的副本不检查/不覆盖（后者请用 git pull）。
+  --no-self-update     本次不做自检
+  --force              self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 默认配置文件（不指定 -t / --file 时读取）:
   $DEFAULT_TARGETS_FILE
@@ -246,16 +245,16 @@ ensure_manage_dir() {
 # 脚本自更新（self-update）
 # ============================================================
 # 原则：宁可不动，也不许把用户本地的东西搞坏。
-#   ⓪ 默认「只提示、不覆盖」：自检发现新版即打印更新指引（静默改写用户正在用的脚本
-#      超出预期，且可能存在内网 fork / 本地改动）；要全自动需 SKILL_INSTALL_SELF_UPDATE=auto
-#   ① 管道执行（curl | bash，$0 不是文件）不覆盖、也不提示（一键安装本身即最新）
-#   ② 脚本在 git 工作树内一律不覆盖，提示用 git pull（保护未提交改动）
-#   ③ 下载物必须先过「哨兵 + bash -n 语法校验」才允许落盘（防 HTML 错误页/半截文件）
-#   ④ 禁止降级：远端版本 ≤ 本地不覆盖（--force 才强制）
-#   ⑤ 可关：--no-self-update / SKILL_INSTALL_NO_SELF_UPDATE=1；节流见 SELF_UPDATE_TTL
+#   ① 自检（每次运行）只提示、不覆盖：静默改写"用户正在用的脚本"超出预期
+#      （内网 fork / 本地改动）；真要更新就显式执行 self-update
+#   ② 管道执行（curl | bash，$0 不是文件）不检查也不提示（一键安装本身即最新）
+#   ③ 脚本在 git 工作树内一律不覆盖，提示用 git pull（保护未提交改动）
+#   ④ 下载物必须先过「哨兵 + bash -n 语法校验」才允许落盘（防 HTML 错误页/半截文件）
+#   ⑤ 禁止降级：远端版本 ≤ 本地不覆盖（--force 才强制）
+#   ⑥ 无环境变量开关：本次关闭自检用 --no-self-update；节流为 SELF_CHECK_TTL 常量
 # 落盘用「同目录 mv 原子替换」：运行中的 bash 读的是启动时打开的 fd（旧 inode），
 # 换目录项不会写坏正在执行的脚本 —— 因此绝不用 > "$0" 覆写。
-SELF_CHECK_FILE="${MANAGE_DIR}/.last-self-check"
+# （SELF_CHECK_FILE 定义在文件顶部：帮助文本要引用它）
 
 # 脚本自身的绝对路径；非文件（管道执行等）输出空
 self_path() {
@@ -335,17 +334,17 @@ apply_self_update() {
     mv -f "$tmp" "$dst"
 }
 
-# 自更新主流程
-#   auto     —— 每次运行的自检（受 TTL / 开关约束）。默认只提示不覆盖；
-#               SKILL_INSTALL_SELF_UPDATE=auto 时才覆盖并 exec 新脚本继续本次操作
-#   explicit —— self-update 子命令（忽略 TTL，直接覆盖；$2=1 即 --force，允许降级/覆盖 git 工作树内副本）
+# 自更新主流程（只有两条路，没有环境变量开关）
+#   notify —— 每次运行的自检（受 SELF_CHECK_TTL 节流）：有新版本只提示，绝不覆盖
+#   apply  —— self-update 子命令：真的覆盖（$2=1 即 --force，允许降级 / 覆盖 git 工作树内副本）
 self_update() {
     local mode="$1" force="${2:-0}"
     local path url tmp rver lver urls FETCH_CT FETCH_MT
     path="$(self_path)"
 
+    # 管道执行（curl | bash）拿不到自身文件：一键安装拿到的本来就是最新版，无需提示
     if [ -z "$path" ]; then
-        if [ "$mode" = "explicit" ]; then
+        if [ "$mode" = "apply" ]; then
             warn "当前脚本不是文件（可能通过 curl | bash 管道执行），无法自更新"
             info "请重新执行一键安装命令获取最新版，或先下载脚本再执行"
             return 1
@@ -353,14 +352,14 @@ self_update() {
         return 0
     fi
 
-    # 自检节流：TTL 内不重复检查（explicit 忽略）
-    case "$SELF_UPDATE_TTL" in ''|*[!0-9]*) SELF_UPDATE_TTL=86400 ;; esac
-    if [ "$mode" = "auto" ] && [ "$SELF_UPDATE_TTL" -gt 0 ]; then
+    # 自检节流：TTL 内不重复检查（apply 忽略）
+    case "$SELF_CHECK_TTL" in ''|*[!0-9]*) SELF_CHECK_TTL=86400 ;; esac
+    if [ "$mode" = "notify" ] && [ "$SELF_CHECK_TTL" -gt 0 ]; then
         local last now
         last="$(cat "$SELF_CHECK_FILE" 2>/dev/null || echo 0)"
         now="$(date +%s 2>/dev/null || echo 0)"
         case "$last" in ''|*[!0-9]*) last=0 ;; esac
-        if [ "$last" -gt 0 ] && [ $((now - last)) -lt "$SELF_UPDATE_TTL" ]; then
+        if [ "$last" -gt 0 ] && [ $((now - last)) -lt "$SELF_CHECK_TTL" ]; then
             return 0
         fi
     fi
@@ -372,12 +371,7 @@ self_update() {
     # 本地没有版本号（更早的版本/被改过）→ 不猜，静默跳过（可用 self-update 手动确认）
     [ -n "$lver" ] || return 0
 
-    # 依次尝试：显式指定的源（唯一）→ 默认 raw → jsDelivr 镜像
-    if [ -n "${SKILL_INSTALL_SCRIPT_URL:-}" ]; then
-        urls="$SKILL_INSTALL_SCRIPT_URL"
-    else
-        urls="$SELF_URL_DEFAULT $SELF_URL_MIRROR"
-    fi
+    urls="$SELF_URL_DEFAULT $SELF_URL_MIRROR"
     # 非 https 源（本地回环/测试除外）没有传输加密：明确提示，不静默
     for url in $urls; do
         case "$url" in
@@ -390,8 +384,8 @@ self_update() {
     # 下载临时文件放系统临时目录 + 随机名（不放脚本目录：脚本目录可能被他人写）
     tmp="$(mktemp "${TMPDIR:-/tmp}/skill-install.dl.XXXXXX" 2>/dev/null || echo "${TMPDIR:-/tmp}/skill-install.dl.$$")"
     rver=""
-    # 自检（auto）快失败：断网/被墙时不要让用户白等；显式 self-update 才容忍慢链路
-    if [ "$mode" = "explicit" ]; then
+    # 自检快失败：断网/被墙时不要让用户白等；显式 self-update 才容忍慢链路
+    if [ "$mode" = "apply" ]; then
         FETCH_CT=5; FETCH_MT=20
     else
         FETCH_CT=3; FETCH_MT=8
@@ -404,7 +398,7 @@ self_update() {
     done
     if [ -z "$rver" ]; then
         rm -f "$tmp" 2>/dev/null || true
-        if [ "$mode" = "explicit" ]; then
+        if [ "$mode" = "apply" ]; then
             warn "无法获取远端脚本（网络不可达，或源地址返回的内容未通过校验）"
             return 1
         fi
@@ -413,15 +407,15 @@ self_update() {
 
     if [ "$rver" = "$lver" ]; then
         rm -f "$tmp" 2>/dev/null || true
-        [ "$mode" = "explicit" ] && info "已是最新版本（$lver）"
+        [ "$mode" = "apply" ] && info "已是最新版本（$lver）"
         return 0
     fi
 
     if ! version_gt "$rver" "$lver"; then
         rm -f "$tmp" 2>/dev/null || true
-        if [ "$mode" = "explicit" ] && [ "$force" = "1" ]; then
+        if [ "$mode" = "apply" ] && [ "$force" = "1" ]; then
             info "远端版本（$rver）不高于本地（$lver），--force 指定：仍按远端覆盖"
-        elif [ "$mode" = "explicit" ]; then
+        elif [ "$mode" = "apply" ]; then
             warn "远端版本（$rver）不高于本地（$lver），未覆盖（确需强制加 --force）"
             return 1
         else
@@ -430,60 +424,44 @@ self_update() {
     fi
 
     # ---- 到这里的语义：远端版本更高 ----
-    # 默认（自检）只提示、不覆盖：静默改写"用户正在用的脚本"超出预期，
-    # 且可能存在内网 fork / 本地改动。要全自动可显式设 SKILL_INSTALL_SELF_UPDATE=auto。
-    if [ "$mode" = "auto" ] && [ "${SKILL_INSTALL_SELF_UPDATE:-notify}" != "auto" ]; then
+    # 自检只提示、绝不覆盖：静默改写"用户正在用的脚本"超出预期（内网 fork / 本地改动），
+    # 要更新就显式执行 self-update。
+    if [ "$mode" = "notify" ]; then
         rm -f "$tmp" 2>/dev/null || true
         if in_git_worktree "$(dirname "$path")"; then
             warn "脚本有新版本（$lver → $rver）：当前副本在 git 工作树内，请在该仓库执行 git pull 更新"
         else
             warn "脚本有新版本：$lver → $rver（本次仍按旧版本执行）"
             info "  更新: bash skill-install.sh self-update    （或重新执行一键安装命令）"
+            info "  关闭本次自检: --no-self-update"
         fi
-        info "  关闭提示: --no-self-update 或 SKILL_INSTALL_NO_SELF_UPDATE=1；"
-        info "  自动更新: SKILL_INSTALL_SELF_UPDATE=auto"
         return 0
     fi
 
-    # git 工作树内的副本：不覆盖（保护未提交改动），提示 git pull；显式模式需 --force
-    if in_git_worktree "$(dirname "$path")"; then
-        if [ "$mode" = "auto" ]; then
-            rm -f "$tmp" 2>/dev/null || true
-            warn "脚本有新版本（$lver → $rver），但当前副本在 git 工作树内，不做自动覆盖"
-            warn "  请在该仓库执行 git pull 更新"
-            return 0
-        fi
-        if [ "$force" != "1" ]; then
-            rm -f "$tmp" 2>/dev/null || true
-            warn "脚本位于 git 工作树内（$path），未覆盖：请用 git pull 更新；确需覆盖加 --force"
-            return 1
-        fi
+    # git 工作树内的副本：不覆盖（保护未提交改动），提示 git pull；需 --force 才覆盖
+    if in_git_worktree "$(dirname "$path")" && [ "$force" != "1" ]; then
+        rm -f "$tmp" 2>/dev/null || true
+        warn "脚本位于 git 工作树内（$path），未覆盖：请用 git pull 更新；确需覆盖加 --force"
+        return 1
     fi
 
     if ! apply_self_update "$tmp" "$path"; then
         rm -f "$tmp" 2>/dev/null || true
         warn "脚本无法自动更新（目录不可写，或系统缺少 mktemp）：$path"
-        [ "$mode" = "explicit" ] && info "可换有写权限的账号，或重新执行一键安装命令"
+        info "可换有写权限的账号，或重新执行一键安装命令"
         return 1
     fi
-
     rm -f "$tmp" 2>/dev/null || true
     info "脚本已更新：$lver → $rver（旧版备份 ${path}.bak）"
-    if [ "$mode" = "explicit" ]; then
-        return 0
-    fi
-    # 自动模式：用新脚本重跑本次操作（置防重入标记，避免 exec 后再自检）
-    export SKILL_INSTALL_SELF_UPDATED=1
-    exec bash "$path" ${ORIG_ARGS[@]+"${ORIG_ARGS[@]}"}
 }
 
 do_self_update() {
     echo "🔄 skill-install.sh self-update"
     echo "   当前版本: $SCRIPT_VERSION"
     echo "   脚本路径: $(self_path)"
-    echo "   来源: ${SKILL_INSTALL_SCRIPT_URL:-$SELF_URL_DEFAULT} (+ $SELF_URL_MIRROR)"
+    echo "   来源: $SELF_URL_DEFAULT (+ $SELF_URL_MIRROR)"
     echo ""
-    self_update explicit "$SELF_FORCE"
+    self_update apply "$SELF_FORCE"
     echo ""
     info "当前版本: $SCRIPT_VERSION"
 }
@@ -1269,11 +1247,9 @@ console.log(`  共 ${total} 个 skill`);
 # ============================================================
 # 主流程
 # ============================================================
-# 脚本自检（默认开启，TTL 节流；管道执行 / git 工作树内不覆盖，见 self_update）
-if [ "$ACTION" != "self-update" ] && [ "$NO_SELF_UPDATE" != "1" ] \
-    && [ "${SKILL_INSTALL_NO_SELF_UPDATE:-0}" != "1" ] \
-    && [ "${SKILL_INSTALL_SELF_UPDATED:-0}" != "1" ]; then
-    self_update auto 0 || true
+# 脚本自检（默认开启，TTL 节流；只提示不覆盖；--no-self-update 可关，见 self_update）
+if [ "$ACTION" != "self-update" ] && [ "$NO_SELF_UPDATE" != "1" ]; then
+    self_update notify || true
 fi
 
 case "$ACTION" in

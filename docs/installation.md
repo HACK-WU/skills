@@ -81,7 +81,7 @@ npx skills add HACK-WU/skills --list -y
 | `--optional` | `--repo https://github.com/HACK-WU/skills/tree/master/skills-optional` 的别名，用于安装依赖第三方 skill/模块的**可选技能**；可与 `--repo` 同时使用 |
 | `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
 | `-y` / `--yes` | `prune` 时真正执行删除（不加则只预演列出） |
-| `--no-self-update` | 本次不检查脚本自身版本（等价环境变量 `SKILL_INSTALL_NO_SELF_UPDATE=1`） |
+| `--no-self-update` | 本次不做脚本自检 |
 | `--force` | `self-update` 时允许降级 / 覆盖 git 工作树内的副本 |
 | `--version` | 显示脚本版本 |
 
@@ -159,20 +159,18 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 ```text
 [WARN] 脚本有新版本：2026-09-18.1 → 2026-09-18.2（本次仍按旧版本执行）
 [INFO]   更新: bash skill-install.sh self-update    （或重新执行一键安装命令）
-[INFO]   关闭提示: --no-self-update 或 SKILL_INSTALL_NO_SELF_UPDATE=1；
-[INFO]   自动更新: SKILL_INSTALL_SELF_UPDATE=auto
+[INFO]   关闭本次自检: --no-self-update
 ```
 
-| 档位 | 开启方式 | 行为 |
-|------|----------|------|
-| **提示（默认）** | — | 有新版只打印上面几行，本次操作继续用旧版本 |
-| **手动更新** | `self-update` 子命令 | 检查并覆盖自身（留 `<脚本>.bak`），忽略 24h 节流 |
-| **全自动** | `SKILL_INSTALL_SELF_UPDATE=auto` | 有新版自动覆盖，并用新脚本继续本次操作 |
-| 关闭自检 | `--no-self-update` / `SKILL_INSTALL_NO_SELF_UPDATE=1` | 完全不检查（也不提示） |
+| 做法 | 命令 | 行为 |
+|------|------|------|
+| **看提示（默认）** | — | 有新版只打印上面几行，本次操作继续用旧版本 |
+| **更新** | `self-update` 子命令 | 检查并覆盖自身（留 `<脚本>.bak`），忽略 24h 节流 |
+| **跳过自检** | `--no-self-update` | 本次不做自检（也不提示） |
 
-> **为什么默认不自动覆盖**：脚本可能被内网 fork、本地改过，或装在只想保持稳定的项目里——静默改写"用户正在用的脚本"超出预期。要全自动有显式开关。
+> **为什么只提示不覆盖**：脚本可能被内网 fork、本地改过，或装在只想保持稳定的项目里——静默改写"用户正在用的脚本"超出预期。
 
-**保险（各档位一致）**：
+**保险（两条路一致）**：
 
 | 保险 | 行为 |
 |------|------|
@@ -182,7 +180,9 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 | 版本方向 | 远端不高于本地不覆盖（`--force` 才允许降级） |
 | 回滚 | 覆盖前留 `<脚本>.bak` |
 
-环境变量：`SKILL_INSTALL_SELF_UPDATE_TTL=<秒>`（默认 86400，`0` = 每次检查）、`SKILL_INSTALL_SCRIPT_URL=<脚本 URL>`（默认 GitHub raw + jsDelivr 镜像兜底，可指向内网镜像；**非 https 的源会提示"无传输加密"**）。
+自更新**不做环境变量开关**（避免配置面）：节流间隔与来源都是脚本顶部常量——要指向内网镜像就改那里的自更新来源常量（`SELF_URL_DEFAULT` / `$SelfUrlDefault`；非 https 源会提示"无传输加密"）。
+
+> **离线 / 求稳环境**：加 `--no-self-update` 跳过自检，或把脚本顶部的节流常量（`SELF_CHECK_TTL` / `$SelfCheckTtl`）调大；离线时自检本身也会在 3s 内快速失败，不会长时间阻塞。
 
 > 自检用**短超时快速失败**（连接 3s / 单源 8s）：断网或被墙时不会让本次操作白等；只有显式 `self-update` 才容忍慢链路（5s / 20s）。
 
