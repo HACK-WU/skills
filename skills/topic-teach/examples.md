@@ -299,6 +299,9 @@ kubectl logs nginx-demo -c log-agent
 
 ### 4.1 机制验证
 
+> ⚠️ 未实测（需要 k8s 集群，本机无 minikube）：以下输出为参考示例，请自行验证。
+> *本地能跑的命令必须实跑*——本例若有集群，留痕改写为 `> ✅ 实测于 minikube v1.33 / kubectl v1.30`，输出贴实际结果（见 SKILL.md「4.1 的实证要求」）
+
 ```bash
 kubectl apply -f pod.yaml && kubectl get pods
 # 预期输出：nginx-demo  1/1  Running
