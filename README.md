@@ -173,12 +173,13 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-59 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+60 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
+| **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，一次成型出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演） | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
 | **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化；快速实现路径默认交接 `plan-track` 建档 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
 | **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
@@ -209,7 +210,7 @@ flowchart TD
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
 | **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
-| **[performance-analysis](./skills/performance-analysis/SKILL.md)** | 接口/请求链路性能专项分析：盘点现有证据（火焰图/APM/压测/慢查询）与代码，八层定位瓶颈；支持**双样本差分**（一快一慢两份数据，先变量对齐再 Δ 分解），量化收益上限与优先级，产出面向开发或产品的报告 + 验证计划 | "性能分析"、"为什么这么慢"、"接口 RT 高"、"性能优化"、"出份性能报告"、"容量评估"、"两份数据对比"、"优化前后对比" |
+| **[performance-analysis](./skills/performance-analysis/SKILL.md)** | 接口/请求链路性能专项分析：盘点现有证据（火焰图/APM/压测/慢查询）与代码，八层定位瓶颈；支持**双样本差分**（一快一慢两份数据，先变量对齐再 Δ 分解），量化收益上限与优先级；性能不佳时输出双路径建议（A 功能等价技术优化 + B 牺牲产品功能换性能，B 交 product-manager 分析），产出面向开发或产品的报告 + 验证计划 | "性能分析"、"为什么这么慢"、"接口 RT 高"、"性能优化"、"出份性能报告"、"容量评估"、"两份数据对比"、"优化前后对比" |
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 | **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
