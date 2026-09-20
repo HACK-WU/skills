@@ -18,6 +18,11 @@
 #             要更新执行 self-update 子命令（-NoSelfUpdate 可跳过自检）。
 #             拿不到自身路径（管道执行）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
 #
+# 参数容错: 子命令接受 -- 前缀（--self-update 等价 self-update）；
+#           未知参数一律报错拒绝，绝不静默降级为 install —— 拼错的单词 /
+#           加错前缀的输入不会被当成目标目录新建（历史事故：
+#           .\skill-install.ps1 --self-update 静默执行 install 并建出 --self-update\ 目录）。
+#
 # 用法:
 #   .\skill-install.ps1 install -Target C:\projects\app
 #   .\skill-install.ps1 install -Optional -Target C:\projects\app    # 只装可选技能
@@ -85,7 +90,7 @@ $TargetsFile = Join-Path $ManageDir "targets.list"
 $DefaultTargetsFile = Join-Path $HomeDir ".skill-targets"
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：前缀定宽 → 序数比较即版本序
-$ScriptVersion = "2026-09-20.1"
+$ScriptVersion = "2026-09-20.2"
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 $SelfUrlDefault = "https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1"
 $SelfUrlMirror = "https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.ps1"
@@ -114,6 +119,10 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $ScriptVe
     list         列出管理源中已安装的 skill（含来源仓库）
     -h, --help   显示此帮助
     --version    显示脚本版本
+
+  说明:
+    子命令也接受 -- 前缀（如 --self-update 等价 self-update）；
+    未知参数一律报错拒绝，不会静默降级为 install（拼错的单词不会被当成目标目录）。
 
 选项:
   -Target <paths>     目标目录，多个用逗号分隔（如 -Target C:\a,C:\b；与 -ConfigFile 互斥；update/prune 时限定处理的目标目录）
@@ -173,15 +182,47 @@ if ($Help) { Show-Help }
 # ============================================================
 # 确定操作（子命令：install/update/remove/list）
 # ============================================================
+# Levenshtein 编辑距离（提示"是否想执行 xxx"用；输入都很短，直接 DP）
+function Get-EditDistance($a, $b) {
+    $n = $a.Length; $m = $b.Length
+    $prev = New-Object 'int[]' ($m + 1); $cur = New-Object 'int[]' ($m + 1)
+    for ($j = 0; $j -le $m; $j++) { $prev[$j] = $j }
+    for ($i = 1; $i -le $n; $i++) {
+        $cur[0] = $i
+        for ($j = 1; $j -le $m; $j++) {
+            $cost = if ($a[$i - 1] -eq $b[$j - 1]) { 0 } else { 1 }
+            $cur[$j] = [Math]::Min([Math]::Min($cur[$j - 1] + 1, $prev[$j] + 1), $prev[$j - 1] + $cost)
+        }
+        $t = $prev; $prev = $cur; $cur = $t
+    }
+    return $prev[$m]
+}
+
+# 最接近的已知子命令（编辑距离 ≤ 2）；找不到返回空
+# 注意参数名不要用 $Input：它是 PowerShell 自动变量（管道输入），会把实参吃掉
+function Get-CommandSuggestion($Typed) {
+    $known = @("install", "update", "remove", "prune", "self-update", "list")
+    $best = ""; $bestD = 3
+    foreach ($c in $known) {
+        $d = Get-EditDistance $Typed $c
+        if ($d -lt $bestD) { $bestD = $d; $best = $c }
+    }
+    return $best
+}
+
 $Action = "install"  # 默认安装
 if ($Command) {
-    switch ($Command.ToLower()) {
-        "--help" { Show-Help }
-        "-help"  { Show-Help }
+    $raw = $Command.Trim()
+    $norm = $raw.ToLower()
+    # 子命令容错：允许 -- 前缀。帮助里的 "-h, --help / --version" 用了双横线，
+    # 用户容易类推 --self-update —— 不放行的话它会落到 default 被当成目标路径（历史事故）
+    if ($norm.StartsWith("--")) { $norm = $norm.Substring(2) }
+    switch ($norm) {
         "-h"     { Show-Help }
+        "-help"  { Show-Help }
         "help"   { Show-Help }
-        "--version" { Write-Host "skill-install.ps1 $ScriptVersion"; exit 0 }
         "-version"  { Write-Host "skill-install.ps1 $ScriptVersion"; exit 0 }
+        "version"   { Write-Host "skill-install.ps1 $ScriptVersion"; exit 0 }
         "update" { $Action = "update" }
         "remove" {
             $Action = "remove"
@@ -194,9 +235,27 @@ if ($Command) {
         "self-update" { $Action = "self-update" }
         "install" { $Action = "install" }
         default {
-            # 非子命令 → 兼容旧用法：当作目标路径
+            # 兼容旧用法（位置参数当目标路径）之前，先拦截"疑似命令/选项"——
+            # 否则拼错子命令（selfupdate）或加错前缀（--self-update）会被静默降级为
+            # install，并把它当目标目录新建出同名目录
+            if (-not $raw) {
+                Write-Err "位置参数不能为空白字符串`n  查看全部用法: -h / --help"
+            }
+            if ($raw.StartsWith("-")) {
+                $sug = Get-CommandSuggestion $norm
+                $hint = if ($sug) { "`n  是否想执行: $sug" } else { "" }
+                Write-Err "未知选项/子命令: $raw$hint`n  查看全部用法: -h / --help"
+            }
+            $exists = $false
+            try { $exists = Test-Path -LiteralPath $raw } catch { }
+            if (($raw -notmatch '[\\/\.:]') -and (-not $exists)) {
+                $sug = Get-CommandSuggestion $norm
+                $hint = if ($sug) { "（是否想执行 '$sug'？）" } else { "" }
+                Write-Err "无法识别的参数: $raw $hint`n  如要安装到新目录，请显式指定: -Target <路径>"
+            }
+            # 其余（像路径 / 已存在的目录）→ 兼容旧用法：当作目标路径
             $Action = "install"
-            if (-not $TargetPath) { $TargetPath = $Command }
+            if (-not $TargetPath) { $TargetPath = $raw }
         }
     }
 }

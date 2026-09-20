@@ -19,6 +19,11 @@
 #             要更新执行 self-update 子命令（--no-self-update 可跳过自检）。
 #             管道执行（curl | bash）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
 #
+# 参数容错: 子命令接受 -- 前缀（--self-update 等价 self-update）；
+#           未知参数一律报错拒绝，绝不静默降级为 install —— 拼错的单词 /
+#           加错前缀的输入不会被当成目标目录新建（历史事故：
+#           .\skill-install.ps1 --self-update 静默执行 install 并建出同名目录）。
+#
 # 用法:
 #   bash skill-install.sh install -t /path/to/target     # 安装（默认）
 #   bash skill-install.sh update [-t ...] [-n names] [--repo ...]  # 更新并同步
@@ -38,7 +43,7 @@ REPOS=()
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：
 # 前缀定宽 → 字典序即版本序（LC_ALL=C 下比较，见 version_gt）
-SCRIPT_VERSION="2026-09-18.1"
+SCRIPT_VERSION="2026-09-20.2"
 
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 SELF_URL_DEFAULT="https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh"
@@ -95,6 +100,10 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $SCRIPT_V
     list         列出管理源中已安装的 skill（含来源仓库）
     --help       显示此帮助
     --version    显示脚本版本
+
+  说明:
+    子命令也接受 -- 前缀（如 --self-update 等价 self-update）；
+    未知参数一律报错拒绝，不会静默降级为 install（拼错的单词不会被当成目标目录）。
 
 选项:
   -t <path>            目标目录（可多次使用，与 --file 互斥；update/prune 时限定处理的目标目录）
@@ -158,6 +167,11 @@ EOF
 REMOVE_PENDING=0
 while [ $# -gt 0 ]; do
     arg="$1"
+    # 子命令容错：帮助里的 --help/--version 用了双横线，用户容易类推 --self-update；
+    # 归一化后走既有子命令分支，避免落到 *) 被当成目标路径（历史事故：建出同名目录）
+    case "$arg" in
+        --install|--update|--remove|--prune|--self-update|--list) arg="${arg#--}" ;;
+    esac
     case "$arg" in
         -h|--help) show_help ;;
         -t)
@@ -206,7 +220,26 @@ while [ $# -gt 0 ]; do
                 NAME_FILTER="$arg"
                 REMOVE_PENDING=0
             elif [ -z "$POSITIONAL_TARGET" ]; then
-                POSITIONAL_TARGET="$arg"
+                # 兼容旧用法（当目标路径）之前，先拦"疑似拼错的子命令"：
+                # 纯单词（无路径特征）且不是已存在目录 → 拒绝，绝不静默当目标新建
+                case "$arg" in
+                    */*|*\\*|*:*|*.*) POSITIONAL_TARGET="$arg" ;;
+                    *)
+                        if [ -d "$arg" ]; then
+                            POSITIONAL_TARGET="$arg"
+                        else
+                            norm="${arg//-/}"
+                            sug=""
+                            for c in install update remove prune self-update list; do
+                                if [ "${c//-/}" = "$norm" ]; then sug="$c"; break; fi
+                            done
+                            if [ -n "$sug" ]; then
+                                error "无法识别的参数: $arg（是否想执行 '$sug'？）"
+                            fi
+                            error "无法识别的参数: $arg（不是已存在的目录；如要安装到新目录请用 -t <路径>）"
+                        fi
+                        ;;
+                esac
             else
                 error "无法识别的参数: $arg"
             fi
