@@ -85,7 +85,7 @@ $TargetsFile = Join-Path $ManageDir "targets.list"
 $DefaultTargetsFile = Join-Path $HomeDir ".skill-targets"
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：前缀定宽 → 序数比较即版本序
-$ScriptVersion = "2026-09-18.1"
+$ScriptVersion = "2026-09-20.1"
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 $SelfUrlDefault = "https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1"
 $SelfUrlMirror = "https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.ps1"
@@ -581,11 +581,39 @@ function Get-TargetReposFromFile($t) {
     return ""
 }
 
+# ============================================================
+# Node 脚本执行：写临时文件后执行
+# ============================================================
+# 不能写成 `& node -e @'...'@`：Windows PowerShell 5.1 把参数拼进命令行时
+# 不转义脚本内的双引号，node 收到的脚本会被截断/改坏，例如：
+#   1) 代码里 `console.log(name+"\t"+x)` 被改成 `name+\t+x` → SyntaxError
+#   2) 注释里含 "..." 时，脚本从该引号处截断，后半段变成独立参数被丢弃
+#      → node 静默无输出（表现为同步范围 0、来源反查为空）
+# 统一改为：写 UTF-8（无 BOM）临时文件 → `node <文件>` → 用完即删。
+function Invoke-NodeScript($Code) {
+    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("skill-inst-" + [guid]::NewGuid().ToString("N") + ".js")
+    try {
+        # UTF-8（无 BOM）：node 按 UTF-8 解析脚本（中文注释/输出不乱码）
+        [System.IO.File]::WriteAllText($tmp, $Code, (New-Object System.Text.UTF8Encoding($false)))
+        & node $tmp
+    } catch {
+        # 临时目录不可写 / node 不可用等系统级异常：给可读提示（原 `& node -e` 不写文件，此为新增失败面）
+        Write-Err "node 脚本执行失败（临时文件: $tmp）: $($_.Exception.Message)"
+    } finally {
+        # 偶发删除失败（进程刚退出时的文件占用）不影响主流程：删除 + 短暂重试兜底
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        if (Test-Path $tmp) {
+            Start-Sleep -Milliseconds 100
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 # lock 中所有 skill 的 "name<TAB>source" 清单（供来源反查 / prune 分类）
 function Get-LockNameSources {
     if (-not (Test-Path $LockFile)) { return @() }
     $env:LOCK_FILE = $LockFile
-    $out = & node -e @'
+    $out = Invoke-NodeScript @'
 const fs=require('fs');
 let d;
 try{ d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8')); }catch(e){ process.exit(0); }
@@ -643,7 +671,7 @@ function Get-SyncScopeNames($RepoSpecs) {
     $env:LOCK_FILE = $LockFile
     $env:REPO_SPECS = ($RepoSpecs -join ' ')
     $env:NAME_WANTED = ($NameList -join ' ')
-    $names = & node -e @'
+    $names = Invoke-NodeScript @'
 const fs=require('fs');
 let d;
 try{ d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8')); }catch(e){ process.exit(0); }
@@ -839,7 +867,7 @@ function Do-Update {
         $repos = @($Repo)
     } else {
         $env:LOCK_FILE = $LockFile
-        $repos = (& node -e @'
+        $repos = (Invoke-NodeScript @'
 const fs=require('fs');
 try{
   const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
@@ -865,7 +893,7 @@ try{
     $env:LOCK_FILE = $LockFile
     $env:NAME_WANTED = if ($NameList.Count -gt 0) { ($NameList -join ' ') } else { "" }
     $env:REPO_SCOPE = ($repos -join ' ')
-    $mapOutput = & node -e @'
+    $mapOutput = Invoke-NodeScript @'
 const fs=require('fs');
 const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
 const wanted=(process.env.NAME_WANTED||'').split(' ').filter(Boolean);
@@ -969,7 +997,7 @@ function Do-Remove {
     foreach ($name in $NameList) {
         $env:LOCK_FILE = $LockFile
         $env:NAME = $name
-        & node -e @'
+        Invoke-NodeScript @'
 const fs=require('fs');
 const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
 process.exit(d.skills && d.skills[process.env.NAME] ? 0 : 1);
@@ -981,7 +1009,7 @@ process.exit(d.skills && d.skills[process.env.NAME] ? 0 : 1);
         Write-Warn "npx 未删除 lock 条目（状态漂移），手动兜底清理: $($staleNames -join ', ')"
         $env:LOCK_FILE = $LockFile
         $env:STALE_NAMES = ($staleNames -join ' ')
-        & node -e @'
+        Invoke-NodeScript @'
 const fs=require('fs');
 const f=process.env.LOCK_FILE;
 const d=JSON.parse(fs.readFileSync(f,'utf8'));
@@ -1118,7 +1146,7 @@ function Do-List {
     # --repo 过滤（仅当用户显式指定 -Repo 时）
     $env:LOCK_FILE = $LockFile
     $env:REPO_FILTER = if ($RepoSpecified) { ($Repo -join ' ') } else { "" }
-    & node -e @'
+    Invoke-NodeScript @'
 const fs=require('fs');
 const d=JSON.parse(fs.readFileSync(process.env.LOCK_FILE,'utf8'));
 const skills=d.skills||{};
