@@ -87,7 +87,7 @@ SELF_FORCE=0       # --force：self-update 时允许降级 / 覆盖 git 工作�
 
 show_help() {
     cat << EOF
-Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $SCRIPT_VERSION）
+Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 ${SCRIPT_VERSION}）
 
 用法:
   bash skill-install.sh <操作> [选项]
@@ -207,14 +207,14 @@ while [ $# -gt 0 ]; do
         --force) SELF_FORCE=1 ;;
         --version) echo "skill-install.sh $SCRIPT_VERSION"; exit 0 ;;
         install|update|remove|prune|self-update|list)
-            [ -n "$ACTION" ] && error "已指定操作 $ACTION，不能同时指定 $arg"
+            [ -n "$ACTION" ] && error "已指定操作 ${ACTION}，不能同时指定 $arg"
             ACTION="$arg"
             if [ "$arg" = "remove" ]; then
                 # remove 后第一个非选项参数是 skill 名称
                 REMOVE_PENDING=1
             fi
             ;;
-        -*) error "未知选项: $arg（使用 --help 查看帮助）" ;;
+        -*) error "未知选项: ${arg}（使用 --help 查看帮助）" ;;
         *)
             if [ "$REMOVE_PENDING" = "1" ]; then
                 NAME_FILTER="$arg"
@@ -234,9 +234,9 @@ while [ $# -gt 0 ]; do
                                 if [ "${c//-/}" = "$norm" ]; then sug="$c"; break; fi
                             done
                             if [ -n "$sug" ]; then
-                                error "无法识别的参数: $arg（是否想执行 '$sug'？）"
+                                error "无法识别的参数: ${arg}（是否想执行 '$sug'？）"
                             fi
-                            error "无法识别的参数: $arg（不是已存在的目录；如要安装到新目录请用 -t <路径>）"
+                            error "无法识别的参数: ${arg}（不是已存在的目录；如要安装到新目录请用 -t <路径>）"
                         fi
                         ;;
                 esac
@@ -410,7 +410,7 @@ self_update() {
         case "$url" in
             https://*) ;;
             http://127.0.0.1*|http://localhost*|file://*) ;;
-            *) warn "自更新源不是 https（$url）：下载内容无传输加密保护" ;;
+            *) warn "自更新源不是 https（${url}）：下载内容无传输加密保护" ;;
         esac
     done
 
@@ -440,16 +440,16 @@ self_update() {
 
     if [ "$rver" = "$lver" ]; then
         rm -f "$tmp" 2>/dev/null || true
-        [ "$mode" = "apply" ] && info "已是最新版本（$lver）"
+        [ "$mode" = "apply" ] && info "已是最新版本（${lver}）"
         return 0
     fi
 
     if ! version_gt "$rver" "$lver"; then
         rm -f "$tmp" 2>/dev/null || true
         if [ "$mode" = "apply" ] && [ "$force" = "1" ]; then
-            info "远端版本（$rver）不高于本地（$lver），--force 指定：仍按远端覆盖"
+            info "远端版本（${rver}）不高于本地（${lver}），--force 指定：仍按远端覆盖"
         elif [ "$mode" = "apply" ]; then
-            warn "远端版本（$rver）不高于本地（$lver），未覆盖（确需强制加 --force）"
+            warn "远端版本（${rver}）不高于本地（${lver}），未覆盖（确需强制加 --force）"
             return 1
         else
             return 0
@@ -462,9 +462,9 @@ self_update() {
     if [ "$mode" = "notify" ]; then
         rm -f "$tmp" 2>/dev/null || true
         if in_git_worktree "$(dirname "$path")"; then
-            warn "脚本有新版本（$lver → $rver）：当前副本在 git 工作树内，请在该仓库执行 git pull 更新"
+            warn "脚本有新版本（$lver → ${rver}）：当前副本在 git 工作树内，请在该仓库执行 git pull 更新"
         else
-            warn "脚本有新版本：$lver → $rver（本次仍按旧版本执行）"
+            warn "脚本有新版本：$lver → ${rver}（本次仍按旧版本执行）"
             info "  更新: bash skill-install.sh self-update    （或重新执行一键安装命令）"
             info "  关闭本次自检: --no-self-update"
         fi
@@ -474,7 +474,7 @@ self_update() {
     # git 工作树内的副本：不覆盖（保护未提交改动），提示 git pull；需 --force 才覆盖
     if in_git_worktree "$(dirname "$path")" && [ "$force" != "1" ]; then
         rm -f "$tmp" 2>/dev/null || true
-        warn "脚本位于 git 工作树内（$path），未覆盖：请用 git pull 更新；确需覆盖加 --force"
+        warn "脚本位于 git 工作树内（${path}），未覆盖：请用 git pull 更新；确需覆盖加 --force"
         return 1
     fi
 
@@ -485,7 +485,7 @@ self_update() {
         return 1
     fi
     rm -f "$tmp" 2>/dev/null || true
-    info "脚本已更新：$lver → $rver（旧版备份 ${path}.bak）"
+    info "脚本已更新：$lver → ${rver}（旧版备份 ${path}.bak）"
 }
 
 do_self_update() {
@@ -968,7 +968,7 @@ do_update() {
         fi
     fi
 
-    echo "🚀 skill-install.sh update（v$SCRIPT_VERSION）"
+    echo "🚀 skill-install.sh update（v${SCRIPT_VERSION}）"
     echo "   管理目录: $MANAGE_DIR"
     echo "   更新仓库: ${repos[*]}"
     [ -n "$NAME_FILTER" ] && echo "   名称过滤: $NAME_FILTER"
@@ -1008,7 +1008,7 @@ for(const s of Object.keys(out).sort()){
 }
 ')
     if [ "$updated_any" = "0" ]; then
-        [ -n "$NAME_FILTER" ] && warn "未在管理源中找到匹配的 skill：$NAME_FILTER（可能未安装）"
+        [ -n "$NAME_FILTER" ] && warn "未在管理源中找到匹配的 skill：${NAME_FILTER}（可能未安装）"
         warn "管理源中没有可更新的 skill。"
     fi
 
@@ -1129,7 +1129,7 @@ do_prune() {
     fi
     [ ${#targets[@]} -eq 0 ] && error "未指定目标（-t <path>），且无已记录目标"
 
-    echo "🧹 skill-install.sh prune（v$SCRIPT_VERSION）"
+    echo "🧹 skill-install.sh prune（v${SCRIPT_VERSION}）"
     echo "   管理目录: $MANAGE_DIR"
     echo "   目标数量: ${#targets[@]}"
     echo "   模式: $([ "$PRUNE_APPLY" = "1" ] && echo "执行删除" || echo "预演（仅列出，加 -y 执行）")"
@@ -1157,7 +1157,7 @@ do_prune() {
             repos="${REPOS[*]}"
             set_sync_scope "${REPOS[@]}"
             if [ -z "$SYNC_NAMES" ]; then
-                warn "指定的仓库（$repos）在管理源中没有匹配的 skill，跳过: $t"
+                warn "指定的仓库（${repos}）在管理源中没有匹配的 skill，跳过: $t"
                 continue
             fi
         else
@@ -1171,7 +1171,7 @@ do_prune() {
         fi
         total_targets=$((total_targets + 1))
         local removed=0
-        echo "  $dest（保留来源: $repos）"
+        echo "  ${dest}（保留来源: ${repos}）"
         for name in $(ls -1 "$dest" 2>/dev/null); do
             [ -d "$dest/$name" ] || continue
             # 只清理 lock 中登记过的 skill（安装器管理过的），手工目录一律保留
@@ -1189,9 +1189,9 @@ do_prune() {
             esac
             if [ "$PRUNE_APPLY" = "1" ]; then
                 rm -rf "${dest:?}/$name" 2>/dev/null || true
-                echo "    [DEL]  $name  （来源: $src）"
+                echo "    [DEL]  $name  （来源: ${src}）"
             else
-                echo "    [待删] $name  （来源: $src）"
+                echo "    [待删] $name  （来源: ${src}）"
             fi
             removed=$((removed + 1))
         done
