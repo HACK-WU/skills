@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-56-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-60-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -215,6 +215,7 @@ flowchart TD
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 | **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
 | **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memory-write | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
+| **[ki-search-first](./skills/ki-search-first/SKILL.md)** | 项目记忆优先（任务前置门）：任何任务前先 `ki_search` 检索项目记忆，命中则带记忆求解，未命中再降级到 expert-solution-workflow 复用路径；改代码时必查强关联关系 | "查记忆"、"改A要连带改B吗"、"遇事不决 ki-search" |
 | **[ki-memory-write](./skills/ki-memory-write/SKILL.md)** | 统一往 ki-search 写记忆的 SSOT，按类型分发七类：专题记忆 / 接口信息 / 数据流 / 决策记忆（expert-team 调用）、强关联（strong-relation 调用）、错误库（debug / solution-capture 调用）、待生效变更（code-review 调用，纯 KB 不向量化） | "写专题记忆"、"写 ki 记忆"、"记录决策"、"登记待生效变更"、"ki memory write" |
 | **[ki-memory-lookup](./skills/ki-memory-lookup/SKILL.md)** | 统一查 ki-search 记忆的 SSOT，按类型分发七类：专题记忆（模块内路标）、接口信息（对外 API）、数据流（数据实体流向）、强关联（跨模块耦合）、决策记忆、错误库、待生效变更（待合入资产变更台账，只能目录直查） | "查记忆"、"查强关联"、"改A要连带改B吗"、"这个模块牵动哪些"、"这个报错见过吗" |
 
@@ -230,6 +231,7 @@ flowchart TD
 | **[artifact-optimizer](./skills/artifact-optimizer/SKILL.md)** | 对代码、设计文档、Skill 文件进行系统化优化分析，根据用户意图调用对应的优化子流程 | "优化代码"、"优化设计文档"、"优化 skill" |
 | **[harness-review](./skills/harness-review/SKILL.md)** | 对项目 AI 工作流配置做五维轻量体检，按证据状态阶梯评分（存在≠被用≠有效），零依赖纯 Markdown | "体检一下工作流"、"harness review"、"评估 AI 配置" |
 | **[ecosystem-review](./skills/ecosystem-review/SKILL.md)** | 评审技能生态（skills/rules/memories/agents）的整体一致性、冗余健康度、资产定位与触发链闭环，甄别"有意冗余"（提注意力）vs"有害重复/冲突" | "评审技能生态"、"体检技能体系"、"ecosystem review"、"三层一致性检查" |
+| **[expert-solution-workflow](./skills/expert-solution-workflow/SKILL.md)** | 资产复用工作流总门（前置路由）：区分「业务专家团」（领域地图，用时需读代码确认）与「解决方案」（场景菜谱，可直接照做）两类资产的本质差异；业务模块类问题 → expert-lookup，具体技术问题 → solution-lookup，沉淀时按可复现场景 → solution-capture、可复用模块 → expert-team 分流 | "有没有现成方案"、"查专家"、"沉淀一下"、"记录解决方案"、"建专家团" |
 | **[expert-lookup](./skills/expert-lookup/SKILL.md)** | 查找并复用已沉淀的业务专家资产包，通过语义匹配定位可复用的分析框架 | "查找专家"、"复用分析框架"、"有类似分析吗" |
 | **[expert-team](./skills/expert-team/SKILL.md)** | 派出多专家子 agent 并行深挖业务模块，各自独立分析后合并成完整画像 | "深挖模块"、"专家团队分析"、"并行分析" |
 | **[expert-audit](./skills/expert-audit/SKILL.md)** | 站在零上下文使用者视角审查 expert-team 专家资产的可读性与格式合规（R1–R7/CR1–CR9/INDEX），格式问题自动修复 | "核对专家团"、"审查专家资产"、"expert audit" |
