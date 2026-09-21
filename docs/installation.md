@@ -81,7 +81,6 @@ npx skills add HACK-WU/skills --list -y
 | `--optional` | `--repo https://github.com/HACK-WU/skills/tree/master/skills-optional` 的别名，用于安装依赖第三方 skill/模块的**可选技能**；可与 `--repo` 同时使用 |
 | `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
 | `-y` / `--yes` | `prune` 时真正执行删除（不加则只预演列出） |
-| `--no-self-update` | 本次不做脚本自检 |
 | `--force` | `self-update` 时允许降级 / 覆盖 git 工作树内的副本 |
 | `--version` | 显示脚本版本 |
 
@@ -154,19 +153,17 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 
 ### 脚本自身的更新
 
-安装器每次运行会**自检脚本版本**（默认 24h 一次），发现新版本时**只提示、不自动覆盖**：
+安装器每次运行会**自检脚本版本**（恒定开启、24h 节流），发现新版本时**只提示、不自动覆盖**：
 
 ```text
 [WARN] 脚本有新版本：2026-09-18.1 → 2026-09-18.2（本次仍按旧版本执行）
 [INFO]   更新: bash skill-install.sh self-update    （或重新执行一键安装命令）
-[INFO]   关闭本次自检: --no-self-update
 ```
 
 | 做法 | 命令 | 行为 |
 |------|------|------|
 | **看提示（默认）** | — | 有新版只打印上面几行，本次操作继续用旧版本 |
 | **更新** | `self-update` 子命令 | 检查并覆盖自身（留 `<脚本>.bak`），忽略 24h 节流 |
-| **跳过自检** | `--no-self-update` | 本次不做自检（也不提示） |
 
 > **为什么只提示不覆盖**：脚本可能被内网 fork、本地改过，或装在只想保持稳定的项目里——静默改写"用户正在用的脚本"超出预期。
 
@@ -180,9 +177,9 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 | 版本方向 | 远端不高于本地不覆盖（`--force` 才允许降级） |
 | 回滚 | 覆盖前留 `<脚本>.bak` |
 
-自更新**不做环境变量开关**（避免配置面）：节流间隔与来源都是脚本顶部常量——要指向内网镜像就改那里的自更新来源常量（`SELF_URL_DEFAULT` / `$SelfUrlDefault`；非 https 源会提示"无传输加密"）。
+自更新**不做任何开关**（既不设环境变量，也不提供"关闭自检"的命令行选项，避免配置面）：自检恒定开启（只提示不覆盖）；节流间隔与来源都是脚本顶部常量——要指向内网镜像就改那里的自更新来源常量（`SELF_URL_DEFAULT` / `$SelfUrlDefault`；非 https 源会提示"无传输加密"）。
 
-> **离线 / 求稳环境**：加 `--no-self-update` 跳过自检，或把脚本顶部的节流常量（`SELF_CHECK_TTL` / `$SelfCheckTtl`）调大；离线时自检本身也会在 3s 内快速失败，不会长时间阻塞。
+> **离线 / 求稳环境**：把脚本顶部的节流常量（`SELF_CHECK_TTL` / `$SelfCheckTtl`）调大；离线时自检本身也会在 3s 内快速失败，不会长时间阻塞。注意该常量写在脚本里，执行 `self-update` 会被远端版本整文件覆盖而重置——要长期生效请改自己 fork / 内网镜像上的副本。
 
 > 自检用**短超时快速失败**（连接 3s / 单源 8s）：断网或被墙时不会让本次操作白等；只有显式 `self-update` 才容忍慢链路（5s / 20s）。
 

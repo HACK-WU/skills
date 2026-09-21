@@ -16,7 +16,7 @@
 #             update 未指定 --repo/-n 时 = 各目标自己的来源记录）
 #
 # 脚本自更新: 每次运行自检一次（24h 节流）；发现新版只提示不覆盖，
-#             要更新执行 self-update 子命令（--no-self-update 可跳过自检）。
+#             要更新执行 self-update 子命令（自检恒定开启，无开关可关）。
 #             管道执行（curl | bash）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
 #
 # 参数容错: 子命令接受 -- 前缀（--self-update 等价 self-update）；
@@ -43,7 +43,7 @@ REPOS=()
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：
 # 前缀定宽 → 字典序即版本序（LC_ALL=C 下比较，见 version_gt）
-SCRIPT_VERSION="2026-09-20.2"
+SCRIPT_VERSION="2026-09-21.1"
 
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 SELF_URL_DEFAULT="https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh"
@@ -82,7 +82,6 @@ CONFIG_FILE=""
 POSITIONAL_TARGET=""
 REPOS_SPECIFIED=0
 PRUNE_APPLY=0
-NO_SELF_UPDATE=0   # --no-self-update：本次不检查脚本自身版本
 SELF_FORCE=0       # --force：self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 show_help() {
@@ -113,7 +112,6 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 ${SCRIPT_
                        （可选技能目录：依赖第三方 skill/模块的技能）
   --file <path>        从配置文件读取目标目录（与 -t 互斥）
   -y, --yes            prune 时真正执行删除（不加则只预演列出）
-  --no-self-update     本次不检查脚本自身版本
   --force              self-update 时允许降级 / 覆盖 git 工作树内的副本
   -h, --help           显示此帮助
   --version            显示脚本版本
@@ -130,7 +128,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 ${SCRIPT_
   每次运行做一次自检（24h 一次），发现新版本只提示、不覆盖自身；
   要更新就执行 self-update 子命令（覆盖前留 <脚本>.bak）。
   管道执行（curl | bash）与 git 工作树内的副本不检查/不覆盖（后者请用 git pull）。
-  --no-self-update     本次不做自检
+  自检恒定开启、没有关闭开关（只提示不覆盖 + 24h 节流，离线时几秒内快速失败）。
   --force              self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 默认配置文件（不指定 -t / --file 时读取）:
@@ -203,7 +201,6 @@ while [ $# -gt 0 ]; do
             ;;
         --file=*) CONFIG_FILE="${arg#*=}" ;;
         -y|--yes) PRUNE_APPLY=1 ;;
-        --no-self-update) NO_SELF_UPDATE=1 ;;
         --force) SELF_FORCE=1 ;;
         --version) echo "skill-install.sh $SCRIPT_VERSION"; exit 0 ;;
         install|update|remove|prune|self-update|list)
@@ -284,7 +281,7 @@ ensure_manage_dir() {
 #   ③ 脚本在 git 工作树内一律不覆盖，提示用 git pull（保护未提交改动）
 #   ④ 下载物必须先过「哨兵 + bash -n 语法校验」才允许落盘（防 HTML 错误页/半截文件）
 #   ⑤ 禁止降级：远端版本 ≤ 本地不覆盖（--force 才强制）
-#   ⑥ 无环境变量开关：本次关闭自检用 --no-self-update；节流为 SELF_CHECK_TTL 常量
+#   ⑥ 无任何开关（环境变量 / 命令行）：自检恒定开启（self-update 自身除外）；节流为 SELF_CHECK_TTL 常量
 # 落盘用「同目录 mv 原子替换」：运行中的 bash 读的是启动时打开的 fd（旧 inode），
 # 换目录项不会写坏正在执行的脚本 —— 因此绝不用 > "$0" 覆写。
 # （SELF_CHECK_FILE 定义在文件顶部：帮助文本要引用它）
@@ -466,7 +463,6 @@ self_update() {
         else
             warn "脚本有新版本：$lver → ${rver}（本次仍按旧版本执行）"
             info "  更新: bash skill-install.sh self-update    （或重新执行一键安装命令）"
-            info "  关闭本次自检: --no-self-update"
         fi
         return 0
     fi
@@ -1280,8 +1276,8 @@ console.log(`  共 ${total} 个 skill`);
 # ============================================================
 # 主流程
 # ============================================================
-# 脚本自检（默认开启，TTL 节流；只提示不覆盖；--no-self-update 可关，见 self_update）
-if [ "$ACTION" != "self-update" ] && [ "$NO_SELF_UPDATE" != "1" ]; then
+# 脚本自检（恒定开启，TTL 节流；只提示不覆盖，见 self_update）
+if [ "$ACTION" != "self-update" ]; then
     self_update notify || true
 fi
 

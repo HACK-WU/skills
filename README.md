@@ -57,7 +57,7 @@ bash skill-install.sh install --repo anthropics/skills -t /path/to/your-project
 | `self-update` | 更新**脚本自身**到最新版本（默认每次运行已自检，发现新版只提示） |
 | `list` | 查看已装 skill（含来源仓库），支持 `--repo` 过滤 |
 
-> **脚本自更新**：每次运行自检一次（24h 节流），发现新版本**只提示不覆盖**（提示里给出更新命令）；要更新执行 `self-update`，`--no-self-update` 可跳过本次自检。管道执行（`curl | bash`）与 git 工作树内的副本不检查也不覆盖。
+> **脚本自更新**：每次运行自检一次（24h 节流），发现新版本**只提示不覆盖**（提示里给出更新命令）；要更新执行 `self-update`。管道执行（`curl | bash`）与 git 工作树内的副本不检查也不覆盖。
 
 ```bash
 # 安装（默认命令，可省略 install）

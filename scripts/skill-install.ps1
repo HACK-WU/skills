@@ -15,7 +15,7 @@
 #             update 未指定 -Repo/-NameFilter 时 = 各目标自己的来源记录）
 #
 # 脚本自更新: 每次运行自检一次（24h 节流）；发现新版只提示不覆盖，
-#             要更新执行 self-update 子命令（-NoSelfUpdate 可跳过自检）。
+#             要更新执行 self-update 子命令（自检恒定开启，无开关可关）。
 #             拿不到自身路径（管道执行）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
 #
 # 参数容错: 子命令接受 -- 前缀（--self-update 等价 self-update）；
@@ -55,8 +55,6 @@ param(
 
     [switch]$Yes,
 
-    [switch]$NoSelfUpdate,
-
     [switch]$Force,
 
     [switch]$Version,
@@ -90,7 +88,7 @@ $TargetsFile = Join-Path $ManageDir "targets.list"
 $DefaultTargetsFile = Join-Path $HomeDir ".skill-targets"
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：前缀定宽 → 序数比较即版本序
-$ScriptVersion = "2026-09-20.2"
+$ScriptVersion = "2026-09-21.1"
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 $SelfUrlDefault = "https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1"
 $SelfUrlMirror = "https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.ps1"
@@ -132,7 +130,6 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $ScriptVe
                       （可选技能目录：依赖第三方 skill/模块的技能）
   -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
   -Yes                prune 时真正执行删除（不加则只预演列出）
-  -NoSelfUpdate       本次不检查脚本自身版本
   -Force              self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 同步范围:
@@ -147,7 +144,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $ScriptVe
   每次运行做一次自检（24h 一次），发现新版本只提示、不覆盖自身；
   要更新就执行 self-update 子命令（覆盖前留 <脚本>.bak）。
   拿不到自身路径（管道执行）与 git 工作树内的副本不检查/不覆盖（后者请用 git pull）。
-  -NoSelfUpdate       本次不做自检
+  自检恒定开启、没有关闭开关（只提示不覆盖 + 24h 节流，离线时几秒内快速失败）。
   -Force              self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 默认配置文件（不指定 -Target / -ConfigFile 时读取）:
@@ -306,7 +303,7 @@ if ($NameFilter) {
 #   ② 拿不到自身路径（管道执行等）不检查也不提示
 #   ③ git 工作树内一律不覆盖（提示 git pull）
 #   ④ 下载物必须先过「哨兵 + PowerShell 语法校验」；⑤ 禁止降级（-Force 才强制）
-#   ⑥ 无环境变量开关：本次关闭自检用 -NoSelfUpdate；节流为 SelfCheckTtl 常量
+#   ⑥ 无任何开关（环境变量 / 命令行）：自检恒定开启（self-update 自身除外）；节流为 SelfCheckTtl 常量
 # 落盘用「备份 + 同目录 Move-Item 替换」；PowerShell 启动时已把脚本整体读入内存，
 # 替换正在运行的 .ps1 是安全的（不要用 Set-Content 直接覆写）。
 $SelfCheckFile = Join-Path $ManageDir ".last-self-check"
@@ -465,7 +462,6 @@ function Invoke-SelfUpdate($Mode, $Force) {
         } else {
             Write-Warn "脚本有新版本：$lver → $rver（本次仍按旧版本执行）"
             Write-Info "  更新: .\skill-install.ps1 self-update    （或重新执行一键安装命令）"
-            Write-Info "  关闭本次自检: -NoSelfUpdate"
         }
         return $true
     }
@@ -1248,8 +1244,8 @@ console.log(`  共 ${total} 个 skill`);
 # ============================================================
 # 主流程
 # ============================================================
-# 脚本自检（默认开启，TTL 节流；只提示不覆盖；-NoSelfUpdate 可关，见 Invoke-SelfUpdate）
-if ($Action -ne "self-update" -and (-not $NoSelfUpdate)) {
+# 脚本自检（恒定开启，TTL 节流；只提示不覆盖，见 Invoke-SelfUpdate）
+if ($Action -ne "self-update") {
     [void](Invoke-SelfUpdate "notify" $false)
 }
 
