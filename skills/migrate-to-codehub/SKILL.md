@@ -1,6 +1,6 @@
 ---
 name: migrate-to-codehub
-description: 从其他项目中提取优秀架构设计或功能实现，剥离业务耦合后迁移到 PythonCodeHub。适用于“迁移到 CodeHub”“提取到 PythonCodeHub”“把这个设计迁移过来”“重构后加入 CodeHub”“migrate to codehub”等场景。
+description: 从其他项目提取优秀架构设计或功能实现，剥离业务耦合后迁移到 PythonCodeHub。触发："迁移到 CodeHub"、"提取到 PythonCodeHub"、"重构后加入 CodeHub"、"migrate to codehub"。
 ---
 
 ## 目的

@@ -1,6 +1,6 @@
 ---
 name: gitnexus-index
-description: 管理 GitNexus 代码索引——创建（首次 analyze 建索引）、增量更新（status 检测过期后自动 analyze）、强制重建与修复（--force 全量重建、--repair-fts 修全文搜索、--embeddings 重建向量）。当用户想让 AI 快速为仓库创建代码索引、更新过期索引、或修复损坏索引时使用。触发短语："创建代码索引"、"更新代码索引"、"索引过期了"、"重新建索引"、"修复索引"、"gitnexus 索引"。
+description: 管理 GitNexus 代码索引：创建（首次 analyze）、增量更新（status 检测过期后自动更新）、强制重建与修复（--force / --repair-fts / --embeddings）。触发："创建代码索引"、"更新代码索引"、"索引过期了"、"重新建索引"、"修复索引"、"gitnexus 索引"。
 ---
 
 # GitNexus 代码索引管理

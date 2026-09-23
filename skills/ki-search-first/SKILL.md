@@ -1,6 +1,6 @@
 ---
 name: ki-search-first
-description: 项目记忆优先。遇到任何任务/问题，务必先使用 ki_search 查询项目记忆（口诀：遇事不决 ki-search），先看记忆里已有什么；无结果或记忆不充分时，再走专家团（expert-lookup）+ 解决方案（solution-lookup）复用路径。已定位/已修改代码时必查强关联关系。当用户说"查记忆"、"改A要连带改B吗"，或任何任务开始前自动触发。
+description: 项目记忆优先（口诀：遇事不决 ki-search）：任何任务先查项目记忆，无结果或记忆不充分时再走专家团（expert-lookup）与解决方案（solution-lookup）；已定位/已改代码时必查强关联。触发：任何任务开始前自动触发，或用户说"查记忆"、"改A要连带改B吗"。
 ---
 
 # 项目记忆优先（遇事不决 ki-search）

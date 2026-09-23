@@ -1,6 +1,6 @@
 ---
 name: ecosystem-review
-description: 评审 AI 技能生态（skills/rules/memories/agents）的整体一致性、冗余健康度、资产定位与触发链闭环，含跨 skill 工作流推演（非零冗余，甄别"提注意力的有意冗余"vs"有害重复/冲突"）。低频元评审，仅用户明确指定时触发（审体系结构，非工作流机制）。触发："评审技能生态"、"体检技能体系"、"ecosystem review"、"三层一致性检查"。
+description: 低频元评审（仅用户明确指定时触发）：评审 skills/rules/memories/agents 生态的整体一致性、冗余健康度、资产定位与触发链闭环，含跨 skill 工作流推演。触发："评审技能生态"、"体检技能体系"、"ecosystem review"、"三层一致性检查"。
 disable: true
 ---
 

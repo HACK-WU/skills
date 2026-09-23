@@ -1,6 +1,6 @@
 ---
 name: api-testing
-description: 基于 httpflex-py 库指导 AI 自主完成 HTTP API 测试的技能。将用户用自然语言描述的接口（或文字说明）解析为端点清单，自动生成 httpflex 测试客户端、构造并发送请求、对响应 data 做业务断言，并产出结构化测试报告。当用户要求测试/验证 HTTP 接口、做自动化 API 测试、或提供接口描述需要连通性与业务断言验证时使用。
+description: 基于 httpflex-py 自主完成 HTTP API 测试：把自然语言接口描述解析为端点清单，生成测试客户端、构造并发送请求、对响应 data 做业务断言，产出结构化测试报告。触发："测试/验证这个 API"、"自动化接口测试"。
 ---
 
 # API 自主测试（基于 httpflex-py）

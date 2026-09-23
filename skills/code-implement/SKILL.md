@@ -1,6 +1,6 @@
 ---
 name: code-implement
-description: 从代码骨架（design-to-code 产出）系统化地填充方法实现、解决 TODO 标记。按骨架批次依赖顺序分批编码，每批先读取骨架契约注释 + 调研结果 + 依赖文档作为参考上下文再补全方法体，同批并行加速。编码完成后验证实现是否满足骨架契约。适用于"骨架编码"、"按骨架实现代码"、"填充骨架"、"implement skeleton"、"开始编码"等场景，或 design-to-code 完成后用户选择"开始编码实施"时触发。
+description: 按骨架（design-to-code 产出）分批填充方法实现、解决 TODO：每批先读契约注释 + 调研/依赖文档，完成后验证实现是否满足契约。触发："骨架编码"、"填充骨架"、"实现代码"、"implement skeleton"、"开始编码实施"。
 ---
 
 # Code Implement（骨架编码实施）

@@ -1,6 +1,6 @@
 ---
 name: skill-amplifier
-description: 执行模式增强器，配合其他能力型 skill 使用。将目标 skill 的工作拆分为多个维度，派发子 Agent 并行深度调研，汇总后由主 Agent 交叉复核再给出结论，放大执行深度。分析类 skill 走输出放大（拆评估维度深挖），生成类 skill 走输入放大（拆调研维度收集证据，写作仍由主 Agent 单线程完成）。仅显式触发：'放大执行'、'拆维度并行审查'、'深度模式跑一遍'、'skill amplifier'、'用放大模式执行 xxx'。区别于 expert-team（深挖业务模块）与 task-dispatch（拆分独立开发任务）：本 skill 拆的是同一对象的评估/调研维度。不自动介入任何 skill 的常规执行。
+description: 执行模式增强器（仅显式触发）：把目标 skill 的工作拆成多个维度，派子 agent 并行深度调研，再由主 agent 交叉复核给出结论——分析类走输出放大，生成类走输入放大。触发："放大执行"、"拆维度并行审查"、"深度模式跑一遍"、"用放大模式执行 xxx"、"skill amplifier"。
 ---
 
 # Skill Amplifier（执行模式放大器）

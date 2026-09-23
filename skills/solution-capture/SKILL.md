@@ -1,6 +1,6 @@
 ---
 name: solution-capture
-description: AI 解决非平凡问题后，评估是否值得沉淀为可复用的解决方案 skill，若值得则按 skill 标准格式写入 .solutions/ 目录并更新索引。触发短语包括："记录这个解决方案"、"沉淀一下"、"保存解决方案"、"这个值得记录"、"solution capture"，或在 AI 解决了一个需要多步推理、调试、配置的问题后自动触发。
+description: 解决非平凡问题后评估是否值得沉淀为可复用的解决方案 skill，值得则按 skill 标准格式写入 .solutions/ 并更新索引。触发："记录这个解决方案"、"沉淀一下"、"保存解决方案"、"这个值得记录"、"solution capture"，或 AI 经多步推理/调试试错解决问题后自动触发。
 ---
 
 # 解决方案捕获

@@ -1,6 +1,6 @@
 ---
 name: create-sub-agent
-description: 指导用户创建符合项目规范的自定义子 Agent。当用户要求创建子 Agent、自定义 Agent、新建 agent 提示词，或需为特定业务领域（评审、测试、文档、信息收集）建立专用子 Agent 时使用。触发短语："创建子agent"、"新建agent"、"create agent"、"create sub-agent"。
+description: 指导创建符合项目规范的自定义子 Agent。触发："创建子 agent"、"新建 agent"、"create agent"、"create sub-agent"，或为评审/测试/文档/信息收集等领域建专用 agent。
 ---
 
 # 创建自定义子 Agent

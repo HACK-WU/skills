@@ -1,6 +1,6 @@
 ---
 name: ui-designer
-description: 设计界面视觉方案——从需求描述或交互设计文档出发，产出界面布局方案文档（页面结构、布局栅格、组件状态、配色、字体、间距/圆角/阴影规范、响应式规则），并负责 HTML demo 的设计编写（可运行的 HTML/CSS/原生 JS 原型，零构建直接预览）。适用于"设计这个界面"、"这个页面怎么布局"、"帮我画个页面设计"、"出个 UI 设计"、"页面原型"、"写个 HTML demo"、"做个 demo 页面"、"给这个页面改版"、"重设计一下" 等场景。定位在设计链路 interaction-design（交互逻辑）→ ui-designer（视觉层，本 skill）→ design-craft（技术设计）之间，只管视觉不管交互逻辑与架构。
+description: 设计界面视觉方案：页面结构、布局栅格、组件状态、配色、字体、间距/圆角/阴影规范与响应式规则，并编写零构建可运行的 HTML/CSS/JS demo。触发："设计这个界面"、"页面怎么布局"、"出个 UI 设计"、"写个 HTML demo"、"给页面改版"。只管视觉，交互逻辑走 interaction-design。
 ---
 
 # UI 设计师（UI Designer）

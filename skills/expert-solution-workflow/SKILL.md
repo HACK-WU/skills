@@ -1,6 +1,6 @@
 ---
 name: expert-solution-workflow
-description: 资产复用工作流。区分"业务专家团"与"解决方案"两类可复用资产的本质差异；遇到业务模块任务先查 expert-lookup，遇到具体技术问题先查 solution-lookup，解决后可复用问题用 solution-capture 沉淀、可复用模块用 expert-team 沉淀。当用户说"查专家"、"有没有现成方案"、"沉淀一下"、"记录解决方案"、"建专家团"，或遇到/解决问题时自动触发。
+description: 资产复用工作流：区分"业务专家团"（领域地图，走 expert-lookup）与"解决方案"（场景菜谱，走 solution-lookup），并把解决后的可复用成果路由到 solution-capture / expert-team。触发："查专家"、"有没有现成方案"、"沉淀一下"、"记录解决方案"、"建专家团"。
 ---
 
 # 资产复用工作流（专家团 + 解决方案）

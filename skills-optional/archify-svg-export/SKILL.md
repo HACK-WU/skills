@@ -1,6 +1,6 @@
 ---
 name: archify-svg-export
-description: 把 archify 生成的图表 HTML 无头导出为 SVG 文件：复用成品页面内置的官方导出代码 Archify.exportMenu.run()，不重写渲染逻辑，产物与人工在浏览器点 Export 完全一致（含深浅双主题）；需本地已装 Chrome/Chromium。仅覆盖 SVG。本 skill 默认不自动触发，仅当用户显式指定（如 @command://archify-svg-export，或点名要求使用本 skill）时才生效。
+description: 把 archify 生成的图表 HTML 无头导出为 SVG（复用成品页内置的 Archify.exportMenu.run()，产物与人工点 Export 一致，含深浅双主题），需本地已装 Chrome/Chromium。默认不自动触发，仅在用户显式点名本 skill 时生效。
 ---
 
 # Archify 图表导出 SVG

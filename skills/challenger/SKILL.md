@@ -1,6 +1,6 @@
 ---
 name: challenger
-description: 质疑者，专门寻找评审可能遗漏的问题。支持对代码变更、设计文档和分析/审查报告进行二次质疑，发现潜在风险。触发短语：'质疑这个修复'、'挑战这个代码'、'二次审查'、'质疑这个设计'、'挑战这个方案'、'这个设计真的没问题吗'，或被其他 skill（review-panel、bug-impact-analysis、auto-review、code-review 无阻塞项自动接力）调用对其产出进行质疑时触发。
+description: 质疑者：专找评审可能遗漏的问题，对代码变更、设计文档、分析/审查报告做二次质疑。触发："质疑这个修复/设计/方案"、"二次审查"，或被 review-panel、auto-review、code-review、bug-impact-analysis 接力调用。
 ---
 
 # 🎯 质疑者（代码变更 / 设计文档 / 报告文档）

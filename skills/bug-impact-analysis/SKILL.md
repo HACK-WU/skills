@@ -1,6 +1,6 @@
 ---
 name: bug-impact-analysis
-description: Bug 修复影响分析。分析修复的根因是否被真正解决、修复是否引入副作用、影响范围和回归风险。触发短语：'分析这个bug的影响'、'这个修复会影响什么'、'bug impact analysis'、'评估修复风险'，或在用户描述 Bug 现象后要求自动分析时触发。
+description: Bug 修复影响分析：判断根因是否真被解决、修复是否引入副作用、影响范围与回归风险。触发："分析这个 bug 的影响"、"这个修复会影响什么"、"评估修复风险"、"bug impact analysis"。
 ---
 
 # Bug Impact Analysis（Bug 修复影响分析）

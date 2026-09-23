@@ -1,6 +1,6 @@
 ---
 name: create-rules
-description: 引导用户创建符合规范的 AI 规则文件（rules/*.md）。当用户要求创建规则、编写规则、新建规则文件时使用。触发短语包括："创建规则"、"写一个规则"、"新建规则"、"create rule"、"add rule"。
+description: 引导创建符合规范的 AI 规则文件（rules/*.md）。触发："创建规则"、"写一个规则"、"新建规则"、"create rule"、"add rule"。
 ---
 
 # 创建规则文件

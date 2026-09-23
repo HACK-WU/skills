@@ -1,6 +1,6 @@
 ---
 name: content-simplifier
-description: 指导AI如何精简skill和rules文件内容，识别冗余、重复、过时内容，提升决策流程清晰度与上下文窗口利用效率。注意：本 skill 专指**精简文件内容**（去冗余/过时/重复），不是"系统优化分析"（那是 artifact-optimizer）、也不是"修改前质疑"（那是 request-guard）。触发短语：'精简skill'、'简化内容'、'压缩文件'、'清理冗余'、'文件过长'、'内容冗余'、'精简这个文件'。
+description: 精简 skill / rules 文件内容：识别冗余、重复、过时内容，提升决策清晰度与上下文利用效率。触发："精简 skill"、"简化内容"、"压缩文件"、"清理冗余"、"文件过长"。系统优化分析走 artifact-optimizer，修改前质疑走 request-guard。
 ---
 
 # 内容精简指导

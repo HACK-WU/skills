@@ -1,6 +1,6 @@
 ---
 name: solution-lookup
-description: AI 遇到可能已有解决方案的问题时，查找并复用已沉淀的解决方案 skill。查找范围包括项目级 .solutions/ 和用户级 ~/.solutions/，通过 INDEX.md 关键词匹配定位解决方案，加载后按其步骤执行。触发短语包括："有没有类似解决方案"、"之前怎么解决的"、"查找解决方案"、"solution lookup"，或在 AI 遇到调试、配置、部署等问题时自动触发。
+description: 查找并复用已沉淀的解决方案 skill（项目级 .solutions/ 与用户级 ~/.solutions/，按 INDEX.md 关键词匹配，加载后按其步骤执行）。触发："有没有类似解决方案"、"之前怎么解决的"、"查找解决方案"、"solution lookup"，或遇到调试/配置/部署等问题时。
 ---
 
 # 解决方案查找

@@ -1,6 +1,6 @@
 ---
 name: frontend-api-guide
-description: 为前端生成 API 集成指南，将 API 设计文档转化为可直接编码的调用流程文档。适用场景：api-design 完成后需交付给前端时、"生成前端 API 文档"、"API 调用流程"。
+description: 把 API 设计文档转成前端可直接编码的调用流程文档（含 UI 映射与错误处理速查）。触发："生成前端 API 文档"、"API 调用流程"，或 api-design 完成后交付前端时。
 ---
 
 # 前端 API 集成指南

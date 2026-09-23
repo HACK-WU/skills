@@ -1,6 +1,6 @@
 ---
 name: artifact-optimizer
-description: 对代码、设计文档、Skill 文件进行系统化优化分析，发现可优化点并按优先级给出具体改进建议。不关注"有没有 bug"，只关注"能不能更好"。触发短语：'优化这段代码'、'优化这个设计'、'优化这个 skill'、'怎么改进这段代码'、'这个设计有什么优化空间'、'帮我优化一下'、'artifact optimizer'、'质量优化'、'这段代码能更好吗'、'这个设计能优化吗'、'有没有优化空间'、'怎么改进'、'改进一下'。当用户说'看看这段代码'、'review 这个代码'时优先触发 code-review；当用户说'改一下'、'改成'时优先触发 request-guard。
+description: 对代码、设计文档、Skill 做系统化优化分析，按优先级给出"还能更好"的改进建议（不查 bug）。触发："优化这段代码/设计/skill"、"有什么优化空间"、"怎么改进"、"artifact optimizer"；纯 review 走 code-review，修改请求走 request-guard。
 ---
 
 # Artifact Optimizer（产物优化分析）

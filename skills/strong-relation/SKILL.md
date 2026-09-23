@@ -1,6 +1,6 @@
 ---
 name: strong-relation
-description: 识别并判定跨文件的强关联关系（契约/业务耦合），写 ki 的动作下沉到 ki-memory-write 的强关联策略（本 skill 只负责识别+判定方向，不内嵌写 ki 细节；查询调用 ki-memory-lookup）。expert-team 创建专家资产后自动调用，也支持任意时机手动调用。触发短语："记录强关联"、"模块间强耦合"、"改A要连带改B"、"关联关系"。
+description: 识别并判定跨文件的强关联关系（契约 / 业务耦合）：本 skill 只负责识别与判定方向，写 ki 下沉 ki-memory-write，查询走 ki-memory-lookup。触发："记录强关联"、"模块间强耦合"、"改A要连带改B"，或 expert-team 产出专家资产后自动调用。
 ---
 
 # 强关联关系记录
