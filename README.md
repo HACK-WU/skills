@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-60-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-61-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -173,7 +173,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-60 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+61 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -214,6 +214,7 @@ flowchart TD
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 | **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
+| **[frontend-walkthrough](./skills/frontend-walkthrough/SKILL.md)** | 对已有前端页面做**真实操作走查**：A/B/C 取证档位自适应（浏览器实操 / 用户提供画面 / 纯静态）并如实降级声明，先读前端代码穷举入口与八态状态矩阵（白盒规划），再像真人一样点击遍历场景轴（黑盒体验），加载性能做到体检级（深入交 `performance-analysis`），四类发现合并为一张带证据清单，按用户视角 + PM 视角（Kano/价值×成本）排序 | "前端走查"、"体验一下这个页面"、"点一遍看看"、"前端页面有什么问题" |
 | **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memory-write | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
 | **[ki-search-first](./skills/ki-search-first/SKILL.md)** | 项目记忆优先（任务前置门）：任何任务前先 `ki_search` 检索项目记忆，命中则带记忆求解，未命中再降级到 expert-solution-workflow 复用路径；改代码时必查强关联关系 | "查记忆"、"改A要连带改B吗"、"遇事不决 ki-search" |
 | **[ki-memory-write](./skills/ki-memory-write/SKILL.md)** | 统一往 ki-search 写记忆的 SSOT，按类型分发七类：专题记忆 / 接口信息 / 数据流 / 决策记忆（expert-team 调用）、强关联（strong-relation 调用）、错误库（debug / solution-capture 调用）、待生效变更（code-review 调用，纯 KB 不向量化） | "写专题记忆"、"写 ki 记忆"、"记录决策"、"登记待生效变更"、"ki memory write" |

@@ -76,6 +76,7 @@ AI 天然会滑向它更熟的视角。执行前先对齐：
 | 看懂这个模块怎么实现的 | `module-teach` |
 | 用具体场景沿代码推演"终态对不对" | `scenario-rehearsal`（代码模式） |
 | 跑通一条端到端流程验证正确性 | `e2e-testing` |
+| 直接实操走查已实现前端的体验（点一遍、看加载性能、挑体验问题） | `frontend-walkthrough` |
 | 修一个具体 Bug | `debug` |
 | 只改几行代码看改动对不对 | `code-review` |
 
@@ -334,6 +335,7 @@ AI 天然会滑向它更熟的视角。执行前先对齐：
 | `code-review` / `request-guard` | 本 skill 出建议，实施前经 `request-guard` 刹车、实施后经 `code-review` |
 | `ui-designer` / `ui-to-ascii` | 前者从零设计界面、后者设计稿转 ASCII 存档；本 skill 是已存在界面的走查 |
 | `e2e-testing` | 其「动态体验验证」可作 M2 的取证手段（真实链路），本 skill 负责 PM 判断与排序 |
+| `frontend-walkthrough` | 对已实现前端做**实操走查**（真实点击遍历 + 前端实现审查 + 加载性能体检）；本 skill M2/M4 是产品视角，不深入前端实现与性能 |
 | `interaction-design` / `design-craft` / `demo-verify` | M1 的常见下游 |
 | `relation-lookup` | 影响面调研首选：查已登记的跨模块强关联（"改 A 要连带改 B 吗"） |
 | `code-survey` | 改动面大时的代码现状调研手段 |
