@@ -1,3 +1,11 @@
 .workbuddy/
 __pycache__/
- AGENTS.md
+AGENTS.md
+
+# ---- 并行交付脚手架（见 skills/delivery-slicing「测试与脚手架的归属」）----
+.delivery/
+
+# 注意：tests/ 与 .requirements/ 下的 sub-requirements/ 是产品资产/过程文档，禁止忽略
+
+# ---- 系统垃圾文件 ----
+.DS_Store

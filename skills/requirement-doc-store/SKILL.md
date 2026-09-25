@@ -175,6 +175,7 @@ document_type: requirement             # 文档类型枚举（见下方文档类
 | `demo` | 验证报告 |
 | `test` | 测试相关文档 |
 | `report` | 实现总结报告 |
+| `slice` | 交付切片（砖头包 + 批次表，`delivery-slicing` 产出） |
 
 ### Step C4：验证创建结果（必须执行）
 
@@ -257,6 +258,11 @@ req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 | 需求分析 | `requirement.md,requirement` |
 | 技术设计 | `design/DESIGN.md,design` |
 | 数据流/模型 | `design/data-flow.md,data_flow` |
+| 子需求拆分 | `sub-requirements/SR-XX-{名称}.md,requirement` |
+| 交付切片（砖头包） | `sub-requirements/{SR-XX}-{名称}/slice.md,slice` |
+| 交付切片（批次表） | `sub-requirements/INDEX.md,slice` |
+| 集成合流（拼接报告） | `sub-requirements/INTEGRATION.md,slice` |
+| mock 台账 | `sub-requirements/MOCK_LEDGER.md,slice` |
 | 交互设计 | `design/interaction-design.md,design` |
 | 设计评审 | `design/design-review.md,review` |
 | Demo 验证 | `demo/verify-report.md,demo` |
@@ -403,6 +409,19 @@ req delete {REQ-NNN} --force
 └── {date}-{功能名称}/
     ├── requirement.md              # 需求分析报告
     ├── report.md                   # 实现报告
+    ├── parent-requirement.md       # 父需求文档（子需求拆分的全局层）
+    ├── sub-requirements/           # 需求子需求（.md 文件）+ 交付切片（目录）——见下方命名区分
+    │   ├── SR-01-{名称}.md         # 需求子需求（requirement-mining 子需求拆分，单文件）
+    │   ├── INDEX.md                # 交付批次表（delivery-slicing）
+    │   ├── MOCK_LEDGER.md          # mock 台账（delivery-slicing 建、integration-merge 核销）
+    │   ├── INTEGRATION.md          # 拼接报告（integration-merge）
+    │   └── SR-01-{名称}/           # 交付砖头包（delivery-slicing，目录，含 6 件套）
+    │       ├── slice.md
+    │       ├── ownership.md
+    │       ├── contract/
+    │       ├── out-of-scope.md
+    │       ├── verify/
+    │       └── handoff.md
     ├── api/
     │   ├── INDEX.md                # API 总览（接口清单+错误码+通用约定）
     │   ├── users.md                # 用户模块 API
@@ -431,6 +450,11 @@ req delete {REQ-NNN} --force
             └── order-create.md     # 场景：订单创建调用流程
 ```
 
+> **`sub-requirements/` 下的命名区分（两者可共存，勿混用）**：
+> - `SR-XX-{名称}.md` = **需求子需求**（`requirement-mining` 子需求拆分，单文件，用户视角）
+> - `SR-XX-{名称}/` = **交付砖头包**（`delivery-slicing`，目录，代码视角，含 6 件套）
+> - 两者编号可相同也可不同（砖头与子需求非 1:1）；编号来源分别为各自 skill 的产出，**不要假设一一对应**
+
 **示例**：
 ```
 security/
@@ -445,6 +469,9 @@ security/
 | 文档类型 | 来源 Skill | 存储路径 |
 |----------|-----------|----------|
 | 需求分析 | requirement-mining | `requirement.md` |
+| 子需求拆分（父文档） | requirement-mining 子需求拆分 | `parent-requirement.md` |
+| 子需求拆分（子需求） | requirement-mining 子需求拆分 | `sub-requirements/SR-XX-{名称}.md` |
+| 交付切片（砖头包 + 批次表） | delivery-slicing | `sub-requirements/{SR-XX}-{名称}/` + `sub-requirements/INDEX.md` |
 | 技术设计 | design-craft | `design/DESIGN.md` |
 | 数据流/模型 | data-flow-model | `design/data-flow.md` |
 | 交互设计 | interaction-design | `design/interaction-design.md` |
@@ -561,6 +588,8 @@ req list --no-color
 | data-flow-model | P0 | 写入型 | `design/data-flow.md` |
 | implementation-report | P0 | 写入型 | `report.md` |
 | work-breakdown | P1 | 写入型 | `design/work-breakdown.md` |
+| delivery-slicing | P1 | 写入型 | `sub-requirements/{SR-XX}-{名称}/` + `sub-requirements/INDEX.md` |
+| integration-merge | P1 | 写入型 | `sub-requirements/INTEGRATION.md` |
 | interaction-design | P1 | 写入型 | `design/interaction-design.md` |
 | design-review | P1 | 读写型 | `design/design-review.md` |
 | code-review | P2 | 读写型 | `review/code-review.md` |

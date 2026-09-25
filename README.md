@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-61-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-63-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -109,6 +109,7 @@ npx skills add HACK-WU/skills --skill code-review design-craft --agent openclaw 
 
 - **覆盖全流程**：需求挖掘 → 技术设计 → 代码骨架 → 编码实现 → 质量保障 → 实现总结，一条链路打穿
 - **可串联使用**：技能按下方设计流程图组合成完整流水线，支持"返回修改"回环与随时查阅的模块知识资产
+- **可并行交付**：需求较大时走 `delivery-slicing` 路线——先由架构阶段交付**骨架**（接口桩 + 语义契约 + 挂载点 + 清单/模型定稿 + mock），再切成**目录互斥**的砖头包，即可分到多个对话窗 / 多个 IDE 手工并行实现（各窗口只填实现体、契约只读、越界即停），最后由 `integration-merge` 统一拼接（拒收门 → 合流 → 装配验证 → 语义验收 → 逐片回滚）
 - **需求可管理**：内置 `req` CLI，以编程方式管理需求元数据（增删改查、归档、依赖追踪）
 - **规则与技能互补**：附带 AI 协作规则（GitNexus 强制规则、自动审查闭环、任务分级委派）
 
@@ -132,7 +133,9 @@ flowchart TD
     SR["🎭 场景推演 · scenario-rehearsal<br/>模拟真实场景验证可行性"]
     DR["🔎 设计评审 · design-review<br/>评审设计文档"]
     D2C["🏗️ 骨架生成 · design-to-code<br/>代码骨架 + 契约级注释（task-dispatch 并行）"]
-    CI["⌨️ 系统化编码 · code-implement<br/>批量编码 + 契约验证"]
+    DS["🧱 交付切片 · delivery-slicing<br/>砖头包 + 批次（跨会话 / 跨 IDE 并行路线）"]
+    CI["⌨️ 系统化编码 · code-implement<br/>批量编码 + 契约验证（含并行窗口模式）"]
+    IM["🔗 集成合流 · integration-merge<br/>拒收门 + 合流 + 装配验证 + 语义验收"]
 
     subgraph QA["🧪 质量阶段"]
         direction LR
@@ -151,7 +154,7 @@ flowchart TD
     SR -. 返回修改 .-> DESIGN
     SR --> DR
     DR -. 返回修改 .-> DESIGN
-    DR --> D2C --> CI --> QA --> IR
+    DR --> D2C --> DS --> CI --> IM --> QA --> IR
 
     classDef pre fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
     classDef design fill:#f3e5f5,stroke:#7b1fa2,color:#4a148c
@@ -164,7 +167,7 @@ flowchart TD
     class RM,DD,CS,DV pre
     class ID,UID,WB,DFM,DC design
     class SR,DR verify
-    class D2C,CI code
+    class D2C,DS,CI,IM code
     class CRV,CH,TP qa
     class IR report
     class EL,ET,EA expert
@@ -173,7 +176,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-61 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+63 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -185,7 +188,7 @@ flowchart TD
 | **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
 | **[work-breakdown](./skills/work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
 | **[data-flow-model](./skills/data-flow-model/SKILL.md)** | 构建 ER 图和数据流图，支持并发/分布式/实时流/批处理等场景分析 | "画 ER 图"、"数据怎么流"、"设计数据模型" |
-| **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构 | "写设计文档"、"帮我设计"、"dd" |
+| **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构；需求较大时另走**阶段 5.5**（判定是否多窗口并行 → **模块划分** + **骨架设计** 8 项，含数据走向预演场景） | "写设计文档"、"帮我设计"、"dd" |
 | **[negative-requirement](./skills/negative-requirement/SKILL.md)** | 从正向需求出发分析负向场景，设计程序的检测、恢复和引导策略 | "错误处理"、"异常场景"、"边界情况" |
 | **[api-design](./skills/api-design/SKILL.md)** | 基于设计文档生成详细的 API 设计文档，含完整接口契约和错误码定义 | "设计 API"、"接口设计"、"api design" |
 | **[frontend-api-guide](./skills/frontend-api-guide/SKILL.md)** | 将 API 设计转化为前端可直接编码的调用流程文档，含 UI 映射和错误处理速查 | "生成前端 API 文档"、"API 调用流程" |
@@ -197,7 +200,9 @@ flowchart TD
 | **[dependency-docs](./skills/dependency-docs/SKILL.md)** | 设计前识别并整理第三方依赖文档，每个依赖独立成文，≥2 个时 task-dispatch 并行收集 | "整理第三方依赖"、"收集 API 文档" |
 | **[code-survey](./skills/code-survey/SKILL.md)** | 设计前对代码库按需调研 13 个维度，ki 优先，≥2 个维度时 task-dispatch 并行搜索 | "代码调研"、"了解现有代码" |
 | **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速 | "生成代码骨架"、"搭骨架" |
-| **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证 | "编码实施"、"填充骨架"、"实现代码" |
+| **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证；含**并行窗口模式**（只填实现体、契约只读、越界即停） | "编码实施"、"填充骨架"、"实现代码" |
+| **[delivery-slicing](./skills/delivery-slicing/SKILL.md)** | **核验骨架 → 骨架预演（★ 骨架本身的验证机制：零上下文开工预演 / 三组测试期望值互补 / 数据走向预演 / 覆盖反向 / 独立核验方）→ 复核模块划分 → 打成 N 个可并行交付的砖头包**（目录互斥 + 契约快照 + 自包含可交接），并按依赖分级（接口级 / 数据级 / 实现级）划分批次。面向**跨对话窗 / 跨 IDE 手工并行** | "切成可并行的砖头"、"拆给多个对话窗并行做"、"交付切片" |
+| **[integration-merge](./skills/integration-merge/SKILL.md)** | 把并行产出的 N 个砖头**合流成可交付版本**：前置校验 → **片级验收**（独立验收方逐片核验验收项，只判定不修改）→ 6 项机械拒收门（越界 / 契约未改 / 依赖方向 / mock 残留 / 契约基线 / **桩残留**）→ 按 DAG 分批合流（主干常绿）→ 装配验证（契约测试**对真实实现**重跑 + 挂载点测试）→ 语义验收（契约 10 项 + 数据守恒 + 负向场景 + 关键路径 e2e）→ 逐片回滚（含重做闭环） | "拼接"、"合并各窗口产出"、"集成合流" |
 | **[module-teach](./skills/module-teach/SKILL.md)** | 系统讲解代码，两类对象——**模块讲解**（能力大纲→代码 wiki→功能推演→数据流）与**变更讲解**（commit / PR / 任意 diff 范围：变更大纲→逐处解读→影响面→意图与权衡）。设正确性核对质量闸门与 course-reviewer 双视角评审，产出 Markdown 学习材料（Mermaid 内嵌 + 复杂图 SVG 独立文件） | "讲讲这个模块"、"学习代码"、"帮我搞懂这块代码"、"讲讲这个 commit/PR 做了什么"、"这个改动是什么意思" |
 
 ### 代码质量
@@ -213,7 +218,7 @@ flowchart TD
 | **[performance-analysis](./skills/performance-analysis/SKILL.md)** | 接口/请求链路性能专项分析：盘点现有证据（火焰图/APM/压测/慢查询）与代码，八层定位瓶颈；支持**双样本差分**（一快一慢两份数据，先变量对齐再 Δ 分解），量化收益上限与推荐指数；性能不佳时输出两条路建议（技术优化 + 产品侧调整：**退让型**牺牲部分功能换性能 / **改进型**修原设计缺陷实现体验与性能双升，均交 product-manager 分析），产出带目录索引、只画「卡在哪」的图（含 **gantt 关键路径**）、**第四/五章用文字树**（调用链 / 改前改后）表达、决策路径与优化建议不画图、每条建议带**推荐指数与预期效果**的面向开发/产品的报告 + 验证计划 | "性能分析"、"为什么这么慢"、"接口 RT 高"、"性能优化"、"出份性能报告"、"容量评估"、"两份数据对比"、"优化前后对比" |
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
-| **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
+| **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**含「片级验收模式」**（被测对象为一个砖头包，由 `integration-merge` 阶段 0.5 调用；不起容器、不进 L3）。**默认模式低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
 | **[frontend-walkthrough](./skills/frontend-walkthrough/SKILL.md)** | 对已有前端页面做**真实操作走查**：A/B/C 取证档位自适应（浏览器实操 / 用户提供画面 / 纯静态）并如实降级声明，先读前端代码穷举入口与八态状态矩阵（白盒规划），再像真人一样点击遍历场景轴（黑盒体验），加载性能做到体检级（深入交 `performance-analysis`），四类发现合并为一张带证据清单，按用户视角 + PM 视角（Kano/价值×成本）排序 | "前端走查"、"体验一下这个页面"、"点一遍看看"、"前端页面有什么问题" |
 | **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memory-write | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
 | **[ki-search-first](./skills/ki-search-first/SKILL.md)** | 项目记忆优先（任务前置门）：任何任务前先 `ki_search` 检索项目记忆，命中则带记忆求解，未命中再降级到 expert-solution-workflow 复用路径；改代码时必查强关联关系 | "查记忆"、"改A要连带改B吗"、"遇事不决 ki-search" |
