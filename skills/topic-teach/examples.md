@@ -5,7 +5,7 @@
 ## 目录
 
 - [示例 1：速览模式 overview.md 成品](#示例-1速览模式-overviewmd-成品)
-- [示例 2：课程制单课 lesson-02 成品（知识点粒度）](#示例-2课程制单课-lesson-02-成品知识点粒度)
+- [示例 2：课程制单课 02 成品（知识点粒度）](#示例-2课程制单课-02-成品知识点粒度)
 - [示例 2b：应用实战独立文件与索引（4.2 正文的落盘形态）](#示例-2b应用实战独立文件与索引42-正文的落盘形态)
 - [示例 3：学习档案（知识点级进度 + 评审记录 + 大纲调整）](#示例-3学习档案知识点级进度--评审记录--大纲调整)
 - [示例 4：学习路径总览与 SVG 用法](#示例-4学习路径总览与-svg-用法)
@@ -119,9 +119,9 @@ flowchart LR
 
 ---
 
-## 示例 2：课程制单课 lesson-02 成品（知识点粒度）
+## 示例 2：课程制单课 02 成品（知识点粒度）
 
-> 场景：课程制 `k8s 基础`，阶段 1（容器与 k8s 基础）课 2《Pod》，本批含 3 个知识点。文件为 `k8s-basics/stages/1-容器与k8s基础/lessons/lesson-02-Pod.md`（课文件名用中文课名，不用英文 slug）。
+> 场景：课程制 `k8s 基础`，阶段 1（容器与 k8s 基础）课 2《Pod》，本批含 3 个知识点。文件为 `k8s-basics/stages/1-容器与k8s基础/lessons/02-Pod.md`（课文件名 = 两位数序号 + 中文课名，不用英文 slug，不带 `lesson-` 前缀）。
 
 ```markdown
 # 第 2 课：Pod——k8s 的最小调度单位
@@ -372,9 +372,9 @@ flowchart LR
 
 🎯 **练一练（本课应用实战）**：[第 2 课实战 · 健康检查 + 日志采集](../../../应用实战/02-Pod.md)
 
-⬅️ **上一课**：[课 1：容器基础](lesson-01-容器基础.md)
+⬅️ **上一课**：[课 1：容器基础](01-容器基础.md)
 
-➡️ **下一课**：[课 3：Deployment](../../2-进阶实战/lessons/lesson-03-Deployment.md)
+➡️ **下一课**：[课 3：Deployment](../../2-进阶实战/lessons/03-Deployment.md)
 
 📚 **返回目录**：[课程目录](../../../02-课程目录.md)
 ```
@@ -390,7 +390,7 @@ flowchart LR
 ````markdown
 # 应用实战 · Pod
 
-> 对应课程：[第 2 课：Pod](../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md) ｜ 覆盖知识点：Pod 概念、Pod YAML、多容器共享
+> 对应课程：[第 2 课：Pod](../stages/1-容器与k8s基础/lessons/02-Pod.md) ｜ 覆盖知识点：Pod 概念、Pod YAML、多容器共享
 > 定位：**会用，不上生产**——课里学完，在这里动手。
 > 📖 结论已按官方文档核对（核对于 2026-09 ｜ 来源：kubernetes.io/docs）
 
@@ -454,7 +454,7 @@ spec:
 
 ## 🧭 导航
 
-- ⬅️ 回到课程：[第 2 课：Pod](../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md)
+- ⬅️ 回到课程：[第 2 课：Pod](../stages/1-容器与k8s基础/lessons/02-Pod.md)
 - 📚 全部实战：[应用实战索引](INDEX.md)
 - ➡️ 下一课实战：[03 · Deployment](03-Deployment.md)（示例，未编写）
 ````
@@ -472,8 +472,8 @@ spec:
 
 | 课 | 实战场景 | 覆盖知识点 | 应用实战 |
 |----|---------|-----------|---------|
-| 课 1：[容器基础](../stages/1-容器与k8s基础/lessons/lesson-01-容器基础.md) | 用一个容器跑起 Web 服务 | 镜像与容器、容器运行时 | [01 · 跑起第一个容器](01-容器基础.md) |
-| 课 2：[Pod](../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md) | 健康检查 + 日志采集 | Pod YAML、多容器共享 | [02 · 健康检查 + 日志采集](02-Pod.md) |
+| 课 1：[容器基础](../stages/1-容器与k8s基础/lessons/01-容器基础.md) | 用一个容器跑起 Web 服务 | 镜像与容器、容器运行时 | [01 · 跑起第一个容器](01-容器基础.md) |
+| 课 2：[Pod](../stages/1-容器与k8s基础/lessons/02-Pod.md) | 健康检查 + 日志采集 | Pod YAML、多容器共享 | [02 · 健康检查 + 日志采集](02-Pod.md) |
 
 ## 汇总
 
@@ -1332,13 +1332,13 @@ spec:
 
 ## 阶段 1：容器与 k8s 基础
 
-### [课 1：容器基础](stages/1-容器与k8s基础/lessons/lesson-01-容器基础.md)
+### [课 1：容器基础](stages/1-容器与k8s基础/lessons/01-容器基础.md)
 
 - 镜像与容器
 - 容器运行时
 - 隔离原理
 
-### [课 2：Pod](stages/1-容器与k8s基础/lessons/lesson-02-Pod.md)
+### [课 2：Pod](stages/1-容器与k8s基础/lessons/02-Pod.md)
 
 - Pod 概念
 - Pod YAML
@@ -1388,10 +1388,10 @@ spec:
 
 | 知识点 | 所属阶段 / 课 | 本项目用在何处 | 回指 |
 |--------|--------------|---------------|------|
-| Pod 与容器 | 阶段 1 · 课 2 | 三层应用各自的 Pod 定义 | [lesson-02-Pod](../../stages/1-容器与k8s基础/lessons/lesson-02-Pod.md) |
-| Deployment 滚动更新 | 阶段 2 · 课 3 | 灰度发布的底层机制（maxSurge / maxUnavailable） | [lesson-03-Deployment](../../stages/2-调度与工作负载/lessons/lesson-03-Deployment.md) |
-| 探针 | 阶段 2 · 课 4 | 灰度期间判断新版本是否健康 | [lesson-04-探针](../../stages/2-调度与工作负载/lessons/lesson-04-探针.md) |
-| Service 与流量转发 | 阶段 3 · 课 5 | 灰度流量的按比例分发 | [lesson-05-Service](../../stages/3-网络与服务/lessons/lesson-05-Service.md) |
+| Pod 与容器 | 阶段 1 · 课 2 | 三层应用各自的 Pod 定义 | [02-Pod](../../stages/1-容器与k8s基础/lessons/02-Pod.md) |
+| Deployment 滚动更新 | 阶段 2 · 课 3 | 灰度发布的底层机制（maxSurge / maxUnavailable） | [03-Deployment](../../stages/2-调度与工作负载/lessons/03-Deployment.md) |
+| 探针 | 阶段 2 · 课 4 | 灰度期间判断新版本是否健康 | [04-探针](../../stages/2-调度与工作负载/lessons/04-探针.md) |
+| Service 与流量转发 | 阶段 3 · 课 5 | 灰度流量的按比例分发 | [05-Service](../../stages/3-网络与服务/lessons/05-Service.md) |
 
 **跨阶段校验**：覆盖 3 个阶段 ✅
 ```
@@ -1729,7 +1729,7 @@ spec:
 ````markdown
 # 源码解析 03：cached_property
 
-> 对应：[课 3《装饰器与缓存》](../stages/2-进阶特性/lessons/lesson-03-装饰器与缓存.md) ｜ 覆盖知识点：描述符协议 / property / 缓存
+> 对应：[课 3《装饰器与缓存》](../stages/2-进阶特性/lessons/03-装饰器与缓存.md) ｜ 覆盖知识点：描述符协议 / property / 缓存
 > 源码锚点 @ 3.12（cpython / Lib/functools.py）
 
 ## 为什么读它
@@ -1811,7 +1811,7 @@ class cached_property:
 
 | 课 | 解析的功能 | 覆盖知识点 | 源码解析 |
 |----|-----------|-----------|---------|
-| 课 3：[装饰器与缓存](../stages/2-进阶特性/lessons/lesson-03-装饰器与缓存.md) | cached_property 的缓存机制 | 描述符协议 / property / 缓存 | [03 · cached_property](03-装饰器与缓存.md) |
+| 课 3：[装饰器与缓存](../stages/2-进阶特性/lessons/03-装饰器与缓存.md) | cached_property 的缓存机制 | 描述符协议 / property / 缓存 | [03 · cached_property](03-装饰器与缓存.md) |
 
 ## 汇总
 
