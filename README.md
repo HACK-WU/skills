@@ -179,7 +179,7 @@ flowchart TD
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
-| **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，一次成型出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演） | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
+| **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，一次成型出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演）；发现属其他 skill 职责的问题时**主动接力**（UI 方案 → `ui-designer`、Bug → `debug` 定位，改码前停） | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
 | **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化；快速实现路径默认交接 `plan-track` 建档 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
 | **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
