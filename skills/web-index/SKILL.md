@@ -299,6 +299,7 @@ timeout 30s python3 {skill-dir}/scripts/fetch_site_map.py {起始URL} \
 - **不改用户环境**：不写 gitignore、不提交、不注册到任何需求管理系统；如需入 git 由用户决定
 - **不做反爬对抗**：不用代理池、不伪造 UA 重试、不绕过登录
 - **与 `dependency-docs` 分工**：`dependency-docs` 管"需求里的第三方依赖 × 结构化字段"（接口清单 / 认证 / 限流 / 配额），本 skill 管"一个网站的页面路由 × 反复查阅"。设计阶段要依赖的深度字段时用前者，不要用索引代替（反之亦然，两者产物互不冲突）
+- **与 `frontend-index` 分工（防抢触发）**：本 skill 的对象是**外部网站**（需要 `web_fetch` 抓远端页面，产物 `.web-index/`）；**本地前端代码**的「页面 ↔ 接口」双向映射走 `frontend-index`（扫源码，产物 `.fe-index/`）——用户说"给前端项目建索引"时用后者，别去 fetch 本地代码
 
 ---
 

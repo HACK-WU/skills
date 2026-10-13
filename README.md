@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-61-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-62-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -173,7 +173,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-61 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+62 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -258,6 +258,7 @@ flowchart TD
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG（含数据流全链路图）的学习材料，支持课程制/速览双模式、大纲教学效果推演、环境准备课、课级应用实战（按需配套、第四幕渐进演进、每步一张分步设计图）、多角色主题拆子教程、结课综合实战项目、实战经验与排障速查手册、场景解法库（设计题独立成册：多解法 + 代码 + 替代路线 + 结构变化必配设计图）、源码解析（按需配套 · 独立成册：读真实库源码 + 至少 1 张图）、双段质量闸门 + 源码探索（文档不足时下沉源码求证 · 求证 + 使用扩展） | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
 | **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
 | **[web-index](./skills/web-index/SKILL.md)** | 给需要反复查阅的网站/文档站建本地网页索引：抓 `llms.txt` / `sitemap.xml` / 导航，产出「我要做什么 → 去哪一页（含锚点）」的路由表落到 `.web-index/{site}/`（INDEX.md 登记表 + index.md 总表 + topics/ 分区）。双模式：已索引站点查表即走（消费模式，不重跑脚本），未索引站点才采集建库（建造模式）。只索引链接与用途、不镜像正文，一次性快照，配套抓取脚本 | "给这个网站建个索引"、"整理一下这个文档的链接"、"网页索引"、"web index"、"这个站后面要反复参考"、"查一下网页索引" |
+| **[frontend-index](./skills/frontend-index/SKILL.md)** | 给**本地前端项目**建「页面 ↔ 接口」双向索引：扫源码提取路由（页面）→ 接口调用 → 定义处（含 file:line），产出 `.fe-index/{slug}/`（INDEX.md 登记表 + index.md + pages/ + apis/ + meta.json），支持「改接口前查影响哪些页面」与「接页面任务查用到哪些接口/组件」。核心设计：**深度即置信度**（🟢 页面自身调用 / 🟡 直接依赖 / 🔵 间接候选）、**新鲜度闸门**（记录 commit，`--check` 比对，过期先重建）、**一键重建**（零依赖脚本，AI 只补语义）、约定探测 + `.fe-index/config.json` 声明兜底。已实测 Vue2+TSX 微前端与 Angular 两个真实工程 | "前端索引"、"页面接口映射"、"改这个接口影响哪些页面"、"哪个页面调了这个接口" |
 | **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |
 
 ### 可选技能（依赖第三方）
@@ -342,6 +343,7 @@ rules/        # 通用 AI 规则（详见"规则"节）
 agents/       # 子 Agent 提示词与专属规则
 scripts/      # 一键安装器 + 需求管理 CLI（req）
 docs/         # 文档（安装指南 / req CLI / 需求文档）
+tests/        # skills/ 下脚本的单元测试（一脚本一子目录；python3 -m pytest tests -q，约定见 tests/README.md）
 ```
 
 <a id="docs"></a>

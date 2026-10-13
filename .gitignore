@@ -1,3 +1,17 @@
+# 本地工具目录
 .workbuddy/
+
+# Python 缓存
 __pycache__/
- AGENTS.md
+*.py[cod]
+.pytest_cache/
+
+# 执行中间产物（扫描输出 / 草稿脚本，只增不删，不入库）
+temp/
+
+# web-index 派生产物（快照式网页索引；按 web-index skill 口径默认不入库。
+# 若希望随仓库分发某份索引，删掉此行并单独提交该目录）
+.web-index/
+
+# 本地 AI 记忆（会话记录，不入库；只忽略仓库根的同名文件）
+/AGENTS.md
