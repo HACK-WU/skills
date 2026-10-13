@@ -73,7 +73,11 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
 
 ## 产物结构
 
+> **落点一律在【项目根】**（`git rev-parse --show-toplevel`；非 git 仓库则逐级向上找 `.git`）：即 `{项目根}/.fe-index/`。
+> monorepo 里 `--root` 可以给应用子目录（如 `bkmonitor/webpack`），但**索引属于整个项目**——所有应用共用一个 `.fe-index/`。
+
 ```text
+{项目根}/.fe-index/
 .fe-index/
 ├── INDEX.md                      # 必存在：全项目登记表（一行一应用）—— 后续会话的发现入口
 ├── config.json                   # 可选：约定声明文件（AI 在阶段 1 探测后产出、用户确认，重建零猜测）
@@ -318,7 +322,7 @@ timeout 300s python3 {skill-dir}/scripts/scan_frontend.py --root {根目录} \
 
 ### 阶段 4：落盘
 
-1. 检查 `.fe-index/{slug}/` 是否已存在：**存在则先告知用户"将整应用覆盖重建"**（快照制无增量合并），确认再写
+1. 检查 `{项目根}/.fe-index/{slug}/` 是否已存在：**存在则先告知用户"将整应用覆盖重建"**（快照制无增量合并），确认再写
 2. 写 `meta.json`（**必须**：commit 用 `git -C {root} rev-parse HEAD`；`scope` 填扫描范围）+ `index.md` + `pages/*.md` + `apis/*.md`
 3. **同步更新 `.fe-index/INDEX.md`**（新增或覆盖该应用那一行）——缺这步，后续会话发现不了这份索引
 4. 写入后自检：所有 URL / `file:line` 均来自阶段 2/3 的实际产出，无凭空拼写的路径

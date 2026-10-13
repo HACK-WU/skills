@@ -63,8 +63,11 @@ description: 给本地后端项目建「模块 ↔ 目录/依赖/数据表」索
 
 ## 产物结构
 
+> **落点一律在【项目根】**（`git rev-parse --show-toplevel`；非 git 仓库则逐级向上找 `.git`）：即 `{项目根}/.fe-index/`。
+> monorepo 里 `--root` 可以给应用子目录，但**索引属于整个项目**——`--emit-tree` 不带值就落这里，带相对路径也以项目根为基准（不看 cwd）。
+
 ```text
-.fe-index/
+{项目根}/.fe-index/
 ├── INDEX.md                      # 必存在：全项目登记表（一行一应用）—— 后续会话的发现入口
 └── {app-slug}/
     ├── index.md                  # 必存在：模块地图 + 依赖图 + 表反查摘要 + 专家资产 + 待确认
@@ -199,7 +202,7 @@ description: 给本地后端项目建「模块 ↔ 目录/依赖/数据表」索
 python3 <skill>/scripts/scan_backend.py --root <根> --dump-config
 ```
 输出：框架（nestjs / django）、全局前缀、`src_dirs`、模块声明数、建议 include。
-- 有 `.fe-index/config.json`（集成方或此前建库留下）→ 脚本**自动读取并应用**（默认路径，`--config` 可指定；只认 `kind=backend`，`--app`/`--slug` 选应用）→ 重建**零猜测**
+- 有 `{项目根}/.fe-index/config.json`（集成方或此前建库留下）→ 脚本**自动读取并应用**（`--config` 可指定路径；只认 `kind=backend`，`--app`/`--slug` 选应用）→ 重建**零猜测**；文件里只有他端条目（如只声明了前端）时**说明一行后忽略，不拦路**
 - 与用户确认：**扫描范围**（哪个应用、哪些包、slug 名）
 - 框架识别失败（退出码 2）→ 用 `--framework` 显式指定，或收窄 `--include`
 - 探测结果建议固化为声明文件（`--dump-config` 会给出 `suggested_config`）：与前端共用同一份 `config.json`，各自按 `kind` 取用自己的条目
@@ -209,8 +212,9 @@ python3 <skill>/scripts/scan_backend.py --root <根> --dump-config
 ```bash
 python3 <skill>/scripts/scan_backend.py --root <根> --framework nestjs \
   --include 'packages/**' --include 'apps/**' --slug server-ai \
-  --emit-tree .fe-index/server-ai
+  --emit-tree
 ```
+`--emit-tree` 不带值 → 自动落 **`{项目根}/.fe-index/server-ai/`**（推荐用法）。要自定义位置时才给它一个值（绝对路径直用；相对路径以**项目根**为基准）。
 一步完成：模块全集 / 前缀 / 依赖图（含被依赖）/ 表双向 / 非 HTTP 入口 / 专家探测 / 待确认 / meta.json。
 
 **退出码处置**：

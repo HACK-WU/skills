@@ -89,7 +89,7 @@ python3 scan_backend.py --root <根> [选项]
 | `--experts-dir` | 额外专家资产目录，可重复（默认探测 `{root}/.module-experts/`、`{root}/module-experts/`） |
 | `--slug` | 应用标识（默认取根目录名） |
 | `--format` / `--out` | `md`（默认，单文件全文）/ `tsv` / `json`；`--out` 写文件 |
-| `--emit-tree <dir>` | **一键落盘**：`index.md` + `modules/*.md` + `tables.md` + `meta.json` |
+| `--emit-tree [dir]` | **一键落盘**：`index.md` + `modules/*.md` + `tables.md` + `meta.json`。**不带值 = `{项目根}/.fe-index/{slug}`**（推荐）；带值时绝对路径直用、**相对路径以项目根为基准**（不看 cwd） |
 | `--max` | 模块数上限（默认 500，硬上限 5000）；超限时截断并记「待确认」 |
 | `--dump-config` | 只探测框架与约定（阶段 1 用） |
 | `--check --index <dir>` | 新鲜度闸门（消费模式必跑） |
@@ -147,7 +147,8 @@ python3 scan_backend.py --root <根> [选项]
 ```
 
 - **一个应用一条**；两个 skill **只取自己 `kind` 的条目**（缺省：本 skill 视为 `backend`），互不干扰
-- **查找顺序**：`--config` 显式路径 → `{root}/.fe-index/config.json` → **逐级向上 ≤3 层**（monorepo 里 `--root` 给应用子目录、声明在仓库根时必需；用上层声明会打印来源路径，不静默）
+- **落点**：`{项目根}/.fe-index/`（项目根 = `git rev-parse --show-toplevel`，非 git 仓库则向上找 `.git`；**monorepo 里不是应用子目录**）
+- **查找顺序**：`--config` 显式路径 → `{项目根}/.fe-index/config.json` → `{root}/.fe-index/config.json` → 向上 ≤3 层（兼容旧布局）
 - **分级失效（关键）**：显式 `--config` 或默认路径的声明不可用 → **报错退出 5**（那是用户/本项目自己的声明）；**向上找到的上层声明**不可用（非法 JSON / 无后端应用 / slug 不匹配 / 多应用且未指定）→ **打印一行说明后忽略**，按 CLI 参数继续。**上层声明不得拦下原本正常的扫描**（实测踩过）
 - `root` 相对声明文件所在目录解析（声明在 `{root}/.fe-index/` 时基准上移一级）
 - 支持注释（JSONC）；CLI 显式传入的参数**优先于**声明
@@ -194,6 +195,8 @@ python3 scan_backend.py --root <根> [选项]
 | 19 | 声明文件只查 `{root}/.fe-index/` | `--root` 给应用子目录、声明在仓库根时**静默没读到** → 重建退化回猜测 | 逐级向上查找 ≤3 层，命中即提示来源路径（两端同口径） |
 | 20 | 向上查找到**别人的/过期的**上层声明 | 被当成本项目声明 → **拦下原本正常的扫描**（实测：`--root bkmonitor` 撞上上层的前端声明，直接退出 5） | 分级失效：显式/默认路径报错，**上层声明只在无歧义时采用**，否则说明一行后忽略 |
 | 21 | 老声明（无 `kind`）被对方认领 | 前端声明被后端当成自己的 → 无后端应用/拦路 | 按特征键推断 kind（`routes`/`pagesDirs`/`apiDirs`/`aliases` → frontend；`framework`/`expertsDir` → backend），推不出才归"双方兼容" |
+| 22 | `--emit-tree` 相对 **cwd** 解析 | 换个目录跑同一命令 → 索引写到别处（产物分裂、`--check` 找不到） | 落点一律为**项目根**（git toplevel）；不带值 → `{项目根}/.fe-index/{slug}`；相对值也以项目根为基准 |
+| 23 | 项目根的声明只有**他端**条目 | 加了前端声明后，后端扫描被硬报错拦下（实测 bk-monitor） | 只有其他类型条目 → **说明一行后忽略**，绝不拦路；本端条目存在但 slug 不匹配才报错 |
 
 ---
 

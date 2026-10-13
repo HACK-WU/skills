@@ -1571,23 +1571,48 @@ def load_jsonc(path):
         return None
 
 
-def find_config(root, explicit, levels=3):
-    """声明文件定位：显式路径 > `{root}/.fe-index/config.json` > 逐级向上找（≤ levels 层）。
+def project_root(root):
+    """**项目根**：`.fe-index/` 的唯一落点。
 
-    向上找是必需的：monorepo 里 `--root` 常给**应用子目录**，而声明文件在**仓库根**的
-    `.fe-index/` —— 只认默认路径会静默地"没读到声明"，重建就退化成猜测。
+    判定顺序：`git rev-parse --show-toplevel` → 逐级向上找 `.git` → 兜底 `root` 本身。
+    monorepo 里 `--root` 常给**应用子目录**，但索引属于整个项目——落点必须确定，不能随
+    `--root` 或 cwd 漂移（实测踩过：`--emit-tree` 相对 cwd 解析，换个目录跑就写到别处）。
     """
+    try:
+        r = subprocess.run(["git", "-C", root, "rev-parse", "--show-toplevel"],
+                           capture_output=True, text=True, timeout=15)
+        if r.returncode == 0 and r.stdout.strip():
+            return os.path.abspath(r.stdout.strip())
+    except (OSError, subprocess.SubprocessError):
+        pass
+    base = os.path.abspath(root)
+    while True:
+        if os.path.isdir(os.path.join(base, ".git")):
+            return base
+        parent = os.path.dirname(base)
+        if parent == base:
+            return os.path.abspath(root)
+        base = parent
+
+
+def find_config(root, explicit, levels=3):
+    """声明文件定位：显式路径 > **项目根**的 `.fe-index/config.json` > `{root}` 下的 > 向上 ≤3 层（兼容旧布局）。"""
     if explicit:
         return explicit
-    base = os.path.abspath(root)
-    for _ in range(levels):
+    proj = project_root(root)
+    for base in (proj, os.path.abspath(root)):
         cand = os.path.join(base, ".fe-index", "config.json")
         if os.path.isfile(cand):
             return cand
+    base = os.path.abspath(root)
+    for _ in range(levels):
         parent = os.path.dirname(base)
         if parent == base:
             break
         base = parent
+        cand = os.path.join(base, ".fe-index", "config.json")
+        if os.path.isfile(cand):
+            return cand
     return None
 
 
@@ -1622,10 +1647,13 @@ def merge_config(args, root):
     config_path = find_config(root, args.config)
     if not config_path or not os.path.isfile(config_path):
         return root, {}
-    default_path = os.path.abspath(os.path.join(root, ".fe-index", "config.json"))
-    via_upward = not explicit and os.path.abspath(config_path) != default_path
+    # 规范落点是【项目根】的 .fe-index/：位于项目根（或 --root）下 = 本项目声明（不可用即报错）；
+    # 只有项目根之外的更上层才算"别人的"，才允许忽略
+    canonical = {os.path.abspath(os.path.join(project_root(root), ".fe-index", "config.json")),
+                 os.path.abspath(os.path.join(root, ".fe-index", "config.json"))}
+    via_upward = not explicit and os.path.abspath(config_path) not in canonical
     if via_upward:
-        eprint("· 发现上层声明文件：%s" % config_path)
+        eprint("· 发现项目根之外的声明文件：%s" % config_path)
 
     def ignore(msg):
         if explicit or not via_upward:
@@ -1645,7 +1673,10 @@ def merge_config(args, root):
         # 兼容无特征键的老声明（既不像前端也不像后端）
         backend_apps = [a for a in apps if app_kind(a) == ""]
     if not backend_apps:
-        return root, ignore("声明文件里没有后端应用")
+        # 只有其他类型的条目（例如只有前端声明）→ 这份声明**不是给本端的**：
+        # 说明一行后忽略，绝不拦路（实测：bk-monitor 的前端声明曾拦下后端扫描）
+        eprint("· 声明文件里没有后端应用（%s），忽略它按命令行参数继续" % config_path)
+        return root, {}
 
     slug = args.app or args.slug
     chosen = None
@@ -1746,7 +1777,7 @@ def build_meta(args, root, result):
         "stats": result.stats,
         "scanner": "scan_backend.py v%s" % VERSION,
         "check_cmd": "python3 scan_backend.py --root %s --check --index %s"
-                     % (root, os.path.join(args.emit_tree or ".fe-index/%s" % slug)),
+                     % (root, os.path.join(project_root(root), ".fe-index", slug)),
     }
 
 
@@ -1763,7 +1794,9 @@ def main(argv=None):
     parser.add_argument("--max", type=int, default=500, help="模块数上限（默认 500，硬上限 5000）")
     parser.add_argument("--format", default="md", choices=["md", "tsv", "json"])
     parser.add_argument("--out", help="输出到文件")
-    parser.add_argument("--emit-tree", help="直接落盘整棵树（index.md + modules/ + tables.md + meta.json）")
+    parser.add_argument("--emit-tree", nargs="?", const="", metavar="DIR",
+                        help="落盘整棵树（index.md + modules/ + tables.md + meta.json）；"
+                             "不带值 = {项目根}/.fe-index/{slug}（相对路径一律以项目根为基准，不看 cwd）")
     parser.add_argument("--slug", help="应用标识（默认取根目录名）")
     parser.add_argument("--dump-config", action="store_true", help="只探测框架与约定")
     parser.add_argument("--check", action="store_true", help="新鲜度检查（需 --index）")
@@ -1807,7 +1840,12 @@ def main(argv=None):
         if not args.index:
             eprint("✗ --check 需要 --index <索引目录>")
             return 5
-        return run_check(root, os.path.abspath(args.index))
+        idx = args.index
+        if not os.path.isabs(idx):
+            # 相对 --index 以【项目根】为基准（`{项目根}/.fe-index/{slug}` 是规范落点）——
+            # 与 --emit-tree 同口径，避免从不同 cwd 跑时找不到索引
+            idx = os.path.join(project_root(root), idx)
+        return run_check(root, idx)
 
     if args.dump_config:
         files = walk_files(root, args.include, args.exclude, TS_EXTS + PY_EXTS)
@@ -1858,8 +1896,16 @@ def main(argv=None):
         result.stats["event_edges"] = sum(len(m.get("event_edges", [])) for m in result.modules)
 
     meta = build_meta(args, root, result)
-    if args.emit_tree:
-        out_dir = os.path.abspath(args.emit_tree)
+    if args.emit_tree is not None:
+        # `.fe-index/` 一律落在【项目根】：不带值 → {项目根}/.fe-index/{slug}；
+        # 相对路径也以项目根为基准（原先相对 cwd，换个目录跑就写到别处——实测陷阱）
+        raw = (args.emit_tree or "").strip()
+        if not raw:
+            out_dir = os.path.join(project_root(root), ".fe-index", meta["slug"])
+        elif os.path.isabs(raw):
+            out_dir = raw
+        else:
+            out_dir = os.path.join(project_root(root), raw)
         emit_tree(result, root, out_dir, opts, meta)
         print("✅ 落盘 %s（模块 %d · 表 %d · 依赖边 %d · 专家资产 %d · 待确认 %d）" % (
             out_dir, len(result.modules), len(result.tables), result.stats["deps_edges"],
