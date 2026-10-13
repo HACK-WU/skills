@@ -19,7 +19,7 @@ description: 设计前对代码库按需调研（只查与当前需求相关的�
 ## 核心原则
 
 1. **按需调研**：只调研与当前需求相关的维度，不相关的跳过
-2. **ki-search 与资产复用优先**：先使用 ki-search 查询相关项目记忆 → 调用 use_skill("expert-solution-workflow") 触发资产复用（expert-lookup / solution-lookup）→ 代码搜索 → 语义检索兜底。禁止跳过 ki-search 直接搜代码
+2. **ki-search 与资产复用优先**：先使用 ki-search 查询相关项目记忆 → 调用 use_skill("expert-solution-workflow") 触发资产复用（expert-lookup / solution-lookup）→ **若仓库已有代码索引则调 `use_skill("index-lookup")` 拿模块/页面地图，缩小搜索域（无索引自动降级，不阻塞）** → 代码搜索 → 语义检索兜底。禁止跳过 ki-search 直接搜代码
 3. **必须执行**：ki-search 为必查项，即使觉得"不太可能有"，也要实际调用确认；**无论是否命中，都必须触发资产复用**
 4. **并行加速**：需代码搜索的维度 ≥ 2 时，自动调用 task-dispatch 并行搜索
 

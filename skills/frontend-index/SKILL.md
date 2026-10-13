@@ -104,6 +104,7 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
 | server-ai | backend | server-ai | `/root/xpert` | 模块 125 · 表 122 | 889e265c | 2026-10-13 |
 
 **更新纪律**：只增改本应用那一行，**不动其他行**；同一仓库前后端各占一行（slug 不同，不合并）——`backend-index` 与本 skill 共用这份登记表，列结构一致。
+**「根目录」列口径**（消费方按此解析）：绝对路径直用；**相对路径以 `.fe-index/` 的上一级为基准**（便于跨机器与仓库整体搬迁）。查找登记表时若 `{root}` 下没有，逐级向上找 ≤3 层。
 ```
 
 ### meta.json 模板（`--check` 依赖，必写）
@@ -393,9 +394,10 @@ timeout 300s python3 {skill-dir}/scripts/scan_frontend.py --root {根目录} \
 
 | 集成方 | 建议用法 | 状态 |
 |--------|----------|------|
-| `frontend-walkthrough` | 阶段 1「入口穷举」可先查索引拿页面清单与接口，省一次全站搜索 | 建议接入（其流程内声明） |
-| `code-review` / `bug-impact-analysis` | 改到前端接口调用时，用反向表确认影响页面 | 建议接入（其流程内声明） |
-| `e2e-testing` | 设计端到端旅程时用页面→接口表选关键路径 | 建议接入 |
+| **`index-lookup`（统一查询入口）** | 消费方**先调它**按代码路径判定该查前端还是后端索引（读同一张 `.fe-index/INDEX.md`），再按本 skill 的查询口径查表 | **推荐接入**：不要让每个消费方自己实现"选哪端"（口径会漂移）。已接入：`code-review` / `debug` / `product-manager` / `code-survey` / `bug-impact-analysis` / `expert-team` |
+| `frontend-walkthrough` | 阶段 1「入口穷举」先查索引拿页面清单与接口，省一次全站搜索 | **已接入**（阶段 1 第 1 项） |
+| `code-review` / `bug-impact-analysis` | 改到前端接口调用时，用反向表确认影响页面 | **已接入**（code-review 阶段 2 / bug-impact-analysis 3.0，经 `index-lookup`） |
+| `e2e-testing` | 设计端到端旅程时用页面→接口表选关键路径 | **已接入**（阶段 1 选路径与终态校验点） |
 
 > 上表**不声明"已接入"**：本 skill 的落盘映射需要目标项目先建一次索引，集成方需自行降级（无索引时按原流程 grep）。
 

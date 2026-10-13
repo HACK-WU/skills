@@ -132,6 +132,8 @@ e2e 需要真实凭证才能发起请求，但**测试定义文件（scenario/�
 ### 阶段 1：拆解为 Scenario + Steps
 将旅程拆成步骤，**标注每个 step 的 `type` 与 `depends_on`**，并标出哪些 step 产出哪些 key（`produces`）供下游 `${ctx.x}` 引用。具体用哪些类型由**被测功能**决定（不预设固定集）。
 
+- **有索引时先用**（挑关键路径 + 定终态校验点）：仓库已建 `.fe-index/` → `use_skill("index-lookup")` 读 `INDEX.md` 匹配涉及文件——前端 `apis/*.md` / `pages/*.md` 给出"这个操作走哪些接口"，后端 `tables.md` / `modules/*.md` 给出"终态该落在哪张表、哪些模块会连带变"，据此选跨组件断言点；无索引 / 未命中 / 过期 → 按原流程，不阻塞
+
 ### 阶段 2：搭建 Context（执行 setup）
 先跑 `setup` 类步骤，初始化 `ctx.env` / `ctx.credentials` / `ctx.data`。
 

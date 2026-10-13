@@ -94,6 +94,7 @@ description: 给本地后端项目建「模块 ↔ 目录/依赖/数据表」索
 ```
 
 **更新纪律**：只增改本应用那一行，**不动其他行**；同一仓库前后端各占一行（slug 不同，不合并）。
+**「根目录」列口径**（消费方按此解析）：绝对路径直用；**相对路径以 `.fe-index/` 的上一级为基准**（便于跨机器与仓库整体搬迁）。查找登记表时若 `{root}` 下没有，逐级向上找 ≤3 层。
 
 ### meta.json 模板（`--check` 依赖，必写）
 
@@ -281,11 +282,12 @@ python3 <skill>/scripts/scan_backend.py --root <根> --framework nestjs \
 
 | 集成方 | 建议用法 | 状态 |
 |---|---|---|
+| **`index-lookup`（统一查询入口）** | 消费方（`code-review` / `debug` / `product-manager` / `expert-team` / `code-survey` …）**先调它**按代码路径判定该查前端还是后端索引（读同一张 `.fe-index/INDEX.md`），再按本 skill 的查询口径查表 | **推荐接入**：**不要让每个消费方自己实现"选哪端"**，否则口径必然漂移 |
 | **跨端 join（与 `frontend-index` 组合）** | 先读后端 `index.md` 的「模块 → 挂载前缀」，再用前端 `apis/{分区}.md` 里的接口路径匹配前缀 → 答"后端改接口 → 前端哪些页面在用" | **可直接用**（两端产物同根、口径已对齐；`@Controller()` 无前缀的模块用「方法路径」提示匹配） |
 | `expert-team` | 建完专家包后重跑 `--emit-tree`，专家列会因目录存在而出现 → 索引成为专家团的**发现入口**（解决"建了没人知道"） | **可直接用**（产物级衔接，无需改对方） |
-| `module-teach` | 讲解某后端模块前读 `modules/{slug}.md` 定位范围与依赖 | 建议接入（需其流程内声明） |
-| `code-survey` / 设计前调研 | 查 `INDEX.md` 命中则消费，未命中再决定是否建库 | 建议接入 |
-| `bug-impact-analysis` / `code-review` | 改到后端模块或数据表时，用被依赖与表反查确认影响面 | 建议接入 |
+| `module-teach` | 讲解某后端模块前读 `modules/{slug}.md` 定位范围与依赖 | **已接入**（「与相邻 skill 的分工与路由」表，`module` 类讲解先用索引锁定范围） |
+| `code-survey` / 设计前调研 | 查 `INDEX.md` 命中则消费，未命中再决定是否建库 | **已接入**（「ki-search 与资产复用优先」链，缩小搜索域） |
+| `bug-impact-analysis` / `code-review` / `debug` | 改到后端模块或数据表时，用被依赖与表反查确认影响面 | **已接入**（bug-impact-analysis 3.0 / code-review 阶段 2 / debug Step 0） |
 
 > 上表**不声明"已接入"**：本 skill 的产物需要目标项目先建一次索引，集成方需自行降级（无索引时按原流程 grep）。
 

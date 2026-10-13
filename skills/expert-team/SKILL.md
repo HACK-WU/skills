@@ -280,6 +280,7 @@ description: 派多专家子 agent 并行深挖单个业务模块，产出"契�
 | skill | 关系 |
 |---|---|
 | code-survey | 轻量、按需、跨多维度、一次性；本 skill 是单业务模块深挖、持久落盘 |
+| **index-lookup / backend-index** | **建专家前**：仓库若已有代码索引（`.fe-index/`），先 `use_skill("index-lookup")` 拿该模块的**边界与依赖/被依赖**（省一次全仓扫描）；**专家落盘后**建议重跑 `backend-index` 的 `--emit-tree`——索引的「专家资产」列会自动出现，解决"建了没人知道" |
 | ki-search | 本 skill 可选地把知识原子写入 ki KB；专家文档存深度参考，KB 存可查询原子，互补 |
 | solution-capture | 沉淀"问题解法"；本 skill 沉淀"业务模块全景知识"，复用其包 + INDEX 范式 |
 | **code-to-wiki** | **本 skill 的实现层文档对齐其格式规范**，但**不套用其单一 7 节骨架**、不调用其校验工具。该 skill 不在本技能库中，所需格式规则已全部内嵌为 R1–R7，不依赖外部文档 |
