@@ -45,6 +45,7 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
 | 邻接 skill | 它回答的问题 | 本 skill 回答的问题 |
 |---|---|---|
 | `web-index` | **外部网站**的文档该看哪一页（抓 llms.txt / sitemap） | **本地前端代码**里页面与接口怎么对应（扫源码） |
+| `backend-index` | **本地后端**的「模块 ↔ 目录/入口/依赖/数据表」（扫后端源码，模块级） | **本地前端**的「页面 ↔ 接口」（扫前端源码，页面级）。两者同族同根 `.fe-index/`：跨端 join（改后端接口 → 前端哪些页面）用后端 `index.md` 的「模块 → 挂载前缀」匹配本索引 `apis/*.md` 的接口路径，口径见 `backend-index/SKILL.md` 的「被其它 skill 集成」 |
 | GitNexus MCP（`impact` / `api_impact` / `context`） | 符号级影响面（需要 CLI + 已建索引） | **页面级**视角、零依赖、产物是人可读的落盘表 |
 | `code-survey` | 设计前一次性调研代码现状 | 一次性调研 → **可跨会话复用的落盘资产** |
 | `relation-lookup` / `strong-relation` | 人工沉淀的跨模块强关联记录 | 从源码**自动提取**的页面↔接口映射 |
@@ -93,13 +94,16 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
 **`INDEX.md` 是这个机制的生命线**：隐藏目录不会被自动发现，每次建造都必须同步更新它。
 
 ```markdown
-# 前端接口索引登记表
+# 索引登记表（.fe-index/）
 
 > 涉及下列应用的问题，先查对应条目所在的分区/映射表，再看代码
 
-| 应用 | slug | 根目录 | 页面 | 接口 | commit | 生成日期 |
-|------|------|--------|------|------|--------|----------|
-| monitor-pc | monitor-pc | src/monitor-pc | 116 | 337 | 4f2a9c1 | 2026-10-13 |
+| 应用 | 类型 | slug | 根目录 | 规模 | commit | 生成日期 |
+|------|------|------|--------|------|--------|----------|
+| monitor-pc | frontend | monitor-pc | src/monitor-pc | 页面 116 · 接口 337 | 4f2a9c1 | 2026-10-13 |
+| server-ai | backend | server-ai | `/root/xpert` | 模块 125 · 表 122 | 889e265c | 2026-10-13 |
+
+**更新纪律**：只增改本应用那一行，**不动其他行**；同一仓库前后端各占一行（slug 不同，不合并）——`backend-index` 与本 skill 共用这份登记表，列结构一致。
 ```
 
 ### meta.json 模板（`--check` 依赖，必写）
@@ -117,6 +121,8 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
   "scanner": "scan_frontend.py v1.0.0"
 }
 ```
+
+> `scope` 支持字符串或数组；**多个范围必须写成数组**（`["packages/**", "apps/**"]`）——拼成一个字符串会让 git 匹配不到文件，`--check` 会错报"索引可用"（静默假阴性）。
 
 ### index.md 模板
 
@@ -228,6 +234,7 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
    {
      "apps": [
        {
+         "kind": "frontend",
          "slug": "monitor-pc",
          "root": "/root/bk-monitor/bkmonitor/webpack",
          "include": ["src/**"],
@@ -241,6 +248,8 @@ description: 给本地前端项目建「页面 ↔ 接口」双向索引（.fe-i
      ]
    }
    ```
+
+   > `config.json` 与 `backend-index` **共用**：本 skill 只认 `kind=frontend`（缺省视为 frontend），后端只认 `kind=backend`——同仓库前后端各写一条，互不选中对方。
 
 3. **与用户确认一次**：
    ```text

@@ -1742,8 +1742,16 @@ def run_check(root, index_dir):
         print("✅ 索引新鲜：commit 未变化（%s）" % current[:10])
         return 0
     try:
+        # scope 可能是字符串或数组：**一个 glob 一个 pathspec**。
+        # 把 `"packages/**, apps/**"` 当单个 pathspec 传给 git 会匹配不到文件 → 变化被漏判
+        # → `--check` 错报"索引可用"（静默假阴性，实测踩过；与 backend-index 同口径）
+        scope = meta.get("scope")
+        if isinstance(scope, (list, tuple)):
+            pathspecs = [str(x).strip() for x in scope if str(x).strip()]
+        else:
+            pathspecs = [s.strip() for s in str(scope or "").split(",") if s.strip()]
         diff = subprocess.run(["git", "-C", index_root, "diff", "--name-only",
-                               "%s..%s" % (recorded, current), "--", meta.get("scope") or "."],
+                               "%s..%s" % (recorded, current), "--"] + (pathspecs or ["."]),
                               capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.SubprocessError) as exc:
         eprint("✗ git diff 失败：%s" % exc)
@@ -1800,24 +1808,86 @@ def build_parser():
     return parser
 
 
+def find_config(root, explicit, levels=3):
+    """声明文件定位：显式路径 > `{root}/.fe-index/config.json` > 逐级向上找（≤ levels 层）。
+
+    monorepo 里 `--root` 常给应用子目录，而声明在仓库根的 `.fe-index/`——只认默认路径会
+    静默"没读到声明"，重建退化成猜测（与 backend-index 同口径）。
+    """
+    if explicit:
+        return explicit
+    base = os.path.abspath(root)
+    for _ in range(levels):
+        cand = os.path.join(base, ".fe-index", "config.json")
+        if os.path.isfile(cand):
+            return cand
+        parent = os.path.dirname(base)
+        if parent == base:
+            break
+        base = parent
+    return None
+
+
+FRONTEND_KEYS = ("routes", "pagesDirs", "apiDirs", "aliases", "requestObjects", "maxDepth")
+BACKEND_KEYS = ("framework", "expertsDir")
+
+
+def app_kind(app):
+    """判定声明条目归属：显式 `kind` 优先；老声明（无 kind）按特征键推断，推不出返回 ""。"""
+    kind = app.get("kind")
+    if kind:
+        return kind
+    if any(k in app for k in FRONTEND_KEYS):
+        return "frontend"
+    if any(k in app for k in BACKEND_KEYS):
+        return "backend"
+    return ""
+
+
 def merge_config(args):
     cfg = {}
-    config_path = args.config or os.path.join(args.root, ".fe-index", "config.json")
-    if os.path.isfile(config_path):
+    config_path = find_config(args.root, args.config)
+    explicit = bool(args.config)
+    default_path = os.path.abspath(os.path.join(args.root, ".fe-index", "config.json"))
+    via_upward = bool(config_path) and not explicit and os.path.abspath(config_path) != default_path
+    if via_upward:
+        eprint("· 发现上层声明文件：%s" % config_path)
+
+    def ignore(msg):
+        """上层声明**不得拦路**：无歧义才采用，否则说明一行后忽略（显式/默认路径则报错）。"""
+        if explicit or not via_upward:
+            eprint("✗ %s：%s" % (msg, config_path))
+            sys.exit(5)
+        eprint("· %s，已忽略该上层声明，按命令行参数继续" % msg)
+
+    if config_path and os.path.isfile(config_path):
         data = load_jsonc(config_path)
         if data is None:
-            eprint("✗ 声明文件不是合法 JSON：%s" % config_path)
-            sys.exit(5)
+            ignore("声明文件不是合法 JSON")
+            return cfg
         apps = data.get("apps")
         if isinstance(apps, list) and apps:
+            # 与 backend-index **共用同一个 config.json**：只认 kind=frontend（老声明按特征键推断），
+            # 否则同仓库前后端各写一条时会选到对方的 app
+            apps = [a for a in apps if isinstance(a, dict)]
+            fe_apps = [a for a in apps if app_kind(a) == "frontend"]
+            if not fe_apps:
+                fe_apps = [a for a in apps if app_kind(a) == ""]
+            if not fe_apps:
+                ignore("声明文件里没有前端应用")
+                return cfg
+            apps = fe_apps
             slug = args.app or args.slug
             chosen = None
             if slug:
                 chosen = next((a for a in apps if a.get("slug") == slug), None)
                 if chosen is None:
-                    eprint("✗ 声明文件中没有 slug=%s 的应用" % slug)
-                    sys.exit(5)
+                    ignore("声明文件中没有 slug=%s 的前端应用" % slug)
+                    return cfg
             else:
+                if len(apps) > 1 and via_upward:
+                    ignore("上层声明含 %d 个前端应用且未指定 --app/--slug" % len(apps))
+                    return cfg
                 chosen = apps[0]
                 if len(apps) > 1:
                     eprint("⚠ 声明文件含 %d 个应用，未指定 --app，使用第一个：%s"
@@ -1888,6 +1958,7 @@ def main(argv=None):
                             "并校正 routes / apiDirs / aliases（探测可能遗漏）后可让重建零猜测")
         print(json.dumps({"detected": detected,
                           "suggested_config": {"apps": [{
+                              "kind": "frontend",
                               "slug": args.slug or os.path.basename(root) or "app",
                               "root": ".",
                               "include": opts.get("include") or ["src/**"],
