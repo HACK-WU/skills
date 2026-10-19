@@ -180,6 +180,7 @@ flowchart LR
 
 - **配色**：一律**浅底深字**；深色仅用于强调元素（新增/变更节点），不作大面积背景；Mermaid **不启用深色主题**（`%%{init:{"theme":"dark"}}%%`）（引自 `topic-teach` 配色约束）
 - **落盘 SVG**（仅在使用 SVG 时）：写入需求目录 `assets/`，kebab-case 命名 `{图作用}-{图主题}.svg`（如 `export-flow-now-vs-new.svg`）；md 用 `![说明](./assets/xxx.svg)` 引用；`assets/` 需同步进 `index.md` 索引
+- **落盘（内嵌图）**：Mermaid / ASCII 图随所属文档（如 `requirement.md`）内嵌落盘，**不另存独立文件、不新建 document_type、不加 `--docs` 注册**；落盘时不得因"精简摘要"删图——与 `product-manager` / `requirement-doc-store` 的落盘口径一致
 - **对齐**：ASCII 图放无语言标记的代码块内，保证等宽不被 Markdown 破坏
 - **一图一事**：每张图只回答一个"变什么"，多主题拆多图
 

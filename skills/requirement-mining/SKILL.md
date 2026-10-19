@@ -678,7 +678,7 @@ N. ⏭️ 跳过 — 不进行后续操作，结束需求挖掘流程
 
 1. 确认落盘：提示用户落盘内容为需求挖掘报告（`requirement.md`），确认后继续
 2. 创建需求：使用 `req create` 命令创建目录并注册到 meta.json
-3. 写入文档：使用 `write_to_file` 按 frontmatter 模板写入 `requirement.md`；**如报告含 SVG 独立图形**，先写入需求目录 `assets/`（kebab-case 命名），md 内用 `![说明](./assets/xxx.svg)` 相对路径引用，并同步进 `index.md`——SVG 是 `requirement.md` 的附属资源，**不注册进 `docs`**（文档类型枚举无 diagram，硬塞会污染 meta.json）
+3. 写入文档：使用 `write_to_file` 按 frontmatter 模板写入 `requirement.md`；**Step 3 的「现状 → 预期（图示）」节必须随正文落盘**——图内嵌代码块（Mermaid 标 `mermaid`，ASCII 不标语言），不得只留在对话、不得因"精简摘要"压缩而删图（压缩的是细节文字，不是图）；**如报告含 SVG 独立图形**，先写入需求目录 `assets/`（kebab-case 命名），md 内用 `![说明](./assets/xxx.svg)` 相对路径引用，并同步进 `index.md`——SVG 是 `requirement.md` 的附属资源，**不注册进 `docs`**（文档类型枚举无 diagram，硬塞会污染 meta.json）
 4. 验证添加成功（必须执行）：落盘后使用 `req list --id {REQ-NNN}` 检查需求是否添加成功——确认条目存在、`feature`/`status`/`tags` 与创建参数一致、需求目录下 `requirement.md` 已写入。验证失败时根据错误信息修正后重试，禁止未验证通过就宣告落盘完成
 
 > 详细步骤、frontmatter 模板和命令参数见 `requirement-doc-store` skill。
@@ -749,7 +749,7 @@ N. ⏭️ 跳过 — 不进行后续操作，结束需求挖掘流程
 - [基于根因分析，建议的长期系统演进方向]
 ```
 
-> **持久化时的文档结构**：实际写入 `requirement.md` 时的格式为精简摘要（见 `requirement-doc-store` skill），而非上述完整报告模板。
+> **持久化时的文档结构**：实际写入 `requirement.md` 时的格式为精简摘要（见 `requirement-doc-store` skill），而非上述完整报告模板——但**「现状 → 预期（图示）」节必须完整保留**（Mermaid / ASCII 内嵌代码块），落盘时不得删图，压缩只压文字细节。
 
 ## 图形化表达规范（SSOT: [references/diagram-guide.md](references/diagram-guide.md)）
 
