@@ -399,7 +399,7 @@ timeout 300s python3 {skill-dir}/scripts/scan_frontend.py --root {根目录} \
 | 集成方 | 建议用法 | 状态 |
 |--------|----------|------|
 | **`index-lookup`（统一查询入口）** | 消费方**先调它**按代码路径判定该查前端还是后端索引（读同一张 `.fe-index/INDEX.md`），再按本 skill 的查询口径查表 | **推荐接入**：不要让每个消费方自己实现"选哪端"（口径会漂移）。已接入：`code-review` / `debug` / `product-manager` / `code-survey` / `code-change-impact` / `expert-team` |
-| `frontend-walkthrough` | 阶段 1「入口穷举」先查索引拿页面清单与接口，省一次全站搜索 | **已接入**（阶段 1 第 1 项） |
+| `frontend-walkthrough` | 阶段 1「入口穷举」先查索引拿页面清单与接口；阶段 1.5 缺陷推演用 `apis/*.md` 反查页面依赖的接口，直接充当"异步源"清单 | **已接入**（阶段 1 第 1 项、阶段 1.5 第 1 步） |
 | `code-review` / `code-change-impact` | 改到前端接口调用时，用反向表确认影响页面 | **已接入**（code-review 阶段 2 / code-change-impact 3.0，经 `index-lookup`） |
 | `e2e-testing` | 设计端到端旅程时用页面→接口表选关键路径 | **已接入**（阶段 1 选路径与终态校验点） |
 
