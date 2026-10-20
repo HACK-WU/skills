@@ -215,16 +215,37 @@ def get_user_discount(user_type: str, order_amount: float) -> float:
 3. **获取 PR 上下文**：执行 `gh pr view 10862` 获取标题、描述、目标分支
 4. **标准 Review 流程**：按阶段 0-6 执行完整审查
 
-**示例输出片段**：
+**示例输出片段**（节选；问题块中 `链路` 是"必给项"的落地形态，不是可选装饰）：
 
-```
+````markdown
 📋 Code Review Report
 
 PR: #10862 "feat: 添加用户登录验证码功能"
 目标分支: main
 变更文件: src/auth/login.py, src/auth/captcha.py, tests/test_login.py
-...
-```
+
+### 1.2 问题（节选）
+
+#### `Q1` · 🟥 本次引入 · 🔴
+
+- **位置**：`src/auth/login.py:58`、`src/auth/captcha.py:33`
+- **问题**：`login()` 先在 session 写入 `captcha_ok = True`，随后才比对验证码；比对失败只 `return False`，不清除该标记，下一次请求可直接跳过验证码。
+- **业务后果**：验证码可被绕过——提交一次错误验证码即解锁后续任意次登录尝试，等同取消该防护。
+- **依据**：`S3`（"验证码校验通过才允许登录"）+ 需求 `AC-2`
+- **链路**（必给：状态流转 + 双路径）：
+  ```text
+  攻击者提交错误验证码 · login.py:58
+    ▼
+  session["captcha_ok"] = True 已写入 · login.py:58   ← 缺口：先置位、后校验
+    ▼
+  比对失败 → return False · captcha.py:33   ← 未回滚该标记
+    ▼
+  第二次提交 · login.py:52
+    ├─ 命中 session 标记 → 跳过验证码   ← 被绕过（🔴 现象）
+    └─ 未命中 → 照常校验（改前行为）
+  ```
+- **修复方向**：① 先校验通过再置位；② 失败分支显式 `session.pop("captcha_ok")`——① 更彻底，不依赖每个失败分支都记得清理
+````
 
 **用户输入**："review 对 develop 的改动"
 
