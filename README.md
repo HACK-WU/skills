@@ -204,7 +204,7 @@ flowchart TD
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
-| **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度 | "review 这个提交"、"code review" |
+| **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度；产出可审计的检查覆盖表，P0 修复可转 `plan-track` 台账跟踪 | "review 这个提交"、"code review" |
 | **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环，修复后可接力 code-change-impact 质检 | "排查这个 bug"、"debug 一下"、"为什么会报错" |
 | **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档/分析报告进行二次质疑，代码支持三种策略、设计文档与报告复用设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
