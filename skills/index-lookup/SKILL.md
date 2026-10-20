@@ -95,7 +95,7 @@ description: 代码索引（.fe-index/）的统一查询入口：按代码路径
 
 | 消费方 | 接入点 | 用法 |
 |---|---|---|
-| `code-review` / `bug-impact-analysis` | 拿到 diff 后、判影响面前 | 读 `INDEX.md` 匹配改动文件 → 按类型查被依赖 / 表反查 / 页面反查 |
+| `code-review` / `code-change-impact` | 拿到 diff 后、判影响面前 | 读 `INDEX.md` 匹配改动文件 → 按类型查被依赖 / 表反查 / 页面反查 |
 | `debug` | 定位根因前 | 用索引缩小搜索域（模块 / 页面），再在命中范围内读码 |
 | `product-manager` | M2 体验走查 / M3 缺功能推演前 | 用索引拿**页面地图**（前端）或**模块地图**（后端）作基线 |
 | `expert-team` | 建专家前 + 建完后 | 建前拿模块边界 / 依赖；建后重跑 provider 的 `--emit-tree`（专家列会自动出现） |

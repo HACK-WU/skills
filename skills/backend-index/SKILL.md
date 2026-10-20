@@ -291,7 +291,7 @@ python3 <skill>/scripts/scan_backend.py --root <根> --framework nestjs \
 | `expert-team` | 建完专家包后重跑 `--emit-tree`，专家列会因目录存在而出现 → 索引成为专家团的**发现入口**（解决"建了没人知道"） | **可直接用**（产物级衔接，无需改对方） |
 | `module-teach` | 讲解某后端模块前读 `modules/{slug}.md` 定位范围与依赖 | **已接入**（「与相邻 skill 的分工与路由」表，`module` 类讲解先用索引锁定范围） |
 | `code-survey` / 设计前调研 | 查 `INDEX.md` 命中则消费，未命中再决定是否建库 | **已接入**（「ki-search 与资产复用优先」链，缩小搜索域） |
-| `bug-impact-analysis` / `code-review` / `debug` | 改到后端模块或数据表时，用被依赖与表反查确认影响面 | **已接入**（bug-impact-analysis 3.0 / code-review 阶段 2 / debug Step 0） |
+| `code-change-impact` / `code-review` / `debug` | 改到后端模块或数据表时，用被依赖与表反查确认影响面 | **已接入**（code-change-impact 3.0 / code-review 阶段 2 / debug Step 0） |
 
 > 上表**不声明"已接入"**：本 skill 的产物需要目标项目先建一次索引，集成方需自行降级（无索引时按原流程 grep）。
 

@@ -43,7 +43,7 @@ description: 执行模式增强器（仅显式触发）：把目标 skill 的工
 | 类型 | 放大模式 | 示例 |
 |------|----------|------|
 | 分析/审查/调研类 | ✅ 输出放大 | code-review、design-review、challenger、code-survey、harness-review |
-| 推演/验证类 | ✅ 输出放大 | scenario-rehearsal（按角色/场景拆）、bug-impact-analysis（按影响面拆） |
+| 推演/验证类 | ✅ 输出放大 | scenario-rehearsal（按角色/场景拆）、code-change-impact（按影响面拆） |
 | 生成/写作类 | ✅ 输入放大 | design-craft、document-writer、api-design（只放大写作前的调研；写作不拆——拆开写会风格割裂） |
 | 流程编排类 | ❌ 不适用 | task-dispatch、auto-review（本身就是编排器，无维度可拆） |
 

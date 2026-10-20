@@ -565,6 +565,7 @@ req list --no-color
 | work-breakdown | P1 | 写入型 | `design/work-breakdown.md` |
 | interaction-design | P1 | 写入型 | `design/interaction-design.md` |
 | design-review | P1 | 读写型 | `design/design-review.md` |
+| code-change-impact | P1 | 读写型 | `review/code-change-impact.md` |
 | code-review | P2 | 读写型 | `review/code-review.md` |
 | challenger | P2 | 读写型 | `review/challenge-report.md` |
 | demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |

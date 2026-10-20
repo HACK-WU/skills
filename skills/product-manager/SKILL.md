@@ -403,7 +403,7 @@ AI 天然会滑向它更熟的视角。执行前先对齐：
 | `interaction-design` / `design-craft` / `demo-verify` / `data-flow-model` | M1 的常见下游；用户确认需求后按「主动接力」**自动转过去继续** |
 | `relation-lookup` | 影响面调研首选：查已登记的跨模块强关联（"改 A 要连带改 B 吗"） |
 | `code-survey` | 改动面大时的代码现状调研手段 |
-| `bug-impact-analysis` | 边界：它分析**已发生的 bug 修复**的影响（事后）；本 skill 是**需求/优化**的影响（前置） |
+| `code-change-impact` | 边界：它分析**已发生的代码改动**的影响（事后：牵动哪些调用方/数据消费方、回归风险）；本 skill 是**需求/优化**的影响（前置：价值、体验、范围） |
 | `expert-solution-workflow` | 分析前查可复用资产 |
 
 ---

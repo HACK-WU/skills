@@ -26,7 +26,7 @@ expert-team 落盘模块专家 → strong-relation（本 skill）→ 识别强�
 
 - **输入**：目标模块（默认 expert-team 刚完成的模块；手动时指定模块路径/范围）+ 可选操作意图
 - **输出**：强关联原子记录（写入 ki-search，按功能模块分组）
-- **边界**：本 skill **记录"模块间"的强耦合关系**，不深挖单模块内部知识（那是 expert-team 的事）；不画 ER 图/数据流图（那是 data-flow-model 的事）；不分析某次具体 bug 影响（那是 bug-impact-analysis 的事）
+- **边界**：本 skill **记录"模块间"的强耦合关系**，不深挖单模块内部知识（那是 expert-team 的事）；不画 ER 图/数据流图（那是 data-flow-model 的事）；不分析某次具体改动的影响（那是 code-change-impact 的事）
 
 ## 强关联的定义（识别什么）
 

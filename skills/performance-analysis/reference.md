@@ -898,7 +898,7 @@ xychart-beta
 
 #### 9.4.3 最小共享语法（跨 skill 统一，供其它 skill 复用）
 
-> 文字树已在 `debug`（根因树 / 排查路径树）、`scenario-rehearsal`（推演路径 / 执行轨迹树）、`code-review`（影响链）、`bug-impact-analysis`（根因链 / 调用链影响）、`product-manager`（报告内的流程 / 因果 / 影响链表达）复用；`module-teach` 以"结构类图（依赖 / 数据流主干）的渲染无关兜底"接入。为防各 skill 各写一套造成漂移，**跨 skill 统一以下最小集**（本 skill 的完整纪律见 9.4.1 / 9.4.2）。
+> 文字树已在 `debug`（根因树 / 排查路径树）、`scenario-rehearsal`（推演路径 / 执行轨迹树）、`code-review`（影响链）、`code-change-impact`（根因链 / 调用链影响）、`product-manager`（报告内的流程 / 因果 / 影响链表达）复用；`module-teach` 以"结构类图（依赖 / 数据流主干）的渲染无关兜底"接入。为防各 skill 各写一套造成漂移，**跨 skill 统一以下最小集**（本 skill 的完整纪律见 9.4.1 / 9.4.2）。
 
 ```text
 🕸 文字树 · 最小语法（4 条）
@@ -910,7 +910,7 @@ xychart-beta
    清单 / 对比 / 字典仍用表格；节点 ≤15、层级 ≤4；不画决策路径与审批流
 ```
 
-> 复用时保留这 4 条语义，标记词按领域替换：debug 用 `← 根因` / `← 待验证`、code-review 用 `← 受影响` / `← 高风险`、scenario-rehearsal 用 `✅ / ⚠️ / ❌` 标注推演结果、bug-impact-analysis 用 `← 根因` / `← ❌ 确定受影响` / `← 待验证`、product-manager 用 `← 缺口` / `← 待确认` / `← 需拍板`、本 skill 用 `← 关键路径 · 主要瓶颈`。
+> 复用时保留这 4 条语义，标记词按领域替换：debug 用 `← 根因` / `← 待验证`、code-review 用 `← 受影响` / `← 高风险`、scenario-rehearsal 用 `✅ / ⚠️ / ❌` 标注推演结果、code-change-impact 用 `← 根因` / `← ❌ 确定受影响` / `← 待验证`、product-manager 用 `← 缺口` / `← 待确认` / `← 需拍板`、本 skill 用 `← 关键路径 · 主要瓶颈`。
 
 ### 9.5 图表坑
 

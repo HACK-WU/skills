@@ -39,5 +39,5 @@
 | expert-team | 产出的模块专家是其触发前置；本 skill 记录模块间强关联，与其专题记忆互补（专题记忆=模块内部路标；本 skill=模块间耦合） |
 | expert-lookup | expert-lookup 的 C4（数据流向与消费）记录模块**内部**的数据流向与消费方（模块级概括）；本 skill 记录**跨模块**的强关联（含多端代码位置、方向、强度）。同一消费关系若跨模块，C4 写模块内视角，本 skill 写跨模块视角，互补不重复 |
 | data-flow-model | data-flow-model 画"设计期未来"的数据流/ER 图；本 skill 记录"现存代码"的强耦合，不画图 |
-| bug-impact-analysis | bug-impact-analysis 分析"某次修复"的具体影响；本 skill 沉淀"持续性的跨模块耦合契约" |
+| code-change-impact | code-change-impact 分析"某次改动"的具体影响（事后、面向本次）；本 skill 沉淀"持续性的跨模块耦合契约"（长期、面向所有改动） |
 | gitnexus-index | gitnexus-index 管索引运维；本 skill 消费索引（用 GitNexus 查询）做关联识别 |

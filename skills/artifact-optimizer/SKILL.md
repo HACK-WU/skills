@@ -21,7 +21,7 @@ description: 对代码、设计文档、Skill 做系统化优化分析，按优�
 
 ---
 
-借鉴 `bug-impact-analysis` 的结构化分析流程与 `code-review` 的多维度审查方法论，结合 `content-simplifier` 的精简策略，输出可执行的优化建议报告。
+借鉴 `code-change-impact` 的结构化分析流程与 `code-review` 的多维度审查方法论，结合 `content-simplifier` 的精简策略，输出可执行的优化建议报告。
 
 ## 核心原则
 

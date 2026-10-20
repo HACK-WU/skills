@@ -205,11 +205,11 @@ flowchart TD
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度 | "review 这个提交"、"code review" |
-| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环，修复后可接力 bug-impact-analysis 质检 | "排查这个 bug"、"debug 一下"、"为什么会报错" |
+| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环，修复后可接力 code-change-impact 质检 | "排查这个 bug"、"debug 一下"、"为什么会报错" |
 | **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档/分析报告进行二次质疑，代码支持三种策略、设计文档与报告复用设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
-| **[bug-impact-analysis](./skills/bug-impact-analysis/SKILL.md)** | Bug 修复影响分析，分析根因是否被真正解决、修复是否引入副作用 | "分析 bug 影响"、"评估修复风险" |
+| **[code-change-impact](./skills/code-change-impact/SKILL.md)** | 代码修改影响分析（通用）：按改动性质分流五类策略（缺陷修复/行为等价优化/能力新增/契约变更/数据与状态变更），分析意图是否达成、会牵连哪些调用方与数据消费方、回归风险与测试建议 | "分析 bug 影响"、"这次改动会影响谁"、"评估修复风险"、"改了这里要连带改什么" |
 | **[performance-analysis](./skills/performance-analysis/SKILL.md)** | 接口/请求链路性能专项分析：盘点现有证据（火焰图/APM/压测/慢查询）与代码，八层定位瓶颈；支持**双样本差分**（一快一慢两份数据，先变量对齐再 Δ 分解），量化收益上限与推荐指数；性能不佳时输出两条路建议（技术优化 + 产品侧调整：**退让型**牺牲部分功能换性能 / **改进型**修原设计缺陷实现体验与性能双升，均交 product-manager 分析），产出带目录索引、只画「卡在哪」的图（含 **gantt 关键路径**）、**第四/五章用文字树**（调用链 / 改前改后）表达、决策路径与优化建议不画图、每条建议带**推荐指数与预期效果**的面向开发/产品的报告 + 验证计划 | "性能分析"、"为什么这么慢"、"接口 RT 高"、"性能优化"、"出份性能报告"、"容量评估"、"两份数据对比"、"优化前后对比" |
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |

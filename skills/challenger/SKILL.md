@@ -1,6 +1,6 @@
 ---
 name: challenger
-description: 质疑者：专找评审可能遗漏的问题，对代码变更、设计文档、分析/审查报告做二次质疑。触发："质疑这个修复/设计/方案"、"二次审查"，或被 review-panel、auto-review、code-review、bug-impact-analysis 接力调用。
+description: 质疑者：专找评审可能遗漏的问题，对代码变更、设计文档、分析/审查报告做二次质疑。触发："质疑这个修复/设计/方案"、"二次审查"，或被 review-panel、auto-review、code-review、code-change-impact 接力调用。
 ---
 
 # 🎯 质疑者（代码变更 / 设计文档 / 报告文档）
@@ -11,7 +11,7 @@ description: 质疑者：专找评审可能遗漏的问题，对代码变更、�
 
 **功能**：按对象类型（代码变更 / 设计文档 / 报告文档）选择质疑策略，执行根因验证、副作用验证、场景完备性等深度质疑，产出含风险等级与改进建议的质疑报告。
 
-**使用场景**：code-review 或设计评审完成后的二次审查；用户对修复/方案有疑虑时；review-panel、bug-impact-analysis、auto-review 等 skill 调用本 skill 对其产出进行质疑时。
+**使用场景**：code-review 或设计评审完成后的二次审查；用户对修复/方案有疑虑时；review-panel、code-change-impact、auto-review 等 skill 调用本 skill 对其产出进行质疑时。
 
 ## 角色定位
 
@@ -38,7 +38,7 @@ description: 质疑者：专找评审可能遗漏的问题，对代码变更、�
 - review-panel 评审团的「挑战者」角色调用本 skill 对方案进行质疑
 
 **报告文档模式**：
-- bug-impact-analysis 输出影响分析报告后调用本 skill 二次质疑，聚焦三点：根因是否找对、影响面是否遗漏、风险评估是否过度/不足
+- code-change-impact 输出影响分析报告后调用本 skill 二次质疑，聚焦四点：根因/意图是否找对、影响面是否遗漏、风险评估是否过度/不足、**策略是否选错**（如该启用契约变更却只按缺陷修复分析）
 - 其他 skill 产出分析/审查报告，且调用方指定质疑对象为报告时
 
 ## 质疑流程
@@ -51,7 +51,7 @@ description: 质疑者：专找评审可能遗漏的问题，对代码变更、�
 |----------|------|----------|
 | 代码变更 | 已有代码改动/diff，code-review 之后 | 存在代码变更、commit、PR |
 | 设计文档 | 尚未实现的设计/方案/架构/API设计 | 存在 scheme.md、设计文档、方案稿 |
-| 报告文档 | 其他 skill 产出的分析/审查报告等文档 | 调用方指定质疑对象为报告（如 bug-impact-analysis 的影响分析报告） |
+| 报告文档 | 其他 skill 产出的分析/审查报告等文档 | 调用方指定质疑对象为报告（如 code-change-impact 的影响分析报告） |
 
 **代码变更**需进一步识别变更类型：
 
