@@ -34,7 +34,7 @@ requirement-mining → interaction-design → ui-designer（本 skill）→ desi
 - **输入**：交互设计文档（首选）或需求描述
 - **输出**：ASCII 布局图（定稿，demo 前置闸门）+ 界面布局方案文档 + 可运行 HTML demo
 - **边界**：只管**视觉层**（布局、组件、配色、字体、样式规范）；交互逻辑交给 interaction-design，技术架构交给 design-craft
-- **与 ui-to-ascii 分工**：从零设计的**布局 ASCII 图由本 skill 产出**（绘制规范以 `ui-to-ascii` 为准，复杂页面调用其描述生成模式）；"已有设计稿 → ASCII 存档"归 `ui-to-ascii`（模式 A）
+- **与 ui-to-ascii 分工**：从零设计的**布局 ASCII 图由本 skill 产出**（绘制规范以 `ui-to-ascii` 为准，复杂页面调用其描述生成模式）；"已有设计稿 → ASCII 存档"归 `ui-to-ascii`（模式 A）；**什么算界面改动、什么可不出图**（触发与豁免）以其「界面确认闸门」为准
 - **与 demo-verify 区分**：demo-verify 针对设计中的风险点构建技术验证原型（"这方案可行吗"）；本 skill 的 HTML demo 呈现已定的视觉方案（"界面长这样"），目标不同
 
 ## 📐 核心原则

@@ -255,7 +255,7 @@ description: 对已实现的前端页面做真实操作走查：遍历状态矩�
 | `performance-analysis` | 接收本 skill 的性能体检发现，做深入定位与优化方案 |
 | `ui-designer` / `interaction-design` | 视觉 / 交互的重新设计 |
 | `acceptance-verify` | 它判"这一版达标没有"，本 skill 判"下一版该优化什么" |
-| `ui-to-ascii` | 需把走查画面转成文本存档时可用 |
+| `ui-to-ascii` | 需把走查画面转成文本存档时可用；走查给出**布局类改动建议**时，实施前须经其「界面确认闸门」出图并取得用户确认（本 skill 只给建议、不落地） |
 | `expert-solution-workflow` | 走查前查可复用经验 / 解决方案（未安装则跳过，不阻塞） |
 
 ---

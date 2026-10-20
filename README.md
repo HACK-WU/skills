@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-64-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-8-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-64-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-9-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -185,7 +185,7 @@ flowchart TD
 | **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），先出 **ASCII 布局图定稿（demo 前置闸门）**，可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
 | **[work-breakdown](./skills/work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
 | **[data-flow-model](./skills/data-flow-model/SKILL.md)** | 构建 ER 图和数据流图，支持并发/分布式/实时流/批处理等场景分析 | "画 ER 图"、"数据怎么流"、"设计数据模型" |
-| **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构 | "写设计文档"、"帮我设计"、"dd" |
+| **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构；涉及页面样式 / 布局时**先出 ASCII 布局图并经用户确认**（阶段 2.4）才继续设计 | "写设计文档"、"帮我设计"、"dd" |
 | **[negative-requirement](./skills/negative-requirement/SKILL.md)** | 从正向需求出发分析负向场景，设计程序的检测、恢复和引导策略 | "错误处理"、"异常场景"、"边界情况" |
 | **[api-design](./skills/api-design/SKILL.md)** | 基于设计文档生成详细的 API 设计文档，含完整接口契约和错误码定义 | "设计 API"、"接口设计"、"api design" |
 | **[frontend-api-guide](./skills/frontend-api-guide/SKILL.md)** | 将 API 设计转化为前端可直接编码的调用流程文档，含 UI 映射和错误处理速查 | "生成前端 API 文档"、"API 调用流程" |
@@ -256,7 +256,7 @@ flowchart TD
 | **[task-dispatch](./skills/task-dispatch/SKILL.md)** | 将编码任务拆分为子任务并行分配给子 agent，主 agent 合并集成 | "并行开发"、"拆分子任务并行执行" |
 | **[plan-track](./skills/plan-track/SKILL.md)** | 复杂任务的执行台账：`.plans/` 下建 plan.md（目标/完成判据/工作项+证据）与 checklist.md（自评审清单），执行中按证据更新、完成后逐条自评审；由 plan-track 规则识别场景后调用（也可用户直接要求，或由上游 skill 交接，如 requirement-mining 快速实现路径），纯文件操作、零外部依赖、不绑定上下游 | "列个计划"、"创建计划文档"、"跟踪进度"、"做完自检" |
 | **[topic-teach](./skills/topic-teach/SKILL.md)** | 教学通用知识主题（k8s/docker/Python 等技术与投资/理财等非技术领域），产出含类比、Mermaid 图与 SVG（含数据流全链路图）的学习材料，支持课程制/速览双模式、大纲教学效果推演、环境准备课、课级应用实战（按需配套、第四幕渐进演进、每步一张分步设计图）、多角色主题拆子教程、结课综合实战项目、实战经验与排障速查手册、场景解法库（设计题独立成册：多解法 + 代码 + 替代路线 + 结构变化必配设计图）、源码解析（按需配套 · 独立成册：读真实库源码 + 至少 1 张图）、双段质量闸门 + 源码探索（文档不足时下沉源码求证 · 求证 + 使用扩展） | "教我k8s"、"讲讲Python装饰器"、"什么是ETF"、"给我个项目练手" |
-| **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图 | "ui to ascii"、"把设计图转成文本"、"画个界面草图" |
+| **[ui-to-ascii](./skills/ui-to-ascii/SKILL.md)** | 把 UI 设计稿/截图转成纯文本 ASCII 框线布局图+标注存入 md（供无视觉模型查阅、可 diff），也支持按文字描述直接生成 ASCII 草图；**界面确认闸门**：页面样式 / 布局的任何编写与修改都必须先出 ASCII 图并经用户确认才可实施 | "ui to ascii"、"ui-ascii"、"把设计图转成文本"、"画个界面草图"、"改页面前先出图" |
 | **[web-index](./skills/web-index/SKILL.md)** | 给需要反复查阅的网站/文档站建本地网页索引：抓 `llms.txt` / `sitemap.xml` / 导航，产出「我要做什么 → 去哪一页（含锚点）」的路由表落到 `.web-index/{site}/`（INDEX.md 登记表 + index.md 总表 + topics/ 分区）。双模式：已索引站点查表即走（消费模式，不重跑脚本），未索引站点才采集建库（建造模式）。只索引链接与用途、不镜像正文，一次性快照，配套抓取脚本 | "给这个网站建个索引"、"整理一下这个文档的链接"、"网页索引"、"web index"、"这个站后面要反复参考"、"查一下网页索引" |
 | **[frontend-index](./skills/frontend-index/SKILL.md)** | 给**本地前端项目**建「页面 ↔ 接口」双向索引：扫源码提取路由（页面）→ 接口调用 → 定义处（含 file:line），产出 **`{项目根}/.fe-index/{slug}/`**（INDEX.md 登记表 + index.md + pages/ + apis/ + meta.json），支持「改接口前查影响哪些页面」与「接页面任务查用到哪些接口/组件」。核心设计：**深度即置信度**（🟢 页面自身调用 / 🟡 直接依赖 / 🔵 间接候选）、**新鲜度闸门**（记录 commit，`--check` 比对，过期先重建）、**一键重建**（零依赖脚本，AI 只补语义）、约定探测 + `.fe-index/config.json` 声明兜底。已实测 Vue2+TSX 微前端与 Angular 两个真实工程 | "前端索引"、"页面接口映射"、"改这个接口影响哪些页面"、"哪个页面调了这个接口" |
 | **[backend-index](./skills/backend-index/SKILL.md)** | 给**本地后端项目**建「模块 ↔ 目录/入口/依赖/数据表」索引：扫源码提取模块（NestJS `@Module` / Django app）→ 挂载前缀 + 接口数 + **依赖与被依赖**（穷举反查）+ **表双向**（模块→表 / 表→模块）+ 非 HTTP 入口（MQ/CQRS/定时任务）+ 专家资产探测，产出 **`{项目根}/.fe-index/{slug}/`**（index.md + modules/*.md + tables.md + meta.json），`--emit-tree` 一条命令落盘、`--check` 新鲜度闸门。**刻意只做接口级之上一层**：接口清单与契约交给 `expert-team`（Step 8.3 写 ki `tags=api`）与 `05-接口.md`，不重复建设；落地为专家团的发现入口。已实测 NestJS（3183 TS 文件 / 0.5s / 125 模块 / 806 接口）与 Django（5530 PY 文件 / 1.3s / 22 模块 / 310 表）两个真实工程 | "后端索引"、"模块索引"、"后端模块地图"、"改这个模块影响谁"、"改这张表影响哪些模块" |
@@ -312,6 +312,7 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 | **[proactive-extension](./rules/proactive-extension.md)** | 解决小问题后主动联想关联功能，主动补充优化而非等用户逐个提出 | 解决小问题/小需求后 |
 | **[temp-and-timeout](./rules/temp-and-timeout.md)** | 调试/验证用临时文件统一建在 workspace temp 目录且只增不删；耗时命令加 timeout 防挂起 | 调试/验证涉及临时文件、执行耗时命令时 |
 | **[plan-track](./rules/plan-track.md)** | **plan 模式的场景识别与触发**：七类场景（多文件 / 多模块 / 多阶段 / 跨轮续做 / 需中途可见进度 / 前置文档落地 / 上游 skill 交接）识别到即调用 plan-track skill；并定义进入后的节奏与四条不可妥协，执行细则以 skill 为准 | 复杂任务开始前、执行中、完成后 |
+| **[ui-ascii-gate](./rules/ui-ascii-gate.md)** | **界面改动先出图确认**：页面样式 / 布局的新增、修改、重设计、缺陷修复，动手前必须先调 `ui-to-ascii` 出 ASCII 图并与用户确认（常驻规则，覆盖不经过 skill 的直接命令） | 任何涉及页面样式 / 布局的编写与修改 |
 | **[task-delegation](./agents/sub-agent/rules/task-delegation.md)** | 任务分级委派，低认知密度任务默认委派子 Agent，主 Agent 聚焦核心决策与核心代码 | 默认生效 |
 | **[disable-task-delegation](./agents/sub-agent/rules/disable-task-delegation.md)** | 关闭任务分级委派，主 Agent 退回全包模式 | 需停用委派机制时 |
 
