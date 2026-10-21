@@ -26,6 +26,21 @@ description: 把编码 / 开发任务拆成多个独立子任务，并行分派�
 - **输出**：集成后的代码交付物（已合并到项目源码目录）
 - **边界**：只管"可并行任务的拆分+调度+合并"，不管"任务本身的设计"（设计由 design-craft 负责）。与 work-breakdown 区别：work-breakdown 输出工作项清单（不执行），task-dispatch 输出已集成的代码（执行+合并）
 
+### 适用前提：**同一会话内**
+
+本 skill 默认**一个主 agent 在场**：主 agent 拆分 → 并行启动子 agent（`team_create` + `Task`）→ 子 agent 间可用 `send_message` 协调 → 主 agent 合并产出。
+
+这套机制依赖三件事：**主 agent 存在、子 agent 可通信、生命周期同一会话**。
+
+| 场景 | 该用什么 |
+|------|---------|
+| 同一会话内，多个独立子任务并行做完并合并 | ✅ 本 skill |
+| **用户要在多个对话窗 / 多个 IDE 手工并行**（无主 agent 在场、窗口间无法通信） | ❌ 本 skill 不适用 → 用 `delivery-slicing`（切片与批次）+ `code-implement` 并行窗口模式 + `integration-merge`（拼接） |
+
+**为什么不能直接套**：跨会话时 `send_message` 不存在、`team_create` 无意义、主 agent 缺席导致"合并集成"无人执行；且跨窗口的冲突防线必须**前置**（目录互斥 + 契约冻结），本 skill 的"合并时检测冲突"是**事后**防线，不足以支撑跨窗口场景。
+
+> 判定一句话：**Agent 之间能不能互相发消息？** 能 → 本 skill；不能 → `delivery-slicing` 路线。
+
 ## 核心原则
 
 1. **真正独立才并行**：子任务间无文件冲突、无接口强依赖、无共享资源竞争，才能并行。否则合并或分批
@@ -423,6 +438,8 @@ description: 把编码 / 开发任务拆成多个独立子任务，并行分派�
 - ❌ 子 agent 自行扩大范围 → 破坏独立性
 - ❌ 静默覆盖冲突文件 → 丢失产出，引入 bug
 - ❌ 跳过一致性校验直接交付 → 接口不一致、导入缺失遗留
+- ❌ **跨会话 / 跨 IDE 场景硬套本 skill** → 无主 agent、子 agent 无法通信，`send_message` / `team_create` 全部失效 → 应走 `delivery-slicing` + `integration-merge`
+- ❌ **把本 skill 当"冲突防线"** → 它的冲突检测是**事后**的（合并时才发现），只适合同会话内快速合并；跨窗口并行必须**事前**防线（目录互斥 + 契约冻结）
 
 ---
 
@@ -496,5 +513,7 @@ description: 把编码 / 开发任务拆成多个独立子任务，并行分派�
 
 - 子 agent prompt 模板与冲突处理细节：[reference.md](reference.md)
 - 任务拆分思路参考：`work-breakdown` skill（工作项拆分，不执行）
+- 跨会话 / 跨 IDE 并行（切片 + 批次 + 契约冻结）：`delivery-slicing` skill
+- 跨窗口产出合流（拼接）：`integration-merge` skill
 - 设计文档生成：`design-craft` skill
 - 实现结果归档：`implementation-report` skill

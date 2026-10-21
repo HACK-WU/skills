@@ -13,5 +13,13 @@ temp/
 # 若希望随仓库分发某份索引，删掉此行并单独提交该目录）
 .web-index/
 
+# ---- 并行交付脚手架（见 skills/delivery-slicing「测试与脚手架的归属」）----
+.delivery/
+
+# 注意：tests/ 与 .requirements/ 下的 sub-requirements/ 是产品资产/过程文档，禁止忽略
+
 # 本地 AI 记忆（会话记录，不入库；只忽略仓库根的同名文件）
 /AGENTS.md
+
+# ---- 系统垃圾文件 ----
+.DS_Store
