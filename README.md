@@ -82,7 +82,7 @@ bash skill-install.sh prune -t ~/app -y
 bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y   # 显式指定期望来源并纠正记录
 ```
 
-> 参数：`-t <path>` 目标目录（可多次）；`-n <names>` 指定 skill（逗号分隔）；`--repo <owner/repo>` 安装源 / 同步范围 / 过滤仓库（默认 `HACK-WU/skills`）；`-y` 让 `prune` 真正执行删除。Windows PowerShell 用 `-Target` / `-NameFilter` / `-Repo` / `-Yes`。完整参数见[安装指南](./docs/installation.md)。
+> 参数：`-t <path>` 目标目录（可多次）；`-n <names>` 指定 skill（逗号分隔）；`--repo <owner/repo>` 安装源 / 同步范围 / 过滤仓库（默认 `HACK-WU/skills`）；`--no-record` 临时安装（不写目标记录，后续 `update` / `prune` 不带上）；`-y` 让 `prune` 真正执行删除。Windows PowerShell 用 `-Target` / `-NameFilter` / `-Repo` / `-NoRecord` / `-Yes`。完整参数见[安装指南](./docs/installation.md)。
 
 也可以直接使用 [`npx skills`](https://skills.sh/) 安装（无需本仓库脚本）：
 

@@ -14,6 +14,9 @@
 #           （install 未指定 -Repo 时 = 默认仓库 HACK-WU/skills；
 #             update 未指定 -Repo/-NameFilter 时 = 各目标自己的来源记录）
 #
+# 临时安装: install/update 支持 -NoRecord：同步到 -Target 目标但不写入 targets.list，
+#           后续全量 update/prune 不会自动包含该目标（升级需手动重装）。
+#
 # 脚本自更新: 每次运行自检一次（24h 节流）；发现新版只提示不覆盖，
 #             要更新执行 self-update 子命令（自检恒定开启，无开关可关）。
 #             拿不到自身路径（管道执行）与 git 工作树内的副本不检查/不覆盖（后者用 git pull）。
@@ -53,6 +56,8 @@ param(
 
     [switch]$Optional,
 
+    [switch]$NoRecord,
+
     [switch]$Yes,
 
     [switch]$Force,
@@ -88,7 +93,7 @@ $TargetsFile = Join-Path $ManageDir "targets.list"
 $DefaultTargetsFile = Join-Path $HomeDir ".skill-targets"
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：前缀定宽 → 序数比较即版本序
-$ScriptVersion = "2026-09-21.1"
+$ScriptVersion = "2026-10-23.1"
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 $SelfUrlDefault = "https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1"
 $SelfUrlMirror = "https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.ps1"
@@ -129,6 +134,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $ScriptVe
   -Optional           别名，等价于 -Repo $OptionalRepoUrl
                       （可选技能目录：依赖第三方 skill/模块的技能）
   -ConfigFile <path>  从配置文件读取目标目录（与 -Target 互斥）
+  -NoRecord           临时安装：同步到 -Target 目标，但不写入 targets.list；
+                      后续 update/prune 不会自动包含该目标（升级需手动重装）
   -Yes                prune 时真正执行删除（不加则只预演列出）
   -Force              self-update 时允许降级 / 覆盖 git 工作树内的副本
 
@@ -156,6 +163,8 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 $ScriptVe
 示例:
   .\skill-install.ps1 -Target C:\projects\app
   .\skill-install.ps1 install -NameFilter code-review,design-craft -Target C:\projects\app
+  .\skill-install.ps1 install -NameFilter ui-ux-pro-max -NoRecord -Target C:\app\ui-tools\vendor
+                      # 临时安装：不写目标记录，update/prune 不带上
   .\skill-install.ps1 install -Optional -Target C:\projects\app    # 只装可选技能
   .\skill-install.ps1 install -Repo HACK-WU/skills -Optional -Target C:\projects\app  # 主技能+可选技能
   .\skill-install.ps1 update -Target C:\projects\app
@@ -254,6 +263,15 @@ if ($Command) {
             $Action = "install"
             if (-not $TargetPath) { $TargetPath = $raw }
         }
+    }
+}
+
+if ($NoRecord) {
+    if ($Action -notin @("install", "update")) {
+        Write-Err "-NoRecord 仅适用于 install / update"
+    }
+    if (-not ($Target -or $ConfigFile -or $TargetPath)) {
+        Write-Err "-NoRecord 需要显式目标：用 -Target <path> / -ConfigFile <path> / 位置参数指定，避免把默认目标变成未记录状态"
     }
 }
 
@@ -621,6 +639,11 @@ function Get-RecordedTargets {
     return $result
 }
 
+# 目标是否已有记录（含老格式无仓库列的情况）
+function Test-TargetRecorded($t) {
+    return ((Get-RecordedTargets) -contains $t)
+}
+
 # 读某目标记录中的仓库列表
 function Get-TargetReposFromFile($t) {
     if (-not (Test-Path $TargetsFile)) { return "" }
@@ -706,8 +729,13 @@ function Resolve-TargetRepos($t) {
     if ($repos -ne "") { return $repos }
     $repos = Get-InferTargetRepos (Target-Dest $t)
     if ($repos -ne "") {
-        Record-Target $t @($repos -split '\s+' | Where-Object { $_ -ne "" })
-        Write-Warn "目标记录缺少来源仓库，已按目标现有 skill 反查并写回: $t → $repos"
+        # 仅当本次有显式目标时抑制写回；未指定目标的 Sync-AllRecorded 保持原有自愈行为
+        if ($NoRecord -and $script:TargetDirs.Count -gt 0) {
+            Write-Warn "目标未记录来源，已按现有 skill 反查（-NoRecord，未写回）: $t → $repos"
+        } else {
+            Record-Target $t @($repos -split '\s+' | Where-Object { $_ -ne "" })
+            Write-Warn "目标记录缺少来源仓库，已按目标现有 skill 反查并写回: $t → $repos"
+        }
     }
     return $repos
 }
@@ -826,6 +854,16 @@ function Scope-ForTarget($t) {
     return $true
 }
 
+# 收窄到目标现有 skill：-NoRecord 的 update 只更新已装项，不新增
+function Narrow-SyncScopeToExisting($dest) {
+    if ($script:SyncNames.Count -eq 0) { return }
+    $keep = @()
+    foreach ($name in $script:SyncNames) {
+        if (Test-Path (Join-Path $dest $name)) { $keep += $name }
+    }
+    $script:SyncNames = @($keep)
+}
+
 # 参数 "1" = 调用方已用 Set-SyncScope 设定显式范围（-Repo / -NameFilter），对所有目标适用；
 # 否则按各目标自己的来源记录圈定范围（无记录则反查；判定不出则跳过，不做全量兜底）
 function Sync-AllRecorded($Fixed = "0") {
@@ -892,13 +930,23 @@ function Do-Install {
         Write-Warn "同步范围为 0：管理源中没有匹配安装源（$($installRepos -join ', ')）的 skill，已跳过同步"
         Write-Warn "  管理源是多仓库共享池，全量同步会把其他仓库的 skill 复制到目标；可用 'list -Repo <repo>' 检查"
     } else {
+        if ($NoRecord) {
+            Write-Warn "临时安装（-NoRecord）：目标不写入 $TargetsFile，后续 update/prune 不会自动包含"
+        }
         Write-Info "同步到目标目录（范围: $($script:SyncNames.Count) 个 skill · 来源 $($installRepos -join ', ')）..."
         foreach ($t in $script:TargetDirs) {
             if (-not (Test-Path $t)) { New-Item -ItemType Directory -Path $t -Force | Out-Null }
+            if ($NoRecord -and (Test-TargetRecorded $t)) {
+                Write-Warn "目标已有记录，-NoRecord 不会移除既有记录（仍会被全量 update/prune 包含）: $t"
+            }
             Sync-ToTarget $t
-            # 记录/合并该目标的来源仓库（供 update / prune 圈定范围）
-            Record-Target $t @($installRepos)
-            Write-Host "  [SYNC] $t"
+            if ($NoRecord) {
+                Write-Host "  [SYNC] $t（未记录）"
+            } else {
+                # 记录/合并该目标的来源仓库（供 update / prune 圈定范围）
+                Record-Target $t @($installRepos)
+                Write-Host "  [SYNC] $t"
+            }
         }
 
         Write-Host ""
@@ -1000,23 +1048,41 @@ for(const s of Object.keys(out).sort()){
 
     Write-Host ""
     Write-Info "同步到目标目录..."
+    if ($NoRecord -and -not ($Target -or $ConfigFile -or $TargetPath)) {
+        Write-Warn "-NoRecord 对未指定 -Target 的 update 无效果：同步对象来自 targets.list"
+    }
     if ($Target -or $ConfigFile -or $TargetPath) {
         # 用户显式指定了目标（-Target / -ConfigFile / 位置参数），只同步这些
         Resolve-Targets
         foreach ($t in $script:TargetDirs) {
             if (-not (Test-Path $t)) { New-Item -ItemType Directory -Path $t -Force | Out-Null }
+            if ($NoRecord -and (Test-TargetRecorded $t)) {
+                Write-Warn "目标已有记录，-NoRecord 不会移除既有记录（仍会被全量 update/prune 包含）: $t"
+            }
             if ((-not $explicitScope) -and (-not (Scope-ForTarget $t))) {
                 Write-Warn "无法判定目标的来源仓库，跳过同步（避免把管理源全量复制）: $t"
                 Write-Warn "  可用 'install -Repo <repo> -Target $t' 重建记录"
                 continue
+            }
+            if ($NoRecord -and $NameList.Count -eq 0) {
+                # 临时安装的 update 只更新目标已有 skill，不按仓库新增
+                Narrow-SyncScopeToExisting (Target-Dest $t)
+                if ($script:SyncNames.Count -eq 0) {
+                    Write-Warn "临时安装目标中没有可更新的 skill（-NoRecord 不新增；如需新增请用 install 或加 -NameFilter）: $t"
+                    continue
+                }
             }
             if ($script:SyncNames.Count -eq 0) {
                 Write-Warn "同步范围为 0：管理源中没有匹配（$($repos -join ', ')$(if ($NameList.Count -gt 0) { ' · -NameFilter ' + ($NameList -join ',') })）的 skill，跳过: $t"
                 continue
             }
             Sync-ToTarget $t
-            Record-Target $t
-            Write-Host "  [SYNC] $t"
+            if ($NoRecord) {
+                Write-Host "  [SYNC] $t（未记录）"
+            } else {
+                Record-Target $t
+                Write-Host "  [SYNC] $t"
+            }
         }
     } else {
         # 未指定目标，同步所有已记录目标（显式范围统一适用，否则按各目标记录）
