@@ -66,6 +66,44 @@
       "role": "standalone",
       "parent_id": null,
       "child_ids": []
+    },
+    "tool/2026-10-23-skill视觉参考库改造": {
+      "id": "REQ-20261023-001",
+      "feature": "skill视觉参考库改造",
+      "created": "2026-10-23 16:30:29",
+      "updated": "2026-10-23 16:50:21",
+      "status": "设计中",
+      "tags": [
+        "feat",
+        "tool"
+      ],
+      "version": 5,
+      "depends_on": [],
+      "changelog": [
+        "初始创建",
+        "2026-10-23 16:32:12 v2: 落盘视觉参考库改造方案（设计稿）",
+        "2026-10-23 16:33:35 v3: 设计稿复核：补 token 示例（on-danger/line-height/focus-ring）、ui_ux_pro_max 适配器、安装来源记录与复制检查",
+        "2026-10-23 16:43:11 v4: 完成场景推演：1🔴（brownfield 无设计系统缺基线提取）/7🟡/2🟢，结论不通过，需先修 S1/S2",
+        "2026-10-23 16:50:21 v5: 按推演建议修订设计：新增 brownfield 基线提取、组件库为实现基座、legacy 范围与轻量记录、项目 token 同步、参考库 v1.0 自检 gate、同步闸门改前判据；第 2 轮增量推演 S1/S2 通过"
+      ],
+      "commits": [],
+      "branch": null,
+      "docs": [
+        {
+          "path": "design/DESIGN.md",
+          "type": "design"
+        },
+        {
+          "path": "review/scenario-rehearsal.md",
+          "type": "rehearsal"
+        }
+      ],
+      "role": "standalone",
+      "parent_id": null,
+      "child_ids": []
     }
+  },
+  "id_counters": {
+    "REQ-20261023": 1
   }
 }
