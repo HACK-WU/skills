@@ -154,3 +154,68 @@ S-01 登录场景
 2. 阶段 4.0 按路由表选 `high-end-visual-design`，读取 `ui-tools/skills/high-end-visual-design/SKILL.md`
 3. 其指令（留白、精致字体、昂贵感阴影）融合进 4.1 的 token 定义与排版决策
 4. 用户偏好与工具指令冲突时以用户为准；无匹配场景 → 用内置参考色板（工具库已由阶段 0.4 保证安装）
+
+---
+
+## 示例 3：已有项目复用视觉参考库（brownfield + 同步闸门）
+
+### 输入
+
+- 项目已有订单列表页，但**没有正式设计系统**（颜色/间距散落在页面里）；
+- 用户要求“优化订单列表页，不要换成另一套风格”。
+
+### 阶段 0.5：建库（C 模式）
+
+1. 检测 `ui-tools/design-reference/` 不存在；
+2. 扫描代表页面：`src/pages/orders/list.tsx`、`src/pages/orders/detail.tsx`；
+3. 提取基线：主色 `#0057b8`、正文 `#1f2329`、背景 `#f5f7fa`、间距 8/16、字号 12/14/20；
+4. 外部种子可选：
+
+```bash
+python3 <ui-designer skill 目录>/scripts/ui_ux_pro_max.py probe --project-root .
+# 未安装 → 用提取基线建库，标 ⚠️ 外部设计知识源不可用
+```
+
+5. 生成参考库 v1.0.0：`tokens.css` + button/input/card + spec + INDEX + preview；
+6. 通过 v1.0 自检 gate；
+7. 用户确认。
+
+### 阶段 3-4：复用基线
+
+- 读 `INDEX.md`，确认 button / input / card 的变体与状态；
+- 项目无组件库 → 按参考在项目栈重实现（**不复制参考 HTML**）；
+- token 直接使用参考库值，不新增主色。
+
+### 阶段 6：demo 与截图
+
+- 按参考重写订单列表页（自有类名/结构，不复用 `ref-*`）；
+- 375 / 768 / 1440 截图对比；无浏览器工具时标 `[未截图]`。
+
+### 同步闸门：用户想把主按钮改成品牌新色
+
+```text
+检测到本次修改影响 button 的公共视觉。
+当前参考库版本：1.0.0；受影响页面：docs/ui-design/orders.md。
+
+请选择：
+A. 只改本页（记录偏离，不更新参考库）
+B. 更新参考库（1.0.0 → 1.0.1；不改旧页面）
+C. 更新参考库并同步使用页（1.0.0 → 1.1.0）
+```
+
+用户选 B：
+
+1. 更新 `components/button.html` + `button.spec.md` + `INDEX.md`；
+2. `meta.json.version` → `1.0.1`，更新 `updatedAt`；
+3. 重新截图 button 与订单页；
+4. 设计文档记录“本次同步更新参考库至 1.0.1”。
+
+### 设计文档片段
+
+```markdown
+## UI 参考库
+- 参考库：ui-tools/design-reference/ ｜ 版本：1.0.1 ｜ 来源：brownfield-extraction（src/pages/orders/list.tsx）
+- 使用组件：button 1.0.1 / input 1.0.0 / card 1.0.0
+- 本页偏离：无
+- 未入库组件：无
+```

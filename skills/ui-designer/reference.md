@@ -1,6 +1,6 @@
 # UI 设计师参考规范库
 
-本文件是 ui-designer 的详细参考：布局模式、ASCII 布局图规范、栅格、配色、字体、token、响应式断点、方案文档模板与 HTML demo 规范。仅当需要具体规格时读取。
+本文件是 ui-designer 的详细参考：布局模式、ASCII 布局图规范、栅格、配色、字体、token、响应式断点、视觉参考库、方案文档模板与 HTML demo 规范。仅当需要具体规格时读取。
 
 ---
 
@@ -268,7 +268,7 @@ ui-designer 可加载外部风格工具库提升设计品味，避免模板化�
 | **主来源** | [taste-skill](https://github.com/Leonxlnx/taste-skill) | 13 个设计风格指令 skill（反套路默认技能 + 极简/高端/粗野等风格 + 图像生成） |
 | **补充来源** | [anthropics/skills](https://github.com/anthropics/skills)（Anthropic 官方） | 前端设计方法论 `frontend-design` + 主题工具 `theme-factory` |
 
-**工具库为必需组件**：目录固定为**当前工作区根目录** `ui-tools/`（即 `{cwd}/ui-tools/skills/`）；缺失时必须先安装（见 SKILL.md 阶段 0.4），不得降级跳过。
+**工具库默认必需**：目录固定为**当前工作区根目录** `ui-tools/`（即 `{cwd}/ui-tools/skills/`）；缺失时默认必须先安装（见 SKILL.md 阶段 0.4），不得降级跳过。**已有 `ui-tools/design-reference/` 且本次不探索新风格时可跳过安装/加载**，参考库已提供项目基线。
 
 ### 安装（当前工作区根目录）
 
@@ -304,11 +304,232 @@ npx skills add https://github.com/anthropics/skills --skill frontend-design them
 
 ### 加载与兜底机制
 
-1. **检测**：阶段 0.4 检查当前工作区 `ui-tools/skills/` 是否存在；**缺失必须安装，不得跳过**
+1. **检测**：阶段 0.4 检查当前工作区 `ui-tools/skills/` 是否存在；**默认缺失必须安装**（已有参考库且不探索新风格时可跳过）
 2. **选择**：阶段 4.0 按场景路由表匹配（用户明确偏好优先于路由默认）
 3. **加载**：读取对应 `SKILL.md` 作为设计指令，融合进 token / 排版 / 动效 / 间距决策
-4. **兜底**：仅场景无匹配时使用本文件内置的配色体系 / token / 布局库（工具库存在是前提）
+4. **兜底**：仅场景无匹配时使用本文件内置的配色体系 / token / 布局库（默认工具库存在是前提；已有参考库且不探索新风格时可跳过）
 5. **边界**：风格指令只影响视觉呈现，不改变页面结构（阶段 1-2）与交互流程（来自交互文档）
+
+---
+
+## 视觉参考库
+
+参考库是**项目视觉基线**，不是生产组件库：只提供视觉参考、组件状态与规格；页面实现必须按项目技术栈重实现，禁止整段复制参考 HTML/CSS。
+
+**路径与边界**：
+
+- 固定 `{project}/ui-tools/design-reference/`；
+- 不得放入 `.claude/skills`、`.codex/skills`、`.qoder/skills`、`.agents/skills`、`.cursor/skills`、仓库根 `skills/`；
+- 参考库内不得出现 `SKILL.md`。
+
+### 目录结构
+
+```text
+ui-tools/design-reference/
+├── INDEX.md                 # 组件清单唯一真源
+├── meta.json                # 全局元数据（版本/来源/日期）
+├── tokens.css               # token 唯一真源
+├── components/
+│   ├── button.html          # 组件参考（所有变体/状态）
+│   ├── button.spec.md       # 组件规格
+│   └── ...
+├── preview/
+│   └── index.html           # 组件画廊（375/768/1440）
+└── screenshots/             # 可选基准截图
+```
+
+### 建库模式（A/B/C）
+
+| 模式 | 特征 | 种子来源 | 关键动作 |
+|---|---|---|---|
+| **A. Greenfield** | 无前端页面、无设计系统 | 用户品牌 / taste-skill 风格方向 → ui-ux-pro-max | 先定 1 个风格方向，再生成 token |
+| **B. Brownfield-formal** | 已有 tokens / Tailwind config / 组件库 / 品牌规范 | 项目现有 token | 镜像现有 token，参考库只做视觉镜像 |
+| **C. Brownfield-informal** | 已有页面，但无正式 token/设计系统 | 现有页面提取基线 | 选 2–3 个代表页面，提取色板/字阶/间距/状态；不发明新风格 |
+
+**C 模式提取要点**：
+
+- 选一个列表、一个表单/详情、一个高流量页面；
+- 提取色板、字号、间距、圆角、阴影、组件状态；
+- 记录 `meta.json.baselineSources`；
+- 发现不一致时提议归一化，用户确认后再做；
+- 生成 v0.x（视觉镜像），确认后升 1.0.0。
+
+**A 模式风格方向**：
+
+- 优先级：用户品牌规范 > taste-skill 风格方向 > ui-ux-pro-max 行业默认；
+- 先定 `styleDirection`（如 calm editorial / bold brutalist），再生成 token；
+- 不让行业默认直接决定风格。
+
+### meta.json 模板
+
+```json
+{
+  "schemaVersion": 1,
+  "project": "my-app",
+  "version": "1.0.0",
+  "source": "brownfield-extraction | project-design-system | ui-ux-pro-max@x.y.z",
+  "baselineSources": ["src/pages/orders/list.tsx"],
+  "styleDirection": "inherit-existing | calm editorial | bold brutalist",
+  "createdAt": "2026-10-26T10:00:00Z",
+  "updatedAt": "2026-10-26T10:00:00Z",
+  "tokens": "tokens.css",
+  "preview": "preview/index.html",
+  "notes": "3–5 个核心组件；主色按现有页面提取"
+}
+```
+
+### INDEX.md 模板
+
+```markdown
+# 视觉参考库索引
+
+> 基线版本：1.0.0 ｜ 来源：brownfield-extraction（src/pages/orders/list.tsx） ｜ 更新：2026-10-26
+
+| 组件 | 用途 | 变体 | 状态 | 依赖 token | 参考文件 | 规格 | 使用页面 | 版本 |
+|---|---|---|---|---|---|---|---|---|
+| button | 主操作/次操作 | primary, secondary | default, hover, focus, disabled, loading | --color-primary, --radius-md | components/button.html | components/button.spec.md | docs/ui-design/orders.md | 1.0.0 |
+```
+
+规则：新增/删除组件、视觉变更、使用页面变化都必须更新 INDEX；INDEX 引用的文件必须存在。
+
+### tokens.css 规则
+
+- 颜色、字号、字重、行高、间距、圆角、阴影、动效时长全部用 CSS 变量；
+- 组件 HTML 只使用 `var(--token)`，不得写死 hex / 字号 / 间距；
+- 项目已有 Tailwind / design tokens 时，参考库映射项目 token，不另起一套；
+- 支持 light/dark（按项目需要）。
+
+### 组件 HTML 规则
+
+1. 静态、零构建、零外部依赖（不引 CDN / 框架 / 网络）；
+2. 只引用 `../tokens.css`；
+3. 展示所有变体与适用状态（default / hover / focus / disabled / loading / error）；
+4. 语义化 HTML + a11y 属性；
+5. 不使用 JS（或仅极简状态切换）；
+6. 根节点标记 `data-ref-component` / `data-ref-version`；
+7. 同组件所有变体放在同一文件；
+8. 不含真实业务数据 / 隐私信息。
+
+### 组件 spec 模板
+
+```markdown
+# Button
+
+## 用途
+
+## Anatomy
+- root / label / loading indicator
+
+## Variants
+- primary / secondary
+
+## States
+- default / hover / focus-visible / disabled / loading
+
+## Tokens
+- --color-primary, --color-on-primary, --radius-md, --space-sm
+
+## Sizing
+- md：padding var(--space-sm) var(--space-md)；最小点击区域 44×44
+
+## Responsive
+- 移动端可全宽；桌面内联
+
+## Accessibility
+- 原生 button；focus-visible 可见 ring；loading 用 aria-busy
+
+## Do / Don't
+- Do: 用语义 button
+- Don't: 用 div 模拟按钮
+
+## 实现提示（栈无关）
+- 项目已有 Button 时按其主题 token 调整，不复制参考 HTML
+
+## 变更记录
+- 1.0.0 初始
+```
+
+### preview 与截图
+
+- `preview/index.html` 汇总所有组件，至少展示 375 / 768 / 1440；
+- 截图可选，存 `screenshots/`；无法截图时设计文档标 `[未截图]`，不得宣称已验证；
+- 参考库 v1.0 必须过自检 gate：对比度 4.5:1（非文本 3:1）、focus-visible、状态齐全、无破版、无硬编码 token、每个组件有 spec、meta 记录来源。
+
+### 外部设计知识源（ui-ux-pro-max）
+
+只作为建库种子，不作为页面实现依赖。
+
+安装（已实现 `--no-record`，目标不写 `targets.list`）：
+
+```bash
+bash scripts/skill-install.sh install -n ui-ux-pro-max \
+  --repo nextlevelbuilder/ui-ux-pro-max-skill \
+  --no-record -t <project>/ui-tools/vendor
+```
+
+实际落点：`<project>/ui-tools/vendor/skills/ui-ux-pro-max/`。
+
+使用方项目没有本仓库安装器时：
+
+```bash
+mkdir -p <project>/ui-tools/vendor && cd <project>/ui-tools/vendor
+npx skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill \
+  --skill ui-ux-pro-max --agent openclaw -y
+```
+
+调用桥（统一入口，不散落调用 search.py）：
+
+```bash
+python3 <ui-designer skill 目录>/scripts/ui_ux_pro_max.py probe --project-root .
+python3 <ui-designer skill 目录>/scripts/ui_ux_pro_max.py generate "订单列表 后台" --project "Orders" --project-root .
+python3 <ui-designer skill 目录>/scripts/ui_ux_pro_max.py domain --domain ux --query "error summary validation" --project-root .
+python3 <ui-designer skill 目录>/scripts/ui_ux_pro_max.py stack --stack react --query "form validation" --project-root .
+```
+
+> Windows 下用 `python` 替代 `python3`。
+
+- 仅建库时调用 `generate` 一次；页面实现阶段不再调用；
+- 未安装 / Python 不可用：用项目设计系统或内置 token 建库，标 `⚠️ 外部设计知识源不可用`；
+- 不修改其本体；只读 data/scripts；核心 skill 不需要 API Key。
+
+### 同步闸门
+
+**改前判断**，命中以下任一即走闸门：
+
+- 修改 `tokens.css`；
+- 修改组件公共 class / 结构 / 状态 / `spec.md`；
+- 修改会影响多个页面的公共组件；
+- 用户要求把新样式沉淀为组件。
+
+| 选项 | 行为 | 版本 |
+|---|---|---|
+| A. 只改本页 | 页面局部覆盖 token；不 fork 结构；记录偏离 | 不变 |
+| B. 更新参考库 | 更新 HTML + spec + INDEX；列出受影响页面；不改旧页面 | patch/minor |
+| C. 更新参考库并同步使用页 | 同 B，并逐页检查/更新使用页 | minor/major |
+
+更新前确认 git/备份可回退；更新后重新截图检查受影响页面。单页一次性微调、页面级布局差异、用户明确“只改这一页”不走闸门。
+
+### 旧页面轻量记录
+
+参考库合规只覆盖新建/本次修改/已登记页面；未触碰旧页面不判偏离。旧页面首次修改时补一条记录（设计文档「UI 参考库」节或页面旁 `reference-usage`）：
+
+```markdown
+## UI 参考库
+- 参考库：ui-tools/design-reference/ ｜ 版本：1.0.0
+- 使用组件：button 1.0.0 / input 1.0.0
+- 本页偏离：无 / {具体偏离与原因}
+- 未入库组件：无
+```
+
+### 常见坑
+
+- 把参考库放进 IDE skill 扫描目录，或在参考库里放 `SKILL.md`；
+- 把参考 HTML 整段复制进页面（不是复用，是复制粘贴）；
+- 项目已有组件库却重写同名组件；
+- 页面里写死 hex / 字号 / 间距，绕过 tokens.css；
+- 每页都调用 ui-ux-pro-max 重新生成（应只在建库时用一次）；
+- 未经确认改参考库，导致其他页面基线漂移；
+- 用一张 1440 截图代替 375/768/1440 三档检查。
 
 ---
 

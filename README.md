@@ -185,7 +185,7 @@ flowchart TD
 | **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，出报告前做**需求缺口六维回扫**，一次成型出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演）；发现属其他 skill 职责的问题时**主动接力**（UI 方案 → `ui-designer`、Bug → `debug` 定位，改码前停）；界面类结论**必附基本 UI ASCII 图**（`ui-to-ascii`），关系表达善用文字树 | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
 | **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化；快速实现路径默认交接 `plan-track` 建档 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
-| **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），先出 **ASCII 布局图定稿（demo 前置闸门）**，可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
+| **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），先出 **ASCII 布局图定稿（demo 前置闸门）**，可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo；可复用项目级视觉参考库（`ui-tools/design-reference/`），优先用已有组件库 + 主题 token，按参考重实现而非复制 | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
 | **[work-breakdown](./skills/work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
 | **[data-flow-model](./skills/data-flow-model/SKILL.md)** | 构建 ER 图和数据流图，支持并发/分布式/实时流/批处理等场景分析 | "画 ER 图"、"数据怎么流"、"设计数据模型" |
 | **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构；涉及页面样式 / 布局时**先出 ASCII 布局图并经用户确认**（阶段 2.4）才继续设计；需求较大时另走**阶段 5.5**（判定是否多窗口并行 → **模块划分** + **骨架设计** 8 项，含数据走向预演场景），作为 `delivery-slicing` 的骨架输入 | "写设计文档"、"帮我设计"、"dd" |
@@ -193,7 +193,7 @@ flowchart TD
 | **[api-design](./skills/api-design/SKILL.md)** | 基于设计文档生成详细的 API 设计文档，含完整接口契约和错误码定义 | "设计 API"、"接口设计"、"api design" |
 | **[frontend-api-guide](./skills/frontend-api-guide/SKILL.md)** | 将 API 设计转化为前端可直接编码的调用流程文档，含 UI 映射和错误处理速查 | "生成前端 API 文档"、"API 调用流程" |
 | **[demo-verify](./skills/demo-verify/SKILL.md)** | 针对设计中的风险点构建验证原型，确认可行后再投入开发（复杂需求自动触发） | "先做个 demo 验证"、"试试看" |
-| **[design-review](./skills/design-review/SKILL.md)** | 对设计文档进行结构化评审，产出分级问题清单 | "评审设计"、"review 设计文档" |
+| **[design-review](./skills/design-review/SKILL.md)** | 对设计文档进行结构化评审，产出分级问题清单；UI 设计文档可核对视觉参考库版本/偏离（只读） | "评审设计"、"review 设计文档" |
 | **[scenario-rehearsal](./skills/scenario-rehearsal/SKILL.md)** | 模拟真实使用场景推演，支持设计文档（验证设计点可行性）、需求文档（验证需求完整性/一致性/验收可达）与 Skill（验证触发准确性等质量维度）三种模式 | "推演一下这个设计"、"推演一下这个需求"、"推演一下这个 skill" |
 | **[request-guard](./skills/request-guard/SKILL.md)** | 在用户突然提出修改请求时快速检查合理性，防止被突发奇想带着跑 | "改一下"、"改成"、"优化一下" |
 | **[implementation-report](./skills/implementation-report/SKILL.md)** | 需求完成后生成实现总结报告，记录最终实现效果和偏差 | "生成实现报告"、"记录完成情况" |
@@ -210,7 +210,7 @@ flowchart TD
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度；产出可审计的检查覆盖表，P0 修复可转 `plan-track` 台账跟踪；**前端改动（三重门通过、无阻塞项、有运行环境）自动按交接单接力 `frontend-walkthrough` 做定向走查**，走查的阻塞级发现回写合入结论 | "review 这个提交"、"code review" |
-| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环，修复后可接力 code-change-impact 质检 | "排查这个 bug"、"debug 一下"、"为什么会报错" |
+| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环；本地无法复现的线上 Bug 支持人工代执行的只读取证、证据固定（`.debug/`）与可选排查报告，并提供只读自查脚本；修复后可接力 code-change-impact 质检 | "排查这个 bug"、"debug 一下"、"线上 Bug 本地复现不了" |
 | **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档/分析报告进行二次质疑，代码支持三种策略、设计文档与报告复用设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
@@ -219,7 +219,7 @@ flowchart TD
 | **[api-testing](./skills/api-testing/SKILL.md)** | 基于 httpflex-py 的 HTTP API 自主测试，自动解析接口描述、生成客户端、设计用例矩阵并断言 | "测试 API"、"自动化接口测试"、"验证接口" |
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 | **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**含「片级验收模式」**（被测对象为一个砖头包，由 `integration-merge` 阶段 0.5 调用；不起容器、不进 L3）。**默认模式低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
-| **[frontend-walkthrough](./skills/frontend-walkthrough/SKILL.md)** | 对已有前端页面做**真实操作走查 + 隐藏缺陷推演**：A/B/C 取证档位自适应（浏览器实操 / 用户提供画面 / 纯静态）并如实降级声明；先读代码穷举入口与八态状态矩阵（白盒规划），再用两条腿挖隐藏缺陷——**A 腿「异步态 × 动作」矩阵**（接口未返回/失败/乱序时继续操作、重复提交、竞态覆盖、状态串台）+ **B 腿十类缺陷族**（状态一致性 / 生命周期副作用 / 表单输入 / 边界计算展示 / 权限安全 / 路由导航 / 集成发版白屏 / 环境兼容 / 错误兜底），每条假设回实操定向复现（时序类推演 🟡、复现才 🟢，写法缺失类代码即 🟢）；**支持定向模式**——接手 `code-review` 交接单，只走改动面 + 一步下游，按改动性质裁维度（纯交互逻辑跳过布局样式，裁掉的维度必须写理由）；**走查前先出「功能回归清单」**（改动 → 受影响功能：调用方/数据消费方/共享能力/页面入口，≤12 项、用户语言），走完逐项闭环（✅ 须附证据 / ❌ 转发现 / ⚠️ 写原因，留空即未完成）；加载性能做到体检级（深入交 `performance-analysis`），五类发现合并为一张带证据清单，按用户视角 + PM 视角（Kano/价值×成本）排序 | "前端走查"、"体验一下这个页面"、"点一遍看看"、"前端页面有什么问题"、"找出这个页面的隐藏 bug"、"接口慢或挂了会怎样"、"前端还有哪些常见坑"、"这次改动的前端部分验一下" |
+| **[frontend-walkthrough](./skills/frontend-walkthrough/SKILL.md)** | 对已有前端页面做**真实操作走查 + 隐藏缺陷推演**：A/B/C 取证档位自适应（浏览器实操 / 用户提供画面 / 纯静态）并如实降级声明；先读代码穷举入口与八态状态矩阵（白盒规划），再用两条腿挖隐藏缺陷——**A 腿「异步态 × 动作」矩阵**（接口未返回/失败/乱序时继续操作、重复提交、竞态覆盖、状态串台）+ **B 腿十类缺陷族**（状态一致性 / 生命周期副作用 / 表单输入 / 边界计算展示 / 权限安全 / 路由导航 / 集成发版白屏 / 环境兼容 / 错误兜底），每条假设回实操定向复现（时序类推演 🟡、复现才 🟢，写法缺失类代码即 🟢）；**支持定向模式**——接手 `code-review` 交接单，只走改动面 + 一步下游，按改动性质裁维度（纯交互逻辑跳过布局样式，裁掉的维度必须写理由）；**走查前先出「功能回归清单」**（改动 → 受影响功能：调用方/数据消费方/共享能力/页面入口，≤12 项、用户语言），走完逐项闭环（✅ 须附证据 / ❌ 转发现 / ⚠️ 写原因，留空即未完成）；加载性能做到体检级（深入交 `performance-analysis`），五类发现合并为一张带证据清单，按用户视角 + PM 视角（Kano/价值×成本）排序；有 `ui-tools/design-reference/` 时以其为视觉基线（只读，漂移按有意偏离/实现误差/参考过时分类） | "前端走查"、"体验一下这个页面"、"点一遍看看"、"前端页面有什么问题"、"找出这个页面的隐藏 bug"、"接口慢或挂了会怎样"、"前端还有哪些常见坑"、"这次改动的前端部分验一下" |
 | **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memory-write | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
 | **[ki-search-first](./skills/ki-search-first/SKILL.md)** | 项目记忆优先（任务前置门）：任何任务前先 `ki_search` 检索项目记忆，命中则带记忆求解，未命中再降级到 expert-solution-workflow 复用路径；改代码时必查强关联关系 | "查记忆"、"改A要连带改B吗"、"遇事不决 ki-search" |
 | **[ki-memory-write](./skills/ki-memory-write/SKILL.md)** | 统一往 ki-search 写记忆的 SSOT，按类型分发七类：专题记忆 / 接口信息 / 数据流 / 决策记忆（expert-team 调用）、强关联（strong-relation 调用）、错误库（debug / solution-capture 调用）、待生效变更（code-review 调用，纯 KB 不向量化） | "写专题记忆"、"写 ki 记忆"、"记录决策"、"登记待生效变更"、"ki memory write" |
