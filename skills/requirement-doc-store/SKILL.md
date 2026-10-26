@@ -271,6 +271,7 @@ req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 | 测试计划 | `test/test-plan.md,test` |
 | 测试报告 | `test/test-report.md,test` |
 | 代码审查 | `review/code-review.md,review` |
+| Bug 排查报告 | `review/debug-report.md,review` |
 | 质疑审查 | `review/challenge-report.md,review` |
 | 实现报告 | `report.md,report` |
 | API 设计 | `api/INDEX.md,design` |
