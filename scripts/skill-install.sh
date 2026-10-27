@@ -15,8 +15,10 @@
 #           （install 未指定 --repo 时 = 默认仓库 HACK-WU/skills；
 #             update 未指定 --repo/-n 时 = 各目标自己的来源记录）
 #
-# 临时安装: install/update 支持 --no-record：同步到 -t 目标但不写入 targets.list，
-#           后续全量 update/prune 不会自动包含该目标（升级需手动重装）。
+# 临时安装: 仅 install 支持 --no-record：在临时目录隔离安装后复制到 -t 目标，
+#           不写入共享管理源 / skills-lock.json / targets.list。
+#           因此全量 update/prune 不会包含该目标，update -t 也无法反查来源；
+#           升级需用相同命令重装，删除需手动删目标下的 skill 目录。
 #
 # 脚本自更新: 每次运行自检一次（24h 节流）；发现新版只提示不覆盖，
 #             要更新执行 self-update 子命令（自检恒定开启，无开关可关）。
@@ -29,7 +31,7 @@
 #
 # 用法:
 #   bash skill-install.sh install -t /path/to/target     # 安装（默认）
-#   bash skill-install.sh install -n <names> --no-record -t <path>  # 临时安装（不记录目标）
+#   bash skill-install.sh install -n <names> --no-record -t <path>  # 临时安装（隔离，不留记录）
 #   bash skill-install.sh update [-t ...] [-n names] [--repo ...]  # 更新并同步
 #   bash skill-install.sh remove <names>                  # 删除 + 同步
 #   bash skill-install.sh prune [-t ...] [-y]             # 清理目标中不属于其来源的 skill
@@ -47,7 +49,7 @@ REPOS=()
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：
 # 前缀定宽 → 字典序即版本序（LC_ALL=C 下比较，见 version_gt）
-SCRIPT_VERSION="2026-10-23.1"
+SCRIPT_VERSION="2026-10-27.1"
 
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 SELF_URL_DEFAULT="https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.sh"
@@ -86,7 +88,8 @@ CONFIG_FILE=""
 POSITIONAL_TARGET=""
 REPOS_SPECIFIED=0
 PRUNE_APPLY=0
-NO_RECORD=0       # --no-record：临时安装，不把目标写入 targets.list
+NO_RECORD=0       # --no-record：临时安装（隔离目录，不碰共享管理源与记录）
+ISOLATED_TMP=""   # --no-record 的隔离目录（全局：EXIT trap 执行时局部变量已失效）
 SELF_FORCE=0       # --force：self-update 时允许降级 / 覆盖 git 工作树内的副本
 
 show_help() {
@@ -116,8 +119,10 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 ${SCRIPT_
   --optional           别名，等价于 --repo $OPTIONAL_REPO_URL
                        （可选技能目录：依赖第三方 skill/模块的技能）
   --file <path>        从配置文件读取目标目录（与 -t 互斥）
-  --no-record          临时安装：同步到 -t 目标，但不写入 targets.list；
-                       后续 update/prune 不会自动包含该目标（升级需手动重装）
+  --no-record          临时安装（仅 install）：在临时目录隔离安装后复制到目标，
+                       不写入共享管理源的 skills/ 与 skills-lock.json、targets.list；
+                       全量 update/prune 不包含该目标，update -t 也反查不到来源
+                       （升级用相同命令重装，删除手动移除目标下的 skill 目录）
   -y, --yes            prune 时真正执行删除（不加则只预演列出）
   --force              self-update 时允许降级 / 覆盖 git 工作树内的副本
   -h, --help           显示此帮助
@@ -128,8 +133,9 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 ${SCRIPT_
   指定 --repo 时只同步这些仓库的 skill（可再叠加 -n 收窄名称）；
   install 未指定 --repo 时 = 默认仓库 HACK-WU/skills；
   update 未指定 --repo / -n 时 = 各目标自己的来源记录
-  （记录在 $MANAGE_DIR/targets.list 每行的仓库列；老记录首次使用时按
-   目标现有 skill 反查来源并写回；判定不出则跳过，不做全量复制）。
+  （记录在 $MANAGE_DIR/targets.list 每行的仓库列；老记录（有路径无仓库列）
+   首次使用时反查写回；完全没有记录行的目标不反查、update 也不新增记录
+   （避免临时目标被转正）；判定不出则跳过，不做全量复制）。
 
 脚本自更新:
   每次运行做一次自检（24h 一次），发现新版本只提示、不覆盖自身；
@@ -149,7 +155,7 @@ Skills 安装器 — 基于 npx skills 管理 AI Skills（脚本版本 ${SCRIPT_
   bash skill-install.sh -t ~/projects/app
   bash skill-install.sh install -n code-review,design-craft -t ~/projects/app
   bash skill-install.sh install -n ui-ux-pro-max --no-record -t ~/app/ui-tools/vendor
-                                                   # 临时安装：不写目标记录，update/prune 不带上
+                                                   # 临时安装：隔离安装，不进共享池/不写记录
   bash skill-install.sh install --optional -t ~/projects/app    # 只装可选技能
   bash skill-install.sh install --repo HACK-WU/skills --optional -t ~/app  # 主技能+可选技能
   bash skill-install.sh update -t ~/projects/app
@@ -258,17 +264,11 @@ done
 # 默认操作：安装
 [ -z "$ACTION" ] && ACTION="install"
 
-# --no-record：只用于 install/update，且必须显式指定目标
+# --no-record：仅 install 支持（隔离安装），且必须显式指定目标
 if [ "$NO_RECORD" = "1" ]; then
-    case "$ACTION" in
-        install|update) ;;
-        *) error "--no-record 仅适用于 install / update" ;;
-    esac
+    [ "$ACTION" = "install" ] || error "--no-record 仅适用于 install（update/remove/prune/list/self-update 不支持；升级请用相同 install 命令重装）"
     if [ ${#TARGETS[@]} -eq 0 ] && [ -z "$CONFIG_FILE" ] && [ -z "$POSITIONAL_TARGET" ]; then
         error "--no-record 需要显式目标：用 -t <path> / --file <path> / 位置参数指定，避免把默认目标变成未记录状态"
-    fi
-    if [ "$ACTION" = "update" ] && [ ${#TARGETS[@]} -eq 0 ]; then
-        error "update --no-record 需要 -t 指定目标（update 不读取 --file / 位置参数）"
     fi
 fi
 
@@ -729,16 +729,13 @@ resolve_target_repos() {
         printf '%s' "$repos"
         return 0
     fi
+    # 没有任何记录行的目标不反查：否则普通 update -t 会按 skill 名从共享 lock
+    # 推出源并写回，把 --no-record 临时目标悄悄转正。老记录（有路径、无仓库列）仍自愈。
+    target_is_recorded "$t" || return 0
     repos="$(infer_target_repos "$(target_dest "$t")")"
     if [ -n "$repos" ]; then
-        # 仅当本次有显式目标时抑制写回（install 的 --file 会解析为显式目标；
-        # update 未解析 --file 时走 sync_all_recorded，保持原有自愈行为）
-        if [ "$NO_RECORD" = "1" ] && [ ${#TARGETS[@]} -gt 0 ]; then
-            warn "目标未记录来源，已按现有 skill 反查（--no-record，未写回）: $t → $repos"
-        else
-            record_target "$t" $repos
-            warn "目标记录缺少来源仓库，已按目标现有 skill 反查并写回: $t → $repos"
-        fi
+        record_target "$t" $repos
+        warn "目标记录缺少来源仓库，已按目标现有 skill 反查并写回: $t → $repos"
     fi
     printf '%s' "$repos"
 }
@@ -881,16 +878,6 @@ scope_for_target() {
     return 0
 }
 
-# 收窄到目标现有 skill：--no-record 的 update 只更新已装项，不新增
-narrow_scope_to_existing() {
-    local dest="$1" name out=""
-    [ -n "$SYNC_NAMES" ] || return 0
-    for name in $SYNC_NAMES; do
-        [ -d "$dest/$name" ] && out="$out $name"
-    done
-    SYNC_NAMES="${out# }"
-}
-
 # 同步所有已记录目标
 # 参数 "1" = 调用方已用 set_sync_scope 设定显式范围（--repo / -n），对所有目标适用；
 # 否则按各目标自己的来源记录圈定范围（无记录则反查；判定不出则跳过，不做全量兜底）
@@ -922,12 +909,71 @@ sync_all_recorded() {
 }
 
 # ============================================================
+# 临时安装：在隔离目录装好后复制到目标，不碰共享管理源 / lock / targets.list
+# ============================================================
+do_install_isolated() {
+    echo "🚀 skill-install.sh v$SCRIPT_VERSION（临时安装）"
+    echo "   安装源: ${REPOS[*]}"
+    echo "   目标数量: ${#TARGETS[@]}"
+    [ -n "$NAME_FILTER" ] && echo "   名称过滤: $NAME_FILTER"
+    echo ""
+
+    local tmp src installed t dest name repo npx_args names
+    ISOLATED_TMP="$(mktemp -d "${TMPDIR:-/tmp}/skill-install.XXXXXX" 2>/dev/null)" || error "无法创建临时目录（检查 TMPDIR）"
+    tmp="$ISOLATED_TMP"
+    # 单引号延迟展开：路径含空格/引号时也安全，且 EXIT 时全局变量仍有效
+    trap 'rm -rf -- "$ISOLATED_TMP"' EXIT INT TERM
+
+    info "隔离安装到临时目录（不写入 $MANAGE_DIR）: $tmp"
+    for repo in "${REPOS[@]}"; do
+        info "  安装源: $repo"
+        npx_args=(add "$repo" --agent "$AGENT" -y)
+        if [ -n "$NAME_FILTER" ]; then
+            names="${NAME_FILTER//,/ }"
+            npx_args+=(--skill $names)
+        fi
+        (cd "$tmp" && npx skills "${npx_args[@]}") </dev/null || error "npx skills add 失败: $repo"
+    done
+
+    src="$tmp/skills"
+    [ -d "$src" ] || error "隔离安装未产出 skills 目录: $src"
+    installed="$(ls -1 "$src" 2>/dev/null)"
+    [ -n "$installed" ] || error "隔离安装没有产出任何 skill（检查仓库与 -n 名称）"
+
+    echo ""
+    info "同步到目标目录（${#TARGETS[@]} 个目标）..."
+    for t in "${TARGETS[@]}"; do
+        if target_is_recorded "$t"; then
+            warn "目标已有记录，临时安装不会修改该记录（全量 update/prune 仍会包含该目标；目标内同名 skill 文件会被本次内容覆盖）: $t"
+        fi
+        dest="$(target_dest "$t")"
+        mkdir -p "$dest"
+        while IFS= read -r name; do
+            [ -n "$name" ] || continue
+            [ -d "$src/$name" ] || continue
+            mkdir -p "$dest/$name" || error "创建目标目录失败: $dest/$name"
+            cp -R "$src/$name/." "$dest/$name/" || error "复制失败: $src/$name → $dest/$name"
+        done <<< "$installed"
+        echo "  [SYNC] $t（未记录）"
+    done
+
+    echo ""
+    warn "临时安装：未写入共享管理源的 skills/ 与 skills-lock.json，也未写入 $TARGETS_FILE"
+    warn "升级：用相同 install 命令重装；删除：手动删除 <目标>/skills/<skill> 目录"
+}
+
+# ============================================================
 # 安装
 # ============================================================
 do_install() {
     resolve_targets
     if [ ${#TARGETS[@]} -eq 0 ]; then
         error "未指定目标目录。使用 -t <path>、--file <path>，或在 $DEFAULT_TARGETS_FILE 配置。"
+    fi
+
+    if [ "$NO_RECORD" = "1" ]; then
+        do_install_isolated
+        return
     fi
 
     ensure_manage_dir
@@ -959,23 +1005,13 @@ do_install() {
         warn "同步范围为 0：管理源中没有匹配安装源（${REPOS[*]}）的 skill，已跳过同步"
         warn "  管理源是多仓库共享池，全量同步会把其他仓库的 skill 复制到目标；可用 'list --repo <repo>' 检查"
     else
-        if [ "$NO_RECORD" = "1" ]; then
-            warn "临时安装（--no-record）：目标不写入 $TARGETS_FILE，后续 update/prune 不会自动包含"
-        fi
         info "同步到目标目录（范围: $(scope_count) 个 skill · 来源 ${REPOS[*]}）..."
         for t in "${TARGETS[@]}"; do
             mkdir -p "$t"
-            if [ "$NO_RECORD" = "1" ] && target_is_recorded "$t"; then
-                warn "目标已有记录，--no-record 不会移除既有记录（仍会被全量 update/prune 包含）: $t"
-            fi
             sync_to_target "$t"
-            if [ "$NO_RECORD" = "1" ]; then
-                echo "  [SYNC] $t（未记录）"
-            else
-                # 记录/合并该目标的来源仓库（供 update / prune 圈定范围）
-                record_target "$t" "${REPOS[@]}"
-                echo "  [SYNC] $t"
-            fi
+            # 记录/合并该目标的来源仓库（供 update / prune 圈定范围）
+            record_target "$t" "${REPOS[@]}"
+            echo "  [SYNC] $t"
         done
 
         echo ""
@@ -1079,40 +1115,26 @@ for(const s of Object.keys(out).sort()){
 
     echo ""
     info "同步到目标目录..."
-    if [ "$NO_RECORD" = "1" ] && [ ${#TARGETS[@]} -eq 0 ]; then
-        warn "--no-record 对未指定 -t 的 update 无效果：同步对象来自 targets.list"
-    fi
     if [ ${#TARGETS[@]} -gt 0 ]; then
         # -t 指定了目标，只同步这些
         for t in "${TARGETS[@]}"; do
             mkdir -p "$t"
-            if [ "$NO_RECORD" = "1" ] && target_is_recorded "$t"; then
-                warn "目标已有记录，--no-record 不会移除既有记录（仍会被全量 update/prune 包含）: $t"
-            fi
             if [ "$explicit_scope" = "0" ] && ! scope_for_target "$t"; then
                 warn "无法判定目标的来源仓库，跳过同步（避免把管理源全量复制）: $t"
                 warn "  可用 'install --repo <repo> -t $t' 重建记录"
                 continue
-            fi
-            if [ "$NO_RECORD" = "1" ] && [ -z "$NAME_FILTER" ]; then
-                # 临时安装的 update 只更新目标已有 skill，不按仓库新增
-                narrow_scope_to_existing "$(target_dest "$t")"
-                if [ -z "$SYNC_NAMES" ]; then
-                    warn "临时安装目标中没有可更新的 skill（--no-record 不新增；如需新增请用 install 或加 -n）: $t"
-                    continue
-                fi
             fi
             if [ -z "$SYNC_NAMES" ]; then
                 warn "同步范围为 0：管理源中没有匹配（${repos[*]}${NAME_FILTER:+ · -n $NAME_FILTER}）的 skill，跳过: $t"
                 continue
             fi
             sync_to_target "$t"
-            if [ "$NO_RECORD" = "1" ]; then
-                echo "  [SYNC] $t（未记录）"
-            else
+            if target_is_recorded "$t"; then
                 record_target "$t"
-                echo "  [SYNC] $t"
+            else
+                warn "目标未记录，update 只同步不写记录（如需纳入管理请用 install 重建记录）: $t"
             fi
+            echo "  [SYNC] $t"
         done
     else
         # 未指定 -t，同步所有已记录目标（显式范围统一适用，否则按各目标记录）
@@ -1273,11 +1295,15 @@ do_prune() {
         total_removed=$((total_removed + removed))
         # 显式指定期望来源时同步纠正记录（预演阶段只提示，-y 才写）
         if [ "$explicit" = "1" ]; then
-            if [ "$PRUNE_APPLY" = "1" ]; then
-                set_target_repos "$t" "${REPOS[@]}"
-                echo "    [记录] 该目标来源已更新为: $repos"
+            if target_is_recorded "$t"; then
+                if [ "$PRUNE_APPLY" = "1" ]; then
+                    set_target_repos "$t" "${REPOS[@]}"
+                    echo "    [记录] 该目标来源已更新为: $repos"
+                else
+                    echo "    [记录] 加 -y 时会把该目标来源更新为: $repos"
+                fi
             else
-                echo "    [记录] 加 -y 时会把该目标来源更新为: $repos"
+                echo "    [记录] 目标未记录，prune 只清理不写记录（如需纳入管理请用 install）"
             fi
         fi
     done

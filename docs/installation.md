@@ -80,7 +80,7 @@ npx skills add HACK-WU/skills --list -y
 | `--repo <owner/repo>` | 指定安装源仓库，可多次使用；`install`/`update` 指定安装源**并决定同步到目标的范围**，`list` 按来源过滤；默认 `HACK-WU/skills`。也接受仓库子路径 URL（如 `https://github.com/HACK-WU/skills/tree/master/skills-optional`），只装该子目录下的 skill |
 | `--optional` | `--repo https://github.com/HACK-WU/skills/tree/master/skills-optional` 的别名，用于安装依赖第三方 skill/模块的**可选技能**；可与 `--repo` 同时使用 |
 | `--file <path>` | 从配置文件读取目标目录（与 `-t` 互斥） |
-| `--no-record` / `-NoRecord` | **临时安装**：同步到显式指定的目标，但不写入 `targets.list`。后续全量 `update` / `prune` 不会自动包含该目标；升级需手动重装。仅适用于 `install` / `update` |
+| `--no-record` / `-NoRecord` | **临时安装**（仅 `install`）：在临时目录隔离安装后复制到显式指定的目标，不写入共享管理源的 `skills/` 与 `skills-lock.json`、`targets.list`；全量 `update` / `prune` 不包含该目标，`update -t` 也反查不到来源。升级需重装，删除需手动 |
 | `-y` / `--yes` | `prune` 时真正执行删除（不加则只预演列出） |
 | `--force` | `self-update` 时允许降级 / 覆盖 git 工作树内的副本 |
 | `--version` | 显示脚本版本 |
@@ -150,7 +150,7 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 
 > 只删除"**在 `skills-lock.json` 中登记过**（＝安装器管理过的）**且不属于该目标来源范围**"的目录。手工新增的目录、目标来源范围内的 skill 一律保留；判定不出来源时拒绝执行（不会误删）。
 
-> **何时需要 `--repo`**：若目标只有老记录（无仓库列），来源靠"按现有内容反查"得出——历史污染会被一并算成"目标自己的来源"，此时 `prune` 会报"无外来 skill"。用 `--repo <期望仓库>` 显式声明该目标**应该**有哪些来源，即可清掉其余项，并把记录纠正为期望值（之后 `prune`/`update` 都以它为准）。
+> **何时需要 `--repo`**：若目标只有老记录（无仓库列），来源靠"按现有内容反查"得出——历史污染会被一并算成"目标自己的来源"，此时 `prune` 会报"无外来 skill"。用 `--repo <期望仓库>` 显式声明该目标**应该**有哪些来源，即可清掉其余项，并把记录纠正为期望值（之后 `prune`/`update` 都以它为准）。记录纠正只对**已有记录行**的目标生效；完全没有记录的目标（如 `--no-record` 临时目标）即使给了 `--repo`，`prune` 也只清理、不写记录。
 
 ### 脚本自身的更新
 
@@ -187,9 +187,9 @@ bash skill-install.sh prune -t ~/app --repo HACK-WU/skills -y
 **注意事项**：
 
 - **update 与 install 的区别**：`install` 会追加安装（可装新 skill）；`update` 只更新已安装的 skill 版本，不追加新 skill。
-- **同步范围（多仓库管理源）**：管理源是多仓库共享池，但同步到目标时按其来源圈定范围——**`install`** 未指定 `--repo` 时 = 默认仓库 `HACK-WU/skills`（不会带其他仓库的 skill）；**`update`** 指定了 `--repo` / `-n` 时按该范围同步，都未指定时 = **各目标自己的来源记录**。要把多个仓库的 skill 装进同一目标，就把它们都写进 `--repo`（如 `--repo HACK-WU/skills --optional`）。同一仓库的不同子目录按 `--repo` 的 tree 子路径区分（如 `skills-optional` 不会被整仓库安装收录）。若本次安装源在管理源中一个 skill 都匹配不到，脚本会警告并跳过同步——**不会退化成"把管理源全量复制"**。
+- **同步范围（多仓库管理源）**：管理源是多仓库共享池，但同步到目标时按其来源圈定范围——**`install`** 未指定 `--repo` 时 = 默认仓库 `HACK-WU/skills`（不会带其他仓库的 skill）；**`update`** 指定了 `--repo` / `-n` 时按该范围同步，都未指定时 = **各目标自己的来源记录**。要把多个仓库的 skill 装进同一目标，就把它们都写进 `--repo`（如 `--repo HACK-WU/skills --optional`）。同一仓库的不同子目录按 `--repo` 的 tree 子路径区分（如 `skills-optional` 不会被整仓库安装收录）。若本次安装源在管理源中一个 skill 都匹配不到，脚本会警告并跳过同步——**不会退化成"把管理源全量复制"**。`update -t <目标>` 只对**已有记录行**的目标生效：完全没有记录的目标不再反查来源，**即使显式给了 `--repo` / `-n` 也只同步、不写记录**（避免把临时安装转正），会提示用 `install` 重建记录；老记录（有路径、无仓库列）仍会反查并写回。
 - **`-n` 语义**：`-n` 决定往管理源追加哪些 skill，并同时收窄目标端的同步范围——`-n code-review` 时目标只出现 code-review（管理源中其他 skill 不受影响，也不会进目标）。需要清理管理源内容时用 `remove`。
-- **临时安装（`--no-record` / `-NoRecord`）**：目标不写入 `targets.list`，因此后续全量 `update` / `prune` 不会自动包含它，`remove` 也不会同步删除它。适合把第三方 skill 装到非标准目录、只需一次性安装的场景；升级时用相同命令重装。仅适用于 `install` / `update`，且必须用 `-t` / `-Target` 显式指定目标（`install` 也接受 `--file` / `-ConfigFile`），避免把默认目标变成未记录状态。注意目标参数指向的是 **skills 父目录**：若路径不以 `skills` 结尾，脚本会自动追加 `skills/`（如 `-t ui-tools/vendor` → 实际落地 `ui-tools/vendor/skills/<skill>/`）。`update --no-record` 默认只更新目标中已有的 skill，不按仓库新增；如需新增请用 `install` 或配合 `-n` / `-NameFilter`。**对已被记录过的目标，`--no-record` 不会解除既有记录**（它仍会被全量 `update` / `prune` 包含），脚本会给出警告。临时安装仍会把 skill 写入共享管理源与 `skills-lock.json`；若其他已记录目标使用同一仓库来源，全量 `update` 仍可能把该 skill 同步过去——需要完全隔离时请使用独立下载（不经过 `npx skills` 管理源）。
+- **临时安装（`--no-record` / `-NoRecord`）**：先在**临时目录隔离安装**，再把 skill 复制到目标，**不写入共享管理源**（`~/.hackwu-skills/skills/`）、`skills-lock.json` 与 `targets.list`。因此：全量 `update` / `prune` 不会包含它，`update -t 目标` 既反查不到来源、也不会为目标新增记录（不会被"转正"），`remove` 不会同步删除它，`list` 里也看不到。仅适用于 `install`，且必须用 `-t` / `-Target` 显式指定目标（也接受 `--file` / `-ConfigFile`）；`update` / `remove` / `prune` / `list` 组合使用会直接报错。目标路径规则同普通安装：参数指向 **skills 父目录**，若路径不以 `skills` 结尾会自动追加（如 `-t ui-tools/vendor` → 实际落地 `ui-tools/vendor/skills/<skill>/`）。升级 = 用相同命令重装；删除 = 手动删除 `<目标>/skills/<skill>`。若目标原本已有记录，`--no-record` **不会修改该记录**（它仍属于正式目标，全量 `update` / `prune` 照常包含）。
 - **增量同步不删除多余文件**：同步采用增量覆盖（如 rsync 不带 `--delete`），目标 `skills/` 中管理源没有的文件（如手动添加的自定义 skill 或本地修改）**不会被删除**，同名文件会被管理源版本覆盖更新。目标中的手动修改会被覆盖，如需保留请勿放在同名路径下。
 - **运行时依赖**：安装器需要 **Node.js >= 22** + npx。`npx skills` 依赖 Node 22（`node:util` 的 `styleText` 自 21.7 起可用，skills 包 engines 声明 ≥22.20.0）。`update` / `list` 解析管理源 `skills-lock.json` 也用 node 内置 `JSON.parse`（复用既有 node 依赖，**无需 python3**）。未检测到 npx 或 Node 版本过低时脚本会报错并给出升级指引（Linux/macOS：nvm 或官网 LTS；Windows：winget/Chocolatey 或官网 LTS）。
 
