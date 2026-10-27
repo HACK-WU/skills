@@ -95,7 +95,7 @@ $TargetsFile = Join-Path $ManageDir "targets.list"
 $DefaultTargetsFile = Join-Path $HomeDir ".skill-targets"
 
 # 脚本自身版本（自更新比较用）。格式固定为 YYYY-MM-DD[.N]：前缀定宽 → 序数比较即版本序
-$ScriptVersion = "2026-10-27.1"
+$ScriptVersion = "2026-10-27.2"
 # 自更新来源（要指向内网镜像就改这两行常量：主源 + 兜底镜像）
 $SelfUrlDefault = "https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill-install.ps1"
 $SelfUrlMirror = "https://cdn.jsdelivr.net/gh/HACK-WU/skills@master/scripts/skill-install.ps1"
@@ -350,15 +350,25 @@ function Get-ScriptVersionOf($file) {
 
 # 下载远程脚本（Invoke-WebRequest 主路径；curl.exe/curl 兜底）
 # 超时可调：自检（courtesy）用短超时快速失败，显式 self-update 才容忍慢链路
+# 坑（同 Test-InGitWorktree，更隐蔽）：curl 兜底位于 catch 块**内部**，而 catch 块内的错误不会
+# 被同一个 catch 再次捕获 → 5.1 下 `& curl ... 2>$null` 一旦失败（断网/被墙/404）就会直接
+# 抛到调用方并终止整个脚本，与注释声称的"离线时几秒内快速失败"相反 ⇒ 同样局部降级兜住。
 function Get-RemoteScript($url, $out, $ConnectSec = 5, $MaxSec = 20) {
     try {
         Invoke-WebRequest -Uri $url -OutFile $out -TimeoutSec $MaxSec -UseBasicParsing -ErrorAction Stop
         return $true
     } catch {
         foreach ($c in @("curl.exe", "curl")) {
-            if (Get-Command $c -ErrorAction SilentlyContinue) {
+            if (-not (Get-Command $c -ErrorAction SilentlyContinue)) { continue }
+            $prevEap = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
                 & $c -fsSL --connect-timeout $ConnectSec --max-time $MaxSec $url -o $out 2>$null
                 if ($LASTEXITCODE -eq 0) { return $true }
+            } catch {
+                continue
+            } finally {
+                $ErrorActionPreference = $prevEap
             }
         }
         return $false
@@ -387,10 +397,23 @@ function Test-VersionGt($a, $b) {
 }
 
 # 脚本是否位于 git 工作树内（是 → 不自动覆盖，提示 git pull）
+# 坑（Windows PowerShell 5.1）：全局 $ErrorActionPreference='Stop' 下，对原生命令的 stderr
+# 一旦做重定向（2>$null / 2>&1 / 管道），PowerShell 必须捕获 stderr → 生成错误记录 →
+# 立即抛 NativeCommandError 终止脚本，重定向拦不住；而"目录不是 git 仓库"正是 git 写 stderr
+# 的常规路径（普通用户在 %USERPROFILE% 下必然命中）→ 自更新 / 新版自检直接被打断。
+# 故局部降级 + try/catch，任何异常一律按"不在工作树内"处理（与原语义一致，pwsh 7 行为不变）。
 function Test-InGitWorktree($dir) {
     if (-not (Get-Command git -ErrorAction SilentlyContinue)) { return $false }
-    $out = & git -C $dir rev-parse --is-inside-work-tree 2>$null
-    return ("$out".Trim() -eq "true")
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $out = & git -C $dir rev-parse --is-inside-work-tree 2>$null
+        return ("$out".Trim() -eq "true")
+    } catch {
+        return $false
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
 }
 
 # 自更新主流程（只有两条路，没有环境变量开关）
