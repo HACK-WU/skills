@@ -4,7 +4,7 @@
 
 一套面向软件工程全流程的 AI Agent 技能集。从需求挖掘到技术设计，从代码评审到交互设计，覆盖"想清楚 → 设计好 → 写对代码"的完整链路。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-66-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-9-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![Skills](https://img.shields.io/badge/skills-67-4fc3f7)](./skills) [![Rules](https://img.shields.io/badge/rules-9-9575cd)](./rules) [![req CLI](https://img.shields.io/badge/req%20CLI-0.2.0--beta-81c784)](./scripts)
 
 </div>
 
@@ -176,7 +176,7 @@ flowchart TD
 <a id="skills-index"></a>
 ## 🧩 技能一览
 
-66 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
+67 个技能按用途分为 4 类。每个技能触发方式见对应 SKILL.md 的 frontmatter description。
 
 ### 需求与设计
 
@@ -266,6 +266,7 @@ flowchart TD
 | **[frontend-index](./skills/frontend-index/SKILL.md)** | 给**本地前端项目**建「页面 ↔ 接口」双向索引：扫源码提取路由（页面）→ 接口调用 → 定义处（含 file:line），产出 **`{项目根}/.fe-index/{slug}/`**（INDEX.md 登记表 + index.md + pages/ + apis/ + meta.json），支持「改接口前查影响哪些页面」与「接页面任务查用到哪些接口/组件」。核心设计：**深度即置信度**（🟢 页面自身调用 / 🟡 直接依赖 / 🔵 间接候选）、**新鲜度闸门**（记录 commit，`--check` 比对，过期先重建）、**一键重建**（零依赖脚本，AI 只补语义）、约定探测 + `.fe-index/config.json` 声明兜底。已实测 Vue2+TSX 微前端与 Angular 两个真实工程 | "前端索引"、"页面接口映射"、"改这个接口影响哪些页面"、"哪个页面调了这个接口" |
 | **[backend-index](./skills/backend-index/SKILL.md)** | 给**本地后端项目**建「模块 ↔ 目录/入口/依赖/数据表」索引：扫源码提取模块（NestJS `@Module` / Django app）→ 挂载前缀 + 接口数 + **依赖与被依赖**（穷举反查）+ **表双向**（模块→表 / 表→模块）+ 非 HTTP 入口（MQ/CQRS/定时任务）+ 专家资产探测，产出 **`{项目根}/.fe-index/{slug}/`**（index.md + modules/*.md + tables.md + meta.json），`--emit-tree` 一条命令落盘、`--check` 新鲜度闸门。**刻意只做接口级之上一层**：接口清单与契约交给 `expert-team`（Step 8.3 写 ki `tags=api`）与 `05-接口.md`，不重复建设；落地为专家团的发现入口。已实测 NestJS（3183 TS 文件 / 0.5s / 125 模块 / 806 接口）与 Django（5530 PY 文件 / 1.3s / 22 模块 / 310 表）两个真实工程 | "后端索引"、"模块索引"、"后端模块地图"、"改这个模块影响谁"、"改这张表影响哪些模块" |
 | **[index-lookup](./skills/index-lookup/SKILL.md)** | 代码索引（`.fe-index/`）的**统一查询入口**：按代码路径**自动判定该查前端页面索引还是后端模块索引**（登记表 `INDEX.md` 是唯一事实源，最长前缀匹配，不猜），输出 `kind`/`slug` + 新鲜度粗判 + provider 的 `--check` 校验命令 + 按 kind 的查询入口（前端 `apis/`、后端 `tables.md`）；无登记表/未命中/ git 不可用 → **明确降级**（grep），不阻塞。消费侧门面：**纯文档 skill（无脚本）**——读 `INDEX.md` → 路径最长前缀匹配 → 按类型查表；查询口径一律引用两个 provider，不复制 | "查索引"、"这段代码有索引吗"、"改这个要查哪个索引"、"index lookup" |
+| **[browser-evidence](./skills/browser-evidence/SKILL.md)** | 浏览器取证能力的**统一入口**：三步探测（判平台 → 试后端 → 选型声明），后端顺序 ego-browser（**仅 macOS / Windows**）→ agent-browser（全平台、零配置、自动复用已有 Chrome/Playwright 浏览器）→ Playwright（要脚本/CI/断言时）；统一截图与录屏产物契约（文件名 + `meta.json`）与 A/B1/B2/C 档位映射（对应 walkthrough A/B/C、PM L0–L3）；探测不到即降级（用户供图 → 纯静态），**绝不自行安装/升级/下载** | "能不能截图走查"、"用哪个浏览器跑"、"取证档位怎么定"、"browser evidence" |
 | **[gitnexus-index](./skills/gitnexus-index/SKILL.md)** | 管理 GitNexus 代码索引——创建（analyze 建索引）、增量更新（status 检测过期）、强制重建与修复（--force/--repair-fts/--embeddings） | "创建代码索引"、"更新代码索引"、"修复索引" |
 
 ### 可选技能（依赖第三方）

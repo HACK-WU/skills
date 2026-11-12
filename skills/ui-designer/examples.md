@@ -189,7 +189,7 @@ python3 <ui-designer skill 目录>/scripts/ui_ux_pro_max.py probe --project-root
 ### 阶段 6：demo 与截图
 
 - 按参考重写订单列表页（自有类名/结构，不复用 `ref-*`）；
-- 375 / 768 / 1440 截图对比；无浏览器工具时标 `[未截图]`。
+- 375 / 768 / 1440 截图对比（后端与命令由 `browser-evidence` 给）；判为 B / C 档时标 `[未截图]`。
 
 ### 同步闸门：用户想把主按钮改成品牌新色
 

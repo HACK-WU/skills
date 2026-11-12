@@ -218,7 +218,7 @@ timeout 300s python3 {skill-dir}/scripts/scan_frontend.py \
    - `inject:prop.m` → 证据行应有 `.m(`（注意多行链式调用：方法名可能在下一行）
    - `direct` → 证据行应有 `fetch(` / `axios.*(` / `http.*(` / `request(` 与 URL 字面量
 3. 通过率低于 9/10：**不要交付**，先检查 `apiDirs`（是否漏了服务层）、`aliases`（是否解析不到跨包符号）、`--max-depth`
-4. 浏览器可运行时的加强版：用 `use_skill("agent-browser")` / `use_skill("playwright-cli")` 实测 2-3 个高频页面，比对网络面板里实际请求的接口与索引条目是否一致
+4. 拿到 A 档取证能力时的加强版：按 `use_skill("browser-evidence")` 选后端，实测 2-3 个高频页面，比对网络面板里实际请求的接口与索引条目是否一致
 
 ---
 

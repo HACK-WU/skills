@@ -283,7 +283,7 @@ i18n key 已定义但无对应文案值
 
 按顺序尝试，**不要猜**：
 
-1. 有无浏览器类工具（截图/读取页面）→ 有：L1
+1. 调 `use_skill("browser-evidence")` 探测后端 → 判定 **A 档**（ego-browser / agent-browser / playwright 任一可用）：L1
 2. 有 `preview_url` 一类"打开预览"能力但拿不到渲染画面 → L2
 3. 项目能否本地起服务（`npm run dev` / `python -m http.server` 等）→ 能起但无截图手段：仍走 L3（起了也看不见，不如请用户拍）
 4. 都不可用 → L3（请用户上传）；用户也不提供 → L0

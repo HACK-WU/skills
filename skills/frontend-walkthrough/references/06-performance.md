@@ -21,7 +21,7 @@
 
 ### 采集降级链（按顺序尝试）
 
-1. 浏览器工具求值 Performance API / PerformanceObserver（A 档首选）
+1. 按 `browser-evidence` 判定的 A 档后端求值 Performance API / PerformanceObserver（agent-browser 还可直接 `trace start|stop` 采一份 DevTools trace 留档）
 2. Lighthouse（工具能跑就跑；跑不了请用户跑）
 3. 用户提供性能面板截图 / Lighthouse 报告
 4. 都没有 → 只报代码层反模式（`🟡`），报告头声明"未实测"
