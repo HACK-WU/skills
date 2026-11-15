@@ -575,7 +575,7 @@ TODO 标记完整格式（以 Python 为例，其他语言替换注释符号即�
 
 一致性结果：✅ 一致 / ⚠️ 存在偏差（列出偏差项）
 
-偏差处理：遗漏项补充到对应骨架文件；不一致项以设计文档为准修正骨架
+偏差处理：本阶段属于骨架冻结前，遗漏项补充到对应骨架文件，不一致项以设计文档为准修正骨架；冻结后不得沿用此入口私改，须走契约修订与回灌流程
 ```
 
 验证通过后进入阶段 6 落盘。
@@ -652,7 +652,7 @@ TODO 标记完整格式（以 Python 为例，其他语言替换注释符号即�
 🚀 后续行动选择
 1. 🔨 开始编码实施（调用 `code-implement` skill）
    骨架已就绪，code-implement 将系统化地读取骨架契约 + code-survey + dependency-docs，分批填充实现。
-2. 📝 生成实施计划（design-craft 阶段 6）
+2. 📝 生成实施计划（`work-breakdown` 拆工作项，`plan-track` 在 `.plans/` 建档）
 3. ⏭️ 暂不实施
 
 请选择 [1/2/3]：
@@ -728,5 +728,5 @@ TODO 标记完整格式（以 Python 为例，其他语言替换注释符号即�
 - 骨架编码实施：`code-implement` skill（系统化地从骨架填充实现，参考 code-survey + dependency-docs）
 - 并行任务调度：`task-dispatch` skill（**同会话内**同批顺序无关时自动调用）
 - 跨会话并行交付（骨架核验 + 切片 + 批次）：`delivery-slicing` skill
-- 实施计划生成：design-craft 阶段 6
+- 实施计划生成：`work-breakdown`（工作项）+ `plan-track`（`.plans/` 活台账）
 - 实现结果归档：`implementation-report` skill
