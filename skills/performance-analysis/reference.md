@@ -44,7 +44,7 @@
 | 单条循环写入 | 循环内逐条 insert/update | 缺批量写入 |
 | 事务范围过大 | 事务内含远程调用 / 大循环 | 锁持有时间长 |
 
-**验证方法**：`EXPLAIN ANALYZE` 前后对比；统计单请求 SQL 条数与总耗时；连接池活跃数监控。
+**验证方法**：执行计划前后对比（线上 `EXPLAIN` 不带 ANALYZE / 测试环境 `EXPLAIN ANALYZE`）；统计单请求 SQL 条数与总耗时；连接池活跃数监控。
 
 ### 第 3 层：缓存
 
@@ -138,7 +138,7 @@
 | Java | 线程池配置、Full GC、MyBatis N+1、锁竞争、连接池 | `async-profiler`、JFR、jstack、Arthas |
 | Go | goroutine 泄漏、channel 阻塞、内存分配率、defer 在热路径 | pprof（cpu/heap/goroutine）、trace |
 | Node.js | 事件循环阻塞、同步 FS、Promise 串行化、内存泄漏 | `--cpu-prof`、clinic.js、heap snapshot |
-| 数据库（MySQL/PG） | 索引失效、深分页、锁等待、连接池 | 慢查询日志、`EXPLAIN ANALYZE`、`pg_stat_statements` |
+| 数据库（MySQL/PG） | 索引失效、深分页、锁等待、连接池 | 慢查询日志、`EXPLAIN`（线上）/ `EXPLAIN ANALYZE`（测试）、`pg_stat_statements` |
 | Redis | 大 key、热 key、命中率、管道缺失 | `SLOWLOG`、`INFO stats`、命中率监控 |
 | 网关 / Nginx | 连接数、TLS 握手、超时配置、缓冲 | access log 耗时字段、连接数监控 |
 
@@ -170,7 +170,7 @@
 
 ## 四、证据采集命令速查
 
-> 用途：S2 模式下为「待验证清单」配套给出可执行的采集方法。**本 skill 不执行压测**，下列命令供用户在合适环境执行。
+> 用途：S2 模式下为「待验证清单」配套给出可执行的采集方法。**本 skill 不执行压测**，下列命令供用户在合适环境执行。**线上环境只用只读命令**：`EXPLAIN ANALYZE`、`SET GLOBAL` 开慢日志这类会真实执行或改配置的，只在本地 / 测试环境用。
 
 | 目标 | 命令 / 方式 |
 |------|-------------|
@@ -181,7 +181,8 @@
 | Java 线程/锁 | `jstack <pid> > dump.txt`（间隔 5s 取 3 次对比 BLOCKED） |
 | Go 协程 | `curl http://host/debug/pprof/goroutine?debug=2` |
 | MySQL 慢查询 | 开启 slow log：`SET GLOBAL slow_query_log=ON; SET GLOBAL long_query_time=1;`；分析：`mysqldumpslow -s t -t 10` |
-| SQL 执行计划 | `EXPLAIN ANALYZE <sql>`（PG/MySQL 8.0.18+） |
+| SQL 执行计划（测试 / 本地） | `EXPLAIN ANALYZE <sql>`（PG/MySQL 8.0.18+，**会真实执行查询**，勿用于线上） |
+| SQL 执行计划（线上） | `EXPLAIN <sql>`（不带 ANALYZE；`debug` 的 `check_readonly.py` 会按关键字阻断任何含 ANALYZE 的写法） |
 | PG 统计 | `SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 10;` |
 | Redis 慢命令 | `SLOWLOG GET 20`；`INFO stats`（查 keyspace_hits/misses 算命中率） |
 | 基线压测 | `wrk -t4 -c100 -d30s --latency <url>`；`k6 run script.js` |
@@ -970,11 +971,152 @@ xychart-beta
 | 12 | 落盘与头信息 | 路径正确；报告头含 对象 / 负载 / 模式 / 档位 / 日期 / 版本；含产品侧建议时注明 PM 出处 | 缺版本与日期、PM 结论无出处 |
 | 13 | 占位符清理 | 在**正文**（排除代码块内 mermaid 的花括号）搜 `{` `}` `[待补]`：该补的已补，确需保留的都在「待补数据」清单里 | 骨架占位符残留；误报图语法 |
 | 14 | 验证计划 | 每项优化都有验证方式与判据；产品侧项有产品判据（退让 = 仍可接受 / 改进 = 体验不降反升） | 产品侧项无判据 |
+| 15 | 探针记录 | 附录有探针表且含**证伪 / 未收敛**项；第四章每条 🟢 都能看出是**生产实测还是本地探针**（标 P-ID 与外推边界）；`.perf/` 脚本保留可复跑；`PERF-PROBE` 已清理 | 只留证实项（确认偏误）；本地结论写成生产结论；插桩残留 |
 
 ### 10.3 记录与未通过处理
 
 - 报告附录加一行：`交付自查：第 {N} 轮通过（修复 {k} 项：{一句话}）`；关键项**带证据**而非只写 ✅（如"内部用语 0 命中 / 锚点 9 条可跳 / 🔴 仅出现在待验证清单"）
-- ⚡ 轻量档：不落盘，只跑 4 项核心（结论分级 / 数字一致 / 内部用语 / 占位符清理）；「读回」对象是**对话中已输出的报告正文**（向上翻回，不凭记忆），在对话里给一行自查结论
+- ⚡ 轻量档：不落盘，只跑 4 项核心（结论分级 / 数字一致 / 内部用语 / 占位符清理）；「读回」对象是**对话中已输出的报告正文**（向上翻回，不凭记忆），在对话里给一行自查结论；**若本轮跑过探针，加核第 15 项**（探针台账落 `.perf/`，不受轻量档豁免）
 - **3 轮后仍有 ❌** → 报告头加 `⚠️ 自查未通过项：{列项}`，交付时显式说明，**禁止静默交付**
 - 自查发现"规则之间打架"或某条规则在本报告不适用 → 在附录「自查说明」写清例外的理由，**不要偷偷跳过**
 - 自查是底限，不是上限：重要报告可在自查后再交 `use_skill("challenger")` 做对抗式复核
+
+---
+
+## 十一、探针验证手册
+
+> 配套 [SKILL.md](SKILL.md) 阶段 3.5。**探针 = 为验证一个性能假设而临时构造的最小实验**。它回答"是不是这个原因"，不回答"能省多少"。
+
+### 11.1 该不该做探针
+
+| 情形 | 做？ | 理由 |
+|------|------|------|
+| 两个候选瓶颈都像，缺数据分主次 | 做 | 探针是最便宜的判别器，比让用户回去压测快得多 |
+| 🟡 静态可证但不知量级（"有 N+1"） | 做 | 静态只能证"存在"，探针能证"占多少" |
+| 差分后仍剩多个嫌疑层 | 做 | 单变量对照可逐层排除 |
+| 已有 🟢 APM / 火焰图明确指向某段 | 不做 | 再测一遍是浪费；直接进阶段 4 |
+| 需要造百万行数据 / 改表结构才能测 | 不做 | 成本高于收益，进「待验证清单」并写采集方案 |
+| 目标是线上环境 | 不做 | 线上只读；连只读接口连跑 N 次也构成压测 |
+| 要测的是并发能力 / QPS 拐点 | 不做 | 交 `demo-verify` / `e2e-testing` |
+
+### 11.2 六型模板
+
+**P1 外部复现（端到端单请求计时）**
+
+> 以下三份模板是**骨架**：导入、fixture、被测函数按项目替换（示例用 `httpx` 与 `load_fixture`，未声明依赖）。
+
+```python
+# .perf/{对象}-{date}/probes/p1_baseline.py
+import statistics, time
+import httpx
+
+BASE, N = "http://127.0.0.1:8000", 20
+
+def once() -> float:
+    t0 = time.perf_counter()
+    r = httpx.get(f"{BASE}/api/orders", params={"page_size": 20}, timeout=30)
+    r.raise_for_status()
+    return (time.perf_counter() - t0) * 1000
+
+for _ in range(2):      # 预热丢弃：连接池 / 缓存 / JIT 冷启动
+    once()
+
+samples = sorted(once() for _ in range(N))
+print(f"P1 N={N} median={statistics.median(samples):.1f}ms "
+      f"p95={samples[min(N - 1, int(N * 0.95))]:.1f}ms")
+```
+
+**P2 单变量对照（唯一变量 + A/B）**
+
+不给通用代码——关键是纪律：**同一份数据、同一入参、同一版本、同一台机器**，只动一个变量。常见四种可控变量：
+
+| 变量 | 怎么动 | 看什么 |
+|------|--------|--------|
+| 某次下游调用 | 用桩 / mock 直接返回，删掉真实往返 | 差值 = 该调用的真实成本（含网络） |
+| 一条 SQL | 换等价但走索引的写法 | 差值 = 索引缺失的代价 |
+| 连接池 / 线程池上限 | 改环境变量或配置中心，**跑完还原** | 是否有排队（差值随并发上升才明显） |
+| 缓存开关 | 先跑冷（关缓存）再跑热 | 差值 = 缓存贡献；注意冷热顺序不能反 |
+
+**P3 局部 benchmark（真实量级输入）**
+
+```python
+import statistics, time
+from app.services.project import build_project_dto
+
+payload = load_fixture("projects_20.json")   # 必须与线上单页条数同量级
+
+def run() -> float:
+    t0 = time.perf_counter()
+    build_project_dto(payload)
+    return (time.perf_counter() - t0) * 1000
+
+run()                                          # 预热
+samples = sorted(run() for _ in range(30))
+print("P3 median", round(statistics.median(samples), 2), "ms")
+```
+
+**P4 临时插桩（只加观测，不加逻辑）**
+
+```python
+t0 = time.perf_counter()
+rows = repo.list_orders(tenant_id)             # 原有逻辑一行不改
+print(f"PERF-PROBE seg=db_query rows={len(rows)} ms={(time.perf_counter() - t0) * 1000:.1f}")
+```
+
+- 统一 `PERF-PROBE` 前缀，便于全仓 `grep` 清理
+- 高频路径用**计数聚合**（累加后一次打印），不要每条请求 `print` 大对象——插桩本身会把被测对象拖慢
+- 只允许出现在本地 / 测试分支，不提交
+
+**P5 / P6 命令**
+
+| 目的 | 命令 |
+|------|------|
+| Python 热点 | `py-spy record -o flame.svg --pid <pid> --duration 30` |
+| Java 热点 | `./profiler.sh -d 30 -f flame.html <pid>` |
+| Go 热点 | `go tool pprof http://host/debug/pprof/profile?seconds=30` |
+| 执行计划 | 测试 / 本地 `EXPLAIN ANALYZE`；线上 `EXPLAIN`（不带 ANALYZE，会被 `check_readonly.py` 阻断的是 ANALYZE 写法） |
+| 数据规模 | `SELECT count(*) / pg_class.reltuples`、索引基数、`pg_stat_statements` |
+| 缓存命中 | `INFO stats` 算 `keyspace_hits / (hits + misses)` |
+
+### 11.3 判据怎么写
+
+**先写判据，再跑探针**。判据必须含三样：方向、量级、判定阈值。
+
+| 差 | 好 |
+|----|----|
+| "看看快不快" | "若 N+1 是主因，批量改写后列表段应从 ~800ms 降到 <200ms（≥4 倍）；若只降到 700ms 则假设不成立" |
+| "优化后应该有提升" | "若缓存是主因，关缓存与开缓存的差值应 ≥300ms；实测差 40ms → 证伪，缓存不是本次主因" |
+| "可能是索引问题" | "若缺索引，加了索引的等价 SQL 应比原 SQL 快 3 倍以上；实测 1.1 倍 → 不是索引问题" |
+
+跑完与判据不符 → **记证伪**，不许回头改判据、不许挑一次好看的结果解释。
+
+### 11.4 结果怎么读
+
+- 取**中位数 + P95**，不取最好那一次；差异 <10% 视为噪声带（与阶段 2.4 显著性门槛同口径）；**样本 <20 只报中位数**（此时 P95 近似等于最大值，报出来是误导），并注明样本量
+- 预热至少丢弃 1-2 次（连接池、JIT、缓存、页缓存都要热起来）
+- 跑探针时别并行跑别的重活；记录机器规格、运行时版本、数据量
+- 探针与 APM / 监控冲突时：**以生产实测为准**，并写明"探针未复现生产现象，差异可能在 {数据量 / 配置 / 版本}"
+- 报告里写的是**区间与适用边界**，不是孤零零一个数
+
+### 11.5 清理清单（探针结束前逐项过）
+
+| # | 检查 | 命令 / 做法 |
+|---|------|-------------|
+| 1 | 插桩归零 | `grep -rn "PERF-PROBE" . --exclude-dir=.git` → 0 命中 |
+| 2 | 工作区干净 | `git status` 不应出现 `.perf/`（首次创建时已写 `.perf/.gitignore` 内容 `*`）；产品文件无残留改动 |
+| 3 | 配置还原 | 连接池 / 线程池 / 开关全部改回原值，并记录"已还原" |
+| 4 | 临时数据清理 | 临时表、临时租户、带前缀的造数记录删除 |
+| 5 | 进程清理 | 探针起的服务 / 后台任务全部停止 |
+| 6 | 证据留存 | `.perf/{对象}-{date}/probes/` 保留脚本与脱敏输出，`probes.md` 记 `清理状态` |
+
+### 11.6 常见坑
+
+1. **只跑一次就看数字**：GC、缓存冷启动、网络抖动都会让单次结果偏 2-3 倍
+2. **拿第一次当稳定值**：第一次含连接建立 / JIT / 冷缓存，必须预热后再计时
+3. **A/B 数据量不同**：A 用 1 万行、B 用 100 万行 → 差异归因到"改动"上，实际是数据规模
+4. **改完 A 忘还原就跑 B**：B 跑的还是 A 的配置，两组都不可信
+5. **插桩本身改变结论**：逐条 `print` 大对象 / 同步写盘，把被测路径拖慢成新瓶颈
+6. **本地库替代生产库**：SQLite / 内存库把 N+1 的网络往返抹平，本地看着"没问题"——这是本地探针外推失败的头号原因
+7. **在开发机跑 benchmark**：CPU 降频、别的服务抢核、省电模式，数字不可复现
+8. **用 `sleep` 测耗时**：单元测试里加等待来"测"性能，测的是调度不是代码
+9. **只记证实、不记证伪**：报告里只留支持假设的那条探针 = 确认偏误，也是复核时最先被质疑的点
