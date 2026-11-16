@@ -172,7 +172,7 @@ document_type: requirement             # 文档类型枚举（见下方文档类
 | `design` | 技术设计文档 |
 | `interaction` | 交互设计文档 |
 | `review` | 审查/评审报告 |
-| `demo` | 验证报告 |
+| `demo` | demo 类产物，按子目录区分语义：`demo/ui/` = UI 视觉方案稿与 demo 代码（`ui-designer`），`demo/verify/` = 技术验证报告与原型（`demo-verify`）。**不新增 document_type**，只靠子目录分离 |
 | `test` | 测试相关文档 |
 | `report` | 实现总结报告 |
 | `slice` | 交付切片（砖头包 + 批次表，`delivery-slicing` 产出） |
@@ -267,7 +267,8 @@ req update {REQ-NNN} --docs set {路径1},{类型1};{路径2},{类型2}
 | mock 台账 | `sub-requirements/MOCK_LEDGER.md,slice` |
 | 交互设计 | `design/interaction-design.md,design` |
 | 设计评审 | `design/design-review.md,review` |
-| Demo 验证 | `demo/verify-report.md,demo` |
+| Demo 验证（技术） | `demo/verify/verify-report.md,demo` |
+| UI demo（视觉方案稿） | `demo/ui/{slug}/index.html,demo` |
 | 测试计划 | `test/test-plan.md,test` |
 | 测试报告 | `test/test-report.md,test` |
 | 代码审查 | `review/code-review.md,review` |
@@ -435,8 +436,12 @@ req delete {REQ-NNN} --force
     │   ├── interaction-design.md   # 交互设计
     │   └── design-review.md        # 设计评审报告
     ├── demo/
-    │   ├── verify-report.md        # 验证报告
-    │   └── [demo 代码文件]
+    │   ├── ui/                     # UI 视觉方案稿（ui-designer 产出，实施期只读基线）
+    │   │   └── {slug}/
+    │   │       └── index.html      # 单文件零构建 demo
+    │   └── verify/                 # 技术验证（demo-verify 产出）
+    │       ├── verify-report.md    # 验证报告
+    │       └── [验证原型代码]
     ├── test/
     │   ├── test-plan.md            # 测试计划
     │   └── test-report.md          # 测试报告
@@ -479,7 +484,8 @@ security/
 | 数据流/模型 | data-flow-model | `design/data-flow.md` |
 | 交互设计 | interaction-design | `design/interaction-design.md` |
 | 设计评审 | design-review | `design/design-review.md` |
-| Demo 验证 | demo-verify | `demo/verify-report.md` + 代码 |
+| Demo 验证（技术） | demo-verify | `demo/verify/verify-report.md` + 代码 |
+| UI demo（视觉方案稿） | ui-designer | `demo/ui/{slug}/index.html`（确认后迁移归档，只读基线） |
 | 测试计划 | - | `test/test-plan.md` |
 | 测试报告 | - | `test/test-report.md` |
 | 代码审查 | code-review | `review/code-review.md` |
@@ -594,11 +600,12 @@ req list --no-color
 | delivery-slicing | P1 | 写入型 | `sub-requirements/{SR-XX}-{名称}/` + `sub-requirements/INDEX.md` |
 | integration-merge | P1 | 写入型 | `sub-requirements/INTEGRATION.md` |
 | interaction-design | P1 | 写入型 | `design/interaction-design.md` |
+| ui-designer | P1 | 写入型 | `design/ui-design.md` + `demo/ui/{slug}/`（demo 确认后迁移归档并声明只读） |
 | design-review | P1 | 读写型 | `design/design-review.md` |
 | code-change-impact | P1 | 读写型 | `review/code-change-impact.md` |
 | code-review | P2 | 读写型 | `review/code-review.md` |
 | challenger | P2 | 读写型 | `review/challenge-report.md` |
-| demo-verify | P2 | 写入型 | `demo/verify-report.md` + 代码 |
+| demo-verify | P2 | 写入型 | `demo/verify/verify-report.md` + 代码 |
 | review-panel | P2 | 读写型 | `review/review-panel.md` |
 | api-design | P1 | 写入型 | `api/INDEX.md` + `api/{module}.md` |
 | scenario-rehearsal | P1 | 读写型 | `review/scenario-rehearsal.md` |

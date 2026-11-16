@@ -264,10 +264,12 @@ req list --id {REQ-NNN} --deps
 
 ```bash
 req update {REQ-NNN} \
-  --docs add demo/verify-report.md,demo --changelog "完成设计验证"
+  --docs add demo/verify/verify-report.md,demo --changelog "完成设计验证"
 ```
 
-3. **demo 代码迁移**：将 `.demo-verify/` 下的 demo 代码复制到需求目录的 `demo/` 子目录（而非 `.demo-verify/`），作为需求产出物的持久化部分。复制完成后删除 `.demo-verify/` 临时目录。
+3. **demo 代码迁移**：将 `.demo-verify/` 下的 demo 代码复制到需求目录的 `demo/verify/` 子目录（而非 `.demo-verify/`），作为需求产出物的持久化部分。复制完成后删除 `.demo-verify/` 临时目录。
+
+> **为什么是 `demo/verify/`**：`demo/` 下按来源分流——`demo/ui/` 是 `ui-designer` 的视觉方案稿（实施期只读基线），本文档是**技术可行性验证原型**。两者语义不同（"界面长这样" vs "这方案能跑吗"），混在同一层会让实施期分不清"该按哪份铺页面"。
 
 4. **错误处理**：
    - 需求 ID 不存在 → 提示用户先创建需求，跳过集成
@@ -277,5 +279,5 @@ req update {REQ-NNN} \
 
 | 产出物 | 存储路径 | docs 类型 |
 |--------|----------|-----------|
-| 验证报告 | `demo/verify-report.md` | `demo` |
-| demo 代码 | `demo/` 目录下 | — |
+| 验证报告 | `demo/verify/verify-report.md` | `demo` |
+| demo 代码 | `demo/verify/` 目录下 | — |

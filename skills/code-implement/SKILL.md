@@ -22,7 +22,7 @@ design-craft → ... → design-to-code → code-implement → implementation-re
 
 - **输入**：design-to-code 产出的骨架文件 + skeleton-status.md + code-survey 调研结果 + dependency-docs 依赖文档；**或** `delivery-slicing` 产出的砖头包（并行窗口模式）
 - **输出**：已实现的代码文件（方法体已填充、TODO 已解决、契约注释保留为实施参考）
-- **边界**：只管"按骨架契约填充实现"，不管"骨架怎么生成"（design-to-code 负责）和"实现后怎么归档"（implementation-report 负责）
+- **边界**：只管"按骨架契约填充实现"，不管"骨架怎么生成"（design-to-code 负责）和"实现后怎么归档"（implementation-report 负责）；**前端壳填数据也归本 skill**，但约束更强（见核心原则 8）
 
 ## 运行模式
 
@@ -111,6 +111,7 @@ design-craft → ... → design-to-code → code-implement → implementation-re
 5. **TODO 就地解决**：修改文件的 TODO 标记在编码时就地解决，不集中处理
 6. **契约验证**：编码完成后验证实现是否满足骨架契约（签名一致、异常覆盖、行为完整）
 7. **骨架注释为准**：当骨架契约注释与设计文档内容不一致时，**以骨架中的契约注释为准**——骨架是 design-to-code 对设计文档的精确转译，如果转译过程中有调整（如接口签名微调、异常场景补充），骨架注释才是编码 AI 应遵循的最终契约
+8. **前端壳只填数据接入点**：`design-to-code` 铺的静态页面壳，接逻辑时**只改「数据接入点」注释标出的区域**——不重排结构、不重调样式、不动 demo 已定的间距与层级。壳确实需要改（缺状态 / 字段对不上 / 断点不合理）→ **写阻塞回报**，由用户决定改 demo 重铺还是接受偏离；**不许就地改样式让代码跑通**——那正是"实现吃掉设计"的入口
 
 ## 工作流总览
 

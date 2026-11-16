@@ -62,6 +62,17 @@ S-01 登录场景
 </style>
 ```
 
+### 阶段 6.6 归档（用户确认 demo 后）
+
+```text
+📌 demo 只读基线
+路径：.requirements/design/2026-11-16-登录页优化/demo/ui/login-page/　｜　版本：a1b2c3d
+已确认页面：P1 登录页　｜　未确认页面：无
+实施期规则：结构与样式不可改；偏差须回报，不得就地改 demo
+```
+
+`req update --docs add demo/ui/login-page/index.html,demo` 已注册。实施期由 `design-to-code` 的「前端页面骨架（壳）」分支按它铺生产页面（可与后端骨架并行）。
+
 ---
 
 ## 示例 2：仪表盘（复杂多页，关键页示范）

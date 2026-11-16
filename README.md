@@ -185,10 +185,10 @@ flowchart TD
 | **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，出报告前做**需求缺口六维回扫**，一次成型出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演）；发现属其他 skill 职责的问题时**主动接力**（UI 方案 → `ui-designer`、Bug → `debug` 定位，改码前停）；界面类结论**必附基本 UI ASCII 图**（`ui-to-ascii`），关系表达善用文字树 | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
 | **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化；快速实现路径默认交接 `plan-track` 建档 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
-| **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），先出 **ASCII 布局图定稿（demo 前置闸门）**，可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo；可复用项目级视觉参考库（`ui-tools/design-reference/`），优先用已有组件库 + 主题 token，按参考重实现而非复制 | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
+| **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），先出 **ASCII 布局图定稿（demo 前置闸门）**，可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo；可复用项目级视觉参考库（`ui-tools/design-reference/`），优先用已有组件库 + 主题 token，按参考重实现而非复制；**demo 确认后归档到需求目录 `demo/ui/{slug}/` 并登记确认版本、转为实施期只读基线** | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
 | **[work-breakdown](./skills/work-breakdown/SKILL.md)** | 将需求拆分为完全独立的垂直切片工作项，每个切片贯穿所有层 | "拆成独立任务"、"怎么并行开发" |
 | **[data-flow-model](./skills/data-flow-model/SKILL.md)** | 构建 ER 图和数据流图，支持并发/分布式/实时流/批处理等场景分析 | "画 ER 图"、"数据怎么流"、"设计数据模型" |
-| **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构；涉及页面样式 / 布局时**先出 ASCII 布局图并经用户确认**（阶段 2.4）才继续设计；需求较大时另走**阶段 5.5**（判定是否多窗口并行 → **模块划分** + **骨架设计** 8 项，含数据走向预演场景），作为 `delivery-slicing` 的骨架输入 | "写设计文档"、"帮我设计"、"dd" |
+| **[design-craft](./skills/design-craft/SKILL.md)** | 将需求描述转化为面向技术评审的设计文档，默认多文档结构；涉及页面样式 / 布局时**先出 ASCII 布局图并经用户确认**（阶段 2.4）才继续设计；需求较大时另走**阶段 5.5**（判定是否多窗口并行 → **模块划分** + **骨架设计** 11 项，含数据走向预演场景），作为 `delivery-slicing` 的骨架输入；**阶段 6** 产出实施计划（`IMPL_PLAN.md`：前置层 + 批次表，标出可并行片与串行原因） | "写设计文档"、"帮我设计"、"dd" |
 | **[negative-requirement](./skills/negative-requirement/SKILL.md)** | 从正向需求出发分析负向场景，设计程序的检测、恢复和引导策略 | "错误处理"、"异常场景"、"边界情况" |
 | **[api-design](./skills/api-design/SKILL.md)** | 基于设计文档生成详细的 API 设计文档，含完整接口契约和错误码定义 | "设计 API"、"接口设计"、"api design" |
 | **[frontend-api-guide](./skills/frontend-api-guide/SKILL.md)** | 将 API 设计转化为前端可直接编码的调用流程文档，含 UI 映射和错误处理速查 | "生成前端 API 文档"、"API 调用流程" |
@@ -199,8 +199,8 @@ flowchart TD
 | **[implementation-report](./skills/implementation-report/SKILL.md)** | 需求完成后生成实现总结报告，记录最终实现效果和偏差 | "生成实现报告"、"记录完成情况" |
 | **[dependency-docs](./skills/dependency-docs/SKILL.md)** | 设计前识别并整理第三方依赖文档，每个依赖独立成文，≥2 个时 task-dispatch 并行收集 | "整理第三方依赖"、"收集 API 文档" |
 | **[code-survey](./skills/code-survey/SKILL.md)** | 设计前对代码库按需调研 13 个维度，ki 优先，≥2 个维度时 task-dispatch 并行搜索 | "代码调研"、"了解现有代码" |
-| **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速 | "生成代码骨架"、"搭骨架" |
-| **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证；含**并行窗口模式**（只填实现体、契约只读、越界即停） | "编码实施"、"填充骨架"、"实现代码" |
+| **[design-to-code](./skills/design-to-code/SKILL.md)** | 从设计文档生成代码骨架+契约级注释，同批顺序无关时 task-dispatch 并行加速；**前端页面骨架（壳）分支**：按归档 demo 铺生产栈静态页面（结构 + 样式 + 数据接入点），只等接口契约定稿、不等后端实现，可与后端骨架并行 | "生成代码骨架"、"搭骨架"、"铺前端壳" |
+| **[code-implement](./skills/code-implement/SKILL.md)** | 系统化地从骨架填充实现，参考 code-survey + dependency-docs，分批编码 + 契约验证；含**并行窗口模式**（只填实现体、契约只读、越界即停）；**前端壳只填「数据接入点」**，不重排结构 / 不重调样式 | "编码实施"、"填充骨架"、"实现代码" |
 | **[delivery-slicing](./skills/delivery-slicing/SKILL.md)** | **核验骨架 → 骨架预演（★ 骨架本身的验证机制：零上下文开工预演 / 三组测试期望值互补 / 数据走向预演 / 覆盖反向 / 独立核验方）→ 复核模块划分 → 打成 N 个可并行交付的砖头包**（目录互斥 + 契约快照 + 自包含可交接），并按依赖分级（接口级 / 数据级 / 实现级）划分批次。面向**跨对话窗 / 跨 IDE 手工并行** | "切成可并行的砖头"、"拆给多个对话窗并行做"、"交付切片" |
 | **[integration-merge](./skills/integration-merge/SKILL.md)** | 把并行产出的 N 个砖头**合流成可交付版本**：前置校验 → **片级验收**（独立验收方逐片核验验收项，只判定不修改）→ 6 项机械拒收门（越界 / 契约未改 / 依赖方向 / mock 残留 / 契约基线 / **桩残留**）→ 按 DAG 分批合流（主干常绿）→ 装配验证（契约测试**对真实实现**重跑 + 挂载点测试）→ 语义验收（契约 10 项 + 数据守恒 + 负向场景 + 关键路径 e2e）→ 逐片回滚（含重做闭环） | "拼接"、"合并各窗口产出"、"集成合流" |
 | **[module-teach](./skills/module-teach/SKILL.md)** | 系统讲解代码，两类对象——**模块讲解**（能力大纲→代码 wiki→功能推演→数据流）与**变更讲解**（commit / PR / 任意 diff 范围：变更大纲→逐处解读→影响面→意图与权衡）。设正确性核对质量闸门与 course-reviewer 双视角评审，产出 Markdown 学习材料（Mermaid 内嵌 + 复杂图 SVG 独立文件） | "讲讲这个模块"、"学习代码"、"帮我搞懂这块代码"、"讲讲这个 commit/PR 做了什么"、"这个改动是什么意思" |
