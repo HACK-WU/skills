@@ -45,8 +45,8 @@ AI 在遇到问题、解决问题或沉淀知识时，**必须先判断问题类
 ### 查找流程（遇到问题时）
 
 ```
-1. ki-search 项目记忆检索（前置 skill `ki-search-first`，use_skill("ki-search-first") 必做，
-   无论是否命中）→ 先看记忆里有什么相关内容
+1. 项目记忆检索（前置 skill `ki-search-first`，use_skill("ki-search-first") 必做，
+   无论是否命中；检索工具由该 skill 按规则调用）→ 先看记忆里有什么相关内容
 2. 判断问题类型
    ├─ 业务模块类 → use_skill("expert-lookup")
    │    → 有专家？→ 记录命中的专家（暂不加载内容）
@@ -70,8 +70,8 @@ AI 在遇到问题、解决问题或沉淀知识时，**必须先判断问题类
    ├─ 场景可复现 → use_skill("solution-capture") → 写入 .solutions/ + 更新 INDEX.md
    ├─ 模块可复用（领域专属 + 复杂度/规模达标）→ use_skill("expert-team")
    └─ 一行事实/偏好 → update_memory
-3. 判断值得沉淀的，均须做 ki-search 项目记忆沉淀（必须步骤）：
-   - 将专家团/解决方案产出的内容**拆分**后**分步骤写入**项目记忆（ki-search 可搜索，
+3. 判断值得沉淀的，均须做项目记忆沉淀（必须步骤，写入走 `use_skill("ki-memory-write")`）：
+   - 将专家团/解决方案产出的内容**拆分**后**分步骤写入**项目记忆（可语义检索，
      后续可直接检索复用）
    - 只记录**有价值的关键内容**，不全量复制原文。典型可沉淀信息：
      - **专家团类**：模块关键类/方法的代码位置（如 `OrderService.createOrder` →

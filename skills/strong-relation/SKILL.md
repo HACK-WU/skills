@@ -9,7 +9,7 @@ description: 识别并判定跨文件的强关联关系（契约 / 业务耦合�
 
 **目的**：把"浏览完整代码才能发现的跨文件强耦合"显性化、可检索化——解决 code review 或修改代码时，改了 A 却不知道必须连带改 B 的风险。
 
-**功能**：识别跨模块/跨文件的强关联（契约耦合 + 业务耦合），沿契约/结构线与语义/行为线分别判定方向与强度，按功能模块分组写入 ki-search，供后续检索感知。
+**功能**：识别跨模块/跨文件的强关联（契约耦合 + 业务耦合），沿契约/结构线与语义/行为线分别判定方向与强度，按功能模块分组写入 ki 记忆（经 `use_skill("ki-memory-write")`），供后续检索感知。
 
 **使用场景**：
 - expert-team 创建专家资产完成后，自动调用本 skill 记录该模块与外部的强关联
@@ -19,13 +19,13 @@ description: 识别并判定跨文件的强关联关系（契约 / 业务耦合�
 ## 定位
 
 ```
-expert-team 落盘模块专家 → strong-relation（本 skill）→ 识别强关联 → 按模块分组写 ki-search
+expert-team 落盘模块专家 → strong-relation（本 skill）→ 识别强关联 → 按模块分组写 ki 记忆
                                                                             ↓
-                        后续 code review / 修改时，ki-search 检索即可感知"改A必改B"
+                        后续 code review / 修改时，经 use_skill("ki-memory-lookup") 检索即可感知"改A必改B"
 ```
 
 - **输入**：目标模块（默认 expert-team 刚完成的模块；手动时指定模块路径/范围）+ 可选操作意图
-- **输出**：强关联原子记录（写入 ki-search，按功能模块分组）
+- **输出**：强关联原子记录（写入 ki 记忆，按功能模块分组）
 - **边界**：本 skill **记录"模块间"的强耦合关系**，不深挖单模块内部知识（那是 expert-team 的事）；不画 ER 图/数据流图（那是 data-flow-model 的事）；不分析某次具体改动的影响（那是 code-change-impact 的事）
 
 ## 强关联的定义（识别什么）
@@ -74,7 +74,7 @@ Step 0 环境检测 → Step 1 定位模块 → Step 2 识别关联 → Step 3 �
 
 ### Step 0：环境检测
 
-1. 确认 ki 可用（`ki_manage_index_list` / `ki_search` 可调用）
+1. 确认 ki MCP 可用（`ki_manage_index_list` / `ki_search` 可调用）
 2. 确认 GitNexus 是否可用（`context`/`impact`/`query`）——可用则辅助识别，不可用则纯读源码（不阻塞）
 
 ### Step 1：定位目标模块
@@ -127,7 +127,7 @@ Step 0 环境检测 → Step 1 定位模块 → Step 2 识别关联 → Step 3 �
 
 ### Step 5：校验
 
-写入后，用 `ki_query_group`（group = `关联关系/{功能模块名}`，**`mode="full"`**）确认关联原子已归入正确子分组，抽查 1-2 条确认已可检索。
+写入后，用 ki MCP 的 `ki_query_group`（group = `关联关系/{功能模块名}`，**`mode="full"`**）确认关联原子已归入正确子分组，抽查 1-2 条确认已可检索。
 
 > ⚠️ **校验必须显式 `mode="full"`**：默认 `mode="hot"` 只返回最热 5 条，新写入的关联若不在其中会被误判为"写入失败"。
 

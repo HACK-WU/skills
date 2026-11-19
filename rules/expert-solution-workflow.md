@@ -2,7 +2,7 @@
 description: 资产复用工作流规则。区分"业务专家团"与"解决方案"两类可复用资产的本质差异；遇到业务模块任务先查 expert-lookup，遇到具体技术问题先查 solution-lookup，解决后可复用问题用 solution-capture 沉淀、可复用模块用 expert-team 沉淀。
 alwaysApply: true
 enabled: true
-updatedAt: 2026-08-04T00:00:00.000Z
+updatedAt: 2026-11-19T00:00:00.000Z
 provider: user
 ---
 
@@ -37,7 +37,7 @@ AI 在遇到问题、解决问题或沉淀知识时，**必须先判断问题类
 ### 查找流程（遇到问题时）
 
 ```
-1. ki-search 项目记忆检索（前置规则 `ki-search-first` 必做，无论是否命中）→ 先看记忆里有什么相关内容
+1. 项目记忆检索（前置规则 `ki-search-first` 必做，无论是否命中；检索由 use_skill("ki-search") 按规则执行）→ 先看记忆里有什么相关内容
 2. 判断问题类型
    ├─ 业务模块类 → use_skill("expert-lookup")
    │    → 有专家？→ 记录命中的专家（暂不加载内容）
@@ -60,8 +60,8 @@ AI 在遇到问题、解决问题或沉淀知识时，**必须先判断问题类
    ├─ 场景可复现 → use_skill("solution-capture") → 写入 .solutions/ + 更新 INDEX.md
    ├─ 模块可复用（领域专属 + 复杂度/规模达标）→ use_skill("expert-team")
    └─ 一行事实/偏好 → update_memory
-3. 判断值得沉淀的，均须做 ki-search 项目记忆沉淀（必须步骤）：
-   - 将专家团/解决方案产出的内容**拆分**后**分步骤写入**项目记忆（ki-search 可搜索，后续可直接检索复用）
+3. 判断值得沉淀的，均须做项目记忆沉淀（必须步骤，写入走 use_skill("ki-memory-write")）：
+   - 将专家团/解决方案产出的内容**拆分**后**分步骤写入**项目记忆（可语义检索，后续可直接检索复用）
    - 只记录**有价值的关键内容**，不全量复制原文。典型可沉淀信息：
      - **专家团类**：模块关键类/方法的代码位置（如 `OrderService.createOrder` → `pkg/order/service.go:120`）、核心设计决策与原因、模块间依赖要点、已知坑
      - **解决方案类**：工具函数的代码位置（如 `utils/time.py::parse_iso8601`）、某个类的使用小技巧（如 `HttpClient` 需先 `set_retry` 否则默认无超时）、零碎但关键的踩坑经验（如"JDK17 下该库需加 `--add-opens`"）、配置项特殊值
