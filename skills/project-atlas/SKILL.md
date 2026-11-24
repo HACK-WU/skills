@@ -15,7 +15,7 @@ description: 把项目的架构与核心链路装配成一个可切换视图的�
 - **视图策划**：按项目实际结构决定出哪几张图、分几个分类、每张图回答什么问题（先出计划，用户确认后才生成）
 - **配置驱动渲染**：一份 `atlas.config.json` 管标题 / 大纲 / 层级 / 页面清单 / 每页图源与代码映射；框架在运行时读取并渲染，**换 JSON 刷新即生效，不改一行代码**
 - **内置示例兜底**：没有配置时框架渲染自带示例（打开即有效果页），配置就位后自动切换成真实图集
-- **导出 Markdown**：页面顶栏「导出 ↓」或 `export_markdown.py`，把图集导成 **Markdown 目录包**（zip，按大纲建目录，每页一个 `.md` + `images/*.svg`）。ZIP 由前端自写（`CompressionStream` + 手写文件头），不引第三方库；纯前端、无需后端与重跑构建
+- **导出 Markdown**：页面顶部「导出 ↓」或 `export_markdown.py`，把图集导成 **Markdown 目录包**（zip，按大纲建目录，每页一个 `.md` + `images/*.svg`）。ZIP 由前端自写（`CompressionStream` + 手写文件头），不引第三方库；纯前端、无需后端与重跑构建
 - **节点级代码关联**：点击节点打开右侧抽屉，显示 `路径:起-止行` + commit + 一句 why + 行号对齐的高亮代码
 - **片段采集与校验**：脚本从源码抽取片段，双向校验"节点 ↔ 片段"（零孤儿、零悬空）
 - **字体去重**：archify 每张 SVG 内嵌 3 份 base64 字体（占文件 27%），装配时提到壳层去重，实测单图 330 KB → 235 KB
@@ -172,7 +172,7 @@ cd {目标目录} && python3 -m http.server 8000   # 打开 http://localhost:800
 
 ```
 读到 atlas.config.json  → 按配置渲染（pages 内联在配置里；图源按 views/{id}.svg 拉取并内联进 DOM）
-读不到（双击 file://）  → 渲染内置示例配置（打开即有效果页，顶栏标「示例」）
+读不到（双击 file://）  → 渲染内置示例配置（打开即有效果页，页首信息条标「示例」）
 ```
 
 **要发给别人 / 要双击就能看**时，才导出单文件（把配置、图源、片段烘焙进 HTML）：
@@ -256,8 +256,8 @@ python3 <project-atlas skill 目录>/scripts/check_atlas.py . --html dist/atlas.
 
 | 检查 | 做法 |
 |---|---|
-| 内置示例态 | 双击 `framework/index.html`（同目录无配置）→ 渲染示例、顶栏带「示例」、节点可点看示例代码 |
-| 真实配置态 | 框架 + `atlas.config.json` + 本地服务 → 顶栏无「示例」、图源来自 `views/`、点击是真实源码 |
+| 内置示例态 | 双击 `framework/index.html`（同目录无配置）→ 渲染示例、页首信息条带「示例」、节点可点看示例代码 |
+| 真实配置态 | 框架 + `atlas.config.json` + 本地服务 → 页首信息条无「示例」、图源来自 `views/`、点击是真实源码 |
 | 导出文件态 | `build_atlas.py` 产出的单文件双击 → 与真实配置态一致、无外链、无「示例」标记 |
 | 加载失败提示 | 故意写错 `svg` 路径 → 图区显示具体路径与错误，不静默空白 |
 | 三档视口 | 1440 / 900 / 375 → 侧栏折叠、抽屉不遮挡图体（<1000px 走底部抽屉） |
@@ -294,7 +294,7 @@ python3 <skill>/scripts/pack_atlas.py <图集目录> dist/ --zip    # 额外打 
 ### 8.2 导出 Markdown（给改的人 / 进文档库）
 
 ```bash
-# 页面：顶栏「导出 ↓」一点即可（纯前端，无需脚本）
+# 页面：顶部「导出 ↓」一点即可（纯前端，无需脚本）
 # 命令行：
 python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 xxx.zip
 ```
@@ -357,7 +357,7 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
 | `pages[].code[].why` | 必填一句话，列出时显示在右侧作为"这行为什么值得看" |
 | `pages[].code[].why` | 必填一句话，说明"为什么看这段"；空则采集脚本拦下 |
 | 可点态 | **不在 SVG 里标**，前端按 `code[]` 运行时打标（有代码 `data-coded`、无代码 `data-bare`）——加图不必改 SVG、不必改脚本 |
-| `branch` | 生成基线分支名（与 `baseline`、`generated_at` 一起渲染在顶栏基线条上） |
+| `branch` | 生成基线分支名（与 `baseline`、`generated_at` 一起渲染在页首信息条上） |
 
 > 新增一张图的完整动作：写图源 → 导 SVG 到 `views/{id}.svg` → 在 `pages` 里加一条 → 在 `nav` 里挂一行。**四步全是配置与素材，框架代码零改动。**
 

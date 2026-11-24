@@ -29,27 +29,21 @@ body{margin:0;color:var(--ink);
 ::selection{background:#d8e7dc;color:var(--accent-2)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:5px}
 
-/* ── 顶栏：细、贴边、半透明 ── */
-.top{position:sticky;top:0;z-index:30;height:56px;display:flex;align-items:center;gap:16px;
-  padding:0 32px;background:rgba(250,250,247,.84);backdrop-filter:blur(18px) saturate(140%);
-  border-bottom:1px solid rgba(215,222,213,.82);box-shadow:0 1px 12px rgba(23,33,28,.025)}
-.top .brand{font-size:13.5px;font-weight:700;letter-spacing:.015em;white-space:nowrap;color:#14251c}
-.top .sub{font-size:12.5px;color:var(--ink-3);padding-left:16px;border-left:1px solid var(--line)}
-.buildbar{display:flex;align-items:center;gap:9px;padding:10px 32px 0;
+.buildbar{display:flex;align-items:center;gap:9px;padding:14px 32px 0;
   font:11px var(--mono);color:#8b968c;
   letter-spacing:.02em;flex-wrap:wrap}
 .buildbar b{color:#2b3b31;font-weight:600}
 .buildbar .bb-text{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0}
 .buildbar .dot{width:3px;height:3px;border-radius:50%;background:#c7d0c7;flex:none}
+.buildbar .bb-meta{margin-left:auto;font:10.5px var(--mono);color:#9aa49b;font-variant-numeric:tabular-nums;letter-spacing:.025em;white-space:nowrap}
 .buildbar code{font-family:var(--mono);color:#4c5951;background:none;padding:0;border:0}
-.export-btn{display:inline-flex;align-items:center;gap:5px;margin-left:auto;
+.export-btn{display:inline-flex;align-items:center;gap:5px;margin-left:8px;flex:none;
   font:11px/1 -apple-system,sans-serif;color:var(--accent-2);background:var(--surface-pure);
   border:1px solid #d7e4da;padding:3px 9px;border-radius:6px;cursor:pointer;
   transition:background .16s,border-color .16s,transform .16s}
 .export-btn:hover{background:var(--wash);border-color:#c5dccb}
 .export-btn:active{transform:translateY(1px)}
 .export-btn[disabled]{opacity:.55;cursor:default;transform:none}
-.top .meta{margin-left:auto;font:10.5px var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;letter-spacing:.025em}
 .toc-btn{display:none;align-items:center;gap:6px;font:12px/1 -apple-system,sans-serif;
   color:var(--ink);background:var(--surface);border:1px solid var(--line);
   padding:7px 10px;border-radius:8px;cursor:pointer;box-shadow:var(--sh-1);
@@ -60,7 +54,7 @@ body{margin:0;color:var(--ink);
 /* ── 骨架 ── */
 .shell{display:grid;grid-template-columns:248px minmax(0,1fr);margin:0}
 .side{padding:24px 16px 40px 32px;border-right:1px solid rgba(221,227,218,.88);
-  background:rgba(255,255,252,.2);position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto}
+  background:rgba(255,255,252,.2);position:sticky;top:0;height:100vh;overflow:auto}
 main{padding:34px 44px 96px 40px;min-width:0;max-width:1200px}
 main>:first-child{animation:page-in .38s var(--ease) both}
 @keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -216,7 +210,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 @media(max-width:1080px){
   .shell{grid-template-columns:1fr}
   .toc-btn{display:inline-flex}
-  .side{position:fixed;top:56px;left:0;right:0;bottom:0;height:auto;z-index:35;
+  .side{position:fixed;top:0;left:0;right:0;bottom:0;height:auto;z-index:35;
     background:rgba(248,249,245,.98);backdrop-filter:blur(18px);border-right:0;padding:16px 20px 40px;
     transform:translateX(-100%);transition:transform .24s var(--ease);overflow:auto}
   .side.open{transform:none;box-shadow:0 20px 50px rgba(23,33,28,.12)}
@@ -231,11 +225,12 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   .cp-head{padding-top:13px}
 }
 @media(max-width:640px){
-  .top{padding:0 14px;gap:9px}
-  .top .sub{display:none}
-  .top .brand{font-size:12px}
-  .top .meta{font-size:9.5px;white-space:nowrap}
-  .toc-btn{padding:7px 8px;font-size:11px}
+  /* 窄屏只留「目录 + 导出」一行，生成基线文字让位给内容 */
+  .buildbar{padding:10px 16px 0;gap:8px;flex-wrap:nowrap}
+  .buildbar .bb-text{display:none}
+  .buildbar .bb-meta{display:none}
+  .export-btn{margin-left:auto}
+  .toc-btn{padding:6px 8px;font-size:11px}
   .hero h1{font-size:25px;letter-spacing:-.025em}
   .pg-head h1{font-size:22px}
   .read{grid-template-columns:1fr}
@@ -250,14 +245,12 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 </style>
 </head>
 <body>
-<header class="top">
+<div class="buildbar" id="buildbar">
   <button class="toc-btn" id="tocBtn" aria-label="打开目录">☰ 目录</button>
-  <div class="brand" id="brand">项目知识地图</div>
-  <div class="sub" id="sub"></div>
-  <div class="meta" id="stat"></div>
-</header>
-
-<div class="buildbar" id="buildbar"><span class="bb-text" id="bbText"></span><button class="export-btn" id="exportBtn" title="导出 Markdown 目录包">导出 ↓</button></div>
+  <span class="bb-text" id="bbText"></span>
+  <span class="bb-meta" id="bbMeta"></span>
+  <button class="export-btn" id="exportBtn" title="导出 Markdown 目录包">导出 ↓</button>
+</div>
 
 <div class="shell">
   <nav class="side" id="side"></nav>
@@ -1011,10 +1004,11 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     ITEMS = leaves();
     cur = fromHash();
     document.title = (SITE.title || '项目知识地图') + (SITE.subtitle ? ' · ' + SITE.subtitle : '');
-    $('#brand').textContent = SITE.title || '项目知识地图';
-    $('#sub').textContent = SITE.subtitle || '';
-    $('#stat').textContent = ITEMS.length + ' 页 · ' + (SITE.nav || []).length + ' 个分类'
-      + (SITE.baseline ? ' · ' + SITE.baseline : '') + (SITE.demo ? ' · 示例' : '');
+    const meta = $('#bbMeta');
+    if(meta){
+      meta.textContent = ITEMS.length + ' 页 · ' + (SITE.nav || []).length + ' 分类'
+        + (SITE.demo ? ' · 示例' : '');
+    }
     const bb = $('#bbText');
     if(bb){
       const parts = [];

@@ -52,8 +52,8 @@
 
 | 字段 | 必填 | 约束 | 常见错误 |
 |---|---|---|---|
-| `title` | ✅ | 顶栏品牌名 | 写成路径 |
-| `subtitle` | - | 首页大标题 + 顶栏副标 | 与 intro 重复 |
+| `title` | ✅ | 页面主标题（hero 的 h1） | 写成路径 |
+| `subtitle` | - | hero 上方的小字说明 | 写成长句导致 h1 折行 |
 | `intro` | - | 首页导语 | 写成长段落 |
 | `notice` | - | 首页提示条（可解释交互规则） | 写成营销语 |
 | `baseline` | ✅ | 生成时 commit | 写分支名 |
@@ -122,7 +122,7 @@ atlas/
 
 ## 二·七、导出 Markdown
 
-页面顶栏「导出 ↓」与 `scripts/export_markdown.py` 是同一功能的两个入口，输出 md 逐字节一致。
+页面顶部「导出 ↓」与 `scripts/export_markdown.py` 是同一功能的两个入口，输出 md 逐字节一致。
 产物结构、md 模板、五个实现要点（ZIP UTF-8 标志位 / 图源取值优先级 / 补 xmlns / 补字体 / 别给手绘图补字体）、
 已知限制与验证方法，见 [export-md.md](export-md.md)。
 
