@@ -39,8 +39,16 @@ body{margin:0;color:var(--ink);
   font:11px var(--mono);color:#7f8b82;background:#f2f5ef;border-bottom:1px solid #e4e9e0;
   letter-spacing:.02em;flex-wrap:wrap}
 .buildbar b{color:#2b3b31;font-weight:600}
+.buildbar .bb-text{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0}
 .buildbar .dot{width:3px;height:3px;border-radius:50%;background:#c7d0c7;flex:none}
 .buildbar code{font-family:var(--mono);color:#2b3b31}
+.export-btn{display:inline-flex;align-items:center;gap:6px;margin-left:auto;
+  font:11.5px/1 -apple-system,sans-serif;color:var(--accent-2);background:var(--surface-pure);
+  border:1px solid #d7e4da;padding:5px 11px;border-radius:7px;cursor:pointer;
+  transition:background .16s,border-color .16s,transform .16s}
+.export-btn:hover{background:var(--wash);border-color:#c5dccb}
+.export-btn:active{transform:translateY(1px)}
+.export-btn[disabled]{opacity:.55;cursor:default;transform:none}
 .top .meta{margin-left:auto;font:10.5px var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;letter-spacing:.025em}
 .toc-btn{display:none;align-items:center;gap:6px;font:12px/1 -apple-system,sans-serif;
   color:var(--ink);background:var(--surface);border:1px solid var(--line);
@@ -252,7 +260,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   <div class="meta" id="stat"></div>
 </header>
 
-<div class="buildbar" id="buildbar"></div>
+<div class="buildbar" id="buildbar"><span class="bb-text" id="bbText"></span><button class="export-btn" id="exportBtn" title="导出 Markdown 目录包">导出 ↓</button></div>
 
 <div class="shell">
   <nav class="side" id="side"></nav>
@@ -694,6 +702,248 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     });
   }
 
+  // ── 导出 Markdown 目录包（ZIP 由前端自写，不依赖第三方库）──
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for(let n = 0; n < 256; n++){
+      let c = n;
+      for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(buf){
+    let c = 0xFFFFFFFF;
+    for(let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  async function deflateRaw(bytes){
+    if(typeof CompressionStream === 'undefined') return null;
+    try{
+      const st = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      return new Uint8Array(await new Response(st).arrayBuffer());
+    }catch(e){ return null; }
+  }
+  function dosStamp(d){
+    return {
+      time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+      date: ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()
+    };
+  }
+  async function makeZip(entries){
+    const enc = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    const st = dosStamp(new Date());
+    for(const e of entries){
+      const name = enc.encode(e.name);
+      const crc = crc32(e.data);
+      const packed = await deflateRaw(e.data);
+      const useDeflate = !!(packed && packed.length < e.data.length);
+      const body = useDeflate ? packed : e.data;
+      const method = useDeflate ? 8 : 0;
+      const FLAG_UTF8 = 0x0800;   // bit 11：不置位时 Windows 解压中文目录会乱码
+
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true);
+      lh.setUint16(6, FLAG_UTF8, true);  lh.setUint16(8, method, true);
+      lh.setUint16(10, st.time, true);   lh.setUint16(12, st.date, true);
+      lh.setUint32(14, crc, true);       lh.setUint32(18, body.length, true);
+      lh.setUint32(22, e.data.length, true);
+      lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+      parts.push(new Uint8Array(lh.buffer), name, body);
+
+      const cd = new DataView(new ArrayBuffer(46));
+      cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true);
+      cd.setUint16(8, FLAG_UTF8, true);  cd.setUint16(10, method, true);
+      cd.setUint16(12, st.time, true);   cd.setUint16(14, st.date, true);
+      cd.setUint32(16, crc, true);       cd.setUint32(20, body.length, true);
+      cd.setUint32(24, e.data.length, true);
+      cd.setUint16(28, name.length, true); cd.setUint16(30, 0, true); cd.setUint16(32, 0, true);
+      cd.setUint16(34, 0, true); cd.setUint16(36, 0, true);
+      cd.setUint32(38, 0, true); cd.setUint32(42, offset, true);
+      central.push(new Uint8Array(cd.buffer), name);
+
+      offset += 30 + name.length + body.length;
+    }
+    const cdSize = central.reduce((a, b) => a + b.length, 0);
+    const eocd = new DataView(new ArrayBuffer(22));
+    eocd.setUint32(0, 0x06054b50, true); eocd.setUint16(4, 0, true); eocd.setUint16(6, 0, true);
+    eocd.setUint16(8, entries.length, true); eocd.setUint16(10, entries.length, true);
+    eocd.setUint32(12, cdSize, true);    eocd.setUint32(16, offset, true);
+    eocd.setUint16(20, 0, true);
+    return new Blob(parts.concat(central, [new Uint8Array(eocd.buffer)]), { type: 'application/zip' });
+  }
+
+  function navGroups(){
+    return (SITE.nav || []).map((g, i) => ({
+      dir: String(i + 1).padStart(2, '0') + '-' + String(g.name || g.id).replace(/[\/\\:*?"<>|]/g, '-'),
+      name: g.name || g.id,
+      q: g.q || '',
+      pages: (Array.isArray(g.children) && g.children.length ? g.children : [g]).map(c => c.page || c.id)
+    }));
+  }
+  // 壳层已把各图的 @font-face 抽出来去重；导出成独立 SVG 时要补回去，
+  // 否则图里的文字会 fallback 到系统字体（字形/间距全变）
+  let SHELL_FONTS = null;
+  function shellFonts(){
+    if(SHELL_FONTS !== null) return SHELL_FONTS;
+    const out = [];
+    try{
+      for(const sheet of document.styleSheets){
+        let rules;
+        try{ rules = sheet.cssRules; }catch(e){ continue; }
+        for(const r of rules){
+          if(r.type === 5 || (r.cssText || '').indexOf('@font-face') === 0) out.push(r.cssText);
+        }
+      }
+    }catch(e){ /* 跨域样式表读不到，忽略 */ }
+    SHELL_FONTS = out.join('\n');
+    return SHELL_FONTS;
+  }
+
+  function normSvg(s, needFonts){
+    s = String(s || '').trim();
+    if(!s) return null;
+    if(!/^<\?xml/.test(s)) s = '<?xml version="1.0" encoding="UTF-8"?>\n' + s;
+    // 只看 <svg ...> 这一个标签：archify 的 svg 标签很长，xmlns 常在 400 字符之后，
+    // 用固定长度截断会误判成"没有 xmlns"而重复添加，浏览器直接报 xmlns redefined
+    const svgStart = s.indexOf('<svg');
+    const gt = s.indexOf('>', svgStart);
+    const head = (svgStart >= 0 && gt > svgStart) ? s.slice(svgStart, gt + 1) : s;
+    if(!/xmlns\s*=\s*["']http:\/\/www\.w3\.org\/2000\/svg["']/.test(head)){
+      s = s.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    if(needFonts && !/@font-face/.test(s)){
+      const fonts = shellFonts();
+      if(fonts) s = s.replace(/(<svg[^>]*>)/, '$1<style>' + fonts + '</style>');
+    }
+    return s;
+  }
+  // 取某页的图源文本：
+  //   内置示例态 / 导出单文件 → 用 data-demo 标记的 <template>（内容即示例或烘焙后的真实图）
+  //   运行时真实配置       → 优先用已拉取的 template，否则按 page.svg 现场拉，避免误取内置示例
+  async function svgSource(pid){
+    if(SOURCE === 'demo'){
+      const tpl = document.querySelector('template[data-demo="1"][data-view="' + pid + '"]');
+      return tpl ? normSvg(tpl.innerHTML, tpl.hasAttribute('data-fonts')) : null;
+    }
+    const cached = document.querySelector('#view-sources template[data-view="' + pid + '"]');
+    if(cached) return normSvg(cached.innerHTML);   // fetch 来的图自带 @font-face，无需补
+    const page = PAGES[pid] || {};
+    const href = page.svg || ((SITE.views_dir || 'views') + '/' + pid + '.svg');
+    try{
+      const r = await fetch(href, { cache: 'no-store' });
+      if(!r.ok) return null;
+      return normSvg(await r.text());
+    }catch(e){
+      return null;
+    }
+  }
+  function mdCell(t){
+    return String(t == null ? '' : t).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  }
+  function pageMarkdown(pid, page, hasImage){
+    const out = [];
+    const title = page.title || pid;
+    out.push('# ' + title, '');
+    const meta = [];
+    if(page.type) meta.push(page.type);
+    if(SITE.generated_at) meta.push('生成于 ' + SITE.generated_at);
+    if(SITE.branch && SITE.baseline) meta.push('基线 ' + SITE.branch + '@' + SITE.baseline);
+    if(meta.length) out.push('> ' + meta.join(' · '), '');
+    if(page.summary) out.push(page.summary, '');
+    if(hasImage) out.push('![' + title + '](./images/' + pid + '.svg)', '');
+    if((page.points || []).length){
+      out.push('## 怎么读这张图', '');
+      for(const pt of page.points) out.push('- **' + pt[0] + '**：' + (pt[1] || ''));
+      out.push('');
+    }
+    const codes = (page.code || []).filter(c => c.file);
+    if(codes.length){
+      out.push('## 对应代码', '', '| 节点 | 位置 | 符号 | 说明 |', '| --- | --- | --- | --- |');
+      for(const c of codes){
+        const sn = (SNIP[pid] || {})[c.id] || {};
+        const sym = c.symbol || sn.symbol || '';
+        const loc = '`' + c.file + ':' + (c.lines ? c.lines[0] : '-') + '-' + (c.lines ? c.lines[1] : '-') + '`';
+        out.push('| ' + mdCell(c.id) + ' | ' + loc + ' | ' + mdCell(sym || '-') + ' | ' + mdCell(c.why || '') + ' |');
+      }
+      out.push('');
+    }
+    if((page.docs || []).length){
+      out.push('## 参考文档', '');
+      for(const d of page.docs) out.push('- ' + d);
+      out.push('');
+    }
+    return out.join('\n');
+  }
+  function readmeMarkdown(groups){
+    const out = ['# ' + (SITE.title || '项目知识地图'), ''];
+    if(SITE.subtitle) out.push(SITE.subtitle, '');
+    if(SITE.intro) out.push(SITE.intro, '');
+    if(SITE.notice) out.push('> ' + SITE.notice, '');
+    const meta = [];
+    if(SITE.branch && SITE.baseline) meta.push('基线 ' + SITE.branch + '@' + SITE.baseline);
+    if(SITE.generated_at) meta.push('生成于 ' + SITE.generated_at);
+    meta.push(groups.reduce((a, g) => a + g.pages.length, 0) + ' 页');
+    out.push(meta.join(' · '), '', '## 目录', '');
+    for(const g of groups){
+      out.push('- **' + g.name + '**' + (g.q ? ' — ' + g.q : ''));
+      for(const pid of g.pages){
+        const page = PAGES[pid] || {};
+        out.push('  - [' + (page.title || pid) + '](' + g.dir + '/' + pid + '.md)');
+      }
+    }
+    out.push('');
+    return out.join('\n');
+  }
+  function saveBlob(blob, name){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 60000);
+  }
+  async function exportBundle(){
+    const btn = $('#exportBtn');
+    const groups = navGroups();
+    if(!groups.length){ alert('没有可导出的页面'); return; }
+    const enc = new TextEncoder();
+    const entries = [{ name: 'README.md', data: enc.encode(readmeMarkdown(groups)) }];
+    let imgs = 0;
+    for(const g of groups){
+      for(const pid of g.pages){
+        const page = PAGES[pid] || {};
+        const svg = await svgSource(pid);          // 先拿图，md 才能决定是否写图片引用
+        if(svg){
+          entries.push({ name: g.dir + '/images/' + pid + '.svg', data: enc.encode(svg) });
+          imgs++;
+        }
+        entries.push({ name: g.dir + '/' + pid + '.md',
+                       data: enc.encode(pageMarkdown(pid, page, !!svg)) });
+      }
+    }
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = '导出中…';
+    try{
+      const zip = await makeZip(entries);
+      const stamp = (SITE.generated_at || new Date().toISOString().slice(0, 10))
+        .replace(/[^\d-]/g, '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+      const base = String(SITE.title || 'atlas').replace(/[\/\\:*?"<>|\s]+/g, '-');
+      saveBlob(zip, base + '-' + stamp + '.zip');
+      btn.textContent = '已导出 ' + entries.length + ' 个文件' + (imgs ? ' · ' + imgs + ' 图' : ' · 无图');
+      setTimeout(() => { btn.textContent = label; }, 2200);
+    }catch(e){
+      console.error(e);
+      alert('导出失败：' + e.message);
+      btn.textContent = label;
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
   function go(id){
     const side = $('#side');
     if(side) side.classList.remove('open');
@@ -708,6 +958,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 
   $('#cpClose').onclick = closeCode;
   $('#tocBtn').onclick = () => $('#side').classList.toggle('open');
+  $('#exportBtn').onclick = exportBundle;
   // 点面板以外的地方关闭抽屉（节点点击已 stopPropagation，不会误关）
   document.addEventListener('click', ev => {
     const panel = $('#panel');
@@ -770,7 +1021,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     $('#sub').textContent = SITE.subtitle || '';
     $('#stat').textContent = ITEMS.length + ' 页 · ' + (SITE.nav || []).length + ' 个分类'
       + (SITE.baseline ? ' · ' + SITE.baseline : '') + (SITE.demo ? ' · 示例' : '');
-    const bb = $('#buildbar');
+    const bb = $('#bbText');
     if(bb){
       const parts = [];
       parts.push('基于 <b>' + esc(SITE.branch || 'unknown') + '</b> @ <code>' + esc(SITE.baseline || 'unknown') + '</code> 生成');

@@ -120,6 +120,12 @@ atlas/
 
 **迁移**：单文件 → 目录树只需按 `nav` 逐项建目录、按 `pages` 键拆文件；`pages[].title` 等字段原样搬进 `<id>.json`。
 
+## 二·七、导出 Markdown
+
+页面顶栏「导出 ↓」与 `scripts/export_markdown.py` 是同一功能的两个入口，输出 md 逐字节一致。
+产物结构、md 模板、五个实现要点（ZIP UTF-8 标志位 / 图源取值优先级 / 补 xmlns / 补字体 / 别给手绘图补字体）、
+已知限制与验证方法，见 [export-md.md](export-md.md)。
+
 ## 三、交互规范
 
 三条硬约束来自实测缺陷，**不得放宽**：

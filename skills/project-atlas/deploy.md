@@ -40,6 +40,21 @@ cp dist/atlas.html <目标位置>
 
 分步时 `interactive` 依赖**不会自动拷贝**，需要自己按第四节 4.1 处理。
 
+### 1.3 另一个出口：Markdown 目录包（可选）
+
+给"要改、要进 Wiki"的人，同一份内容导成 Markdown（页面上的「导出 ↓」按钮与它等价）：
+
+```bash
+python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/        # 输出目录
+python3 <skill>/scripts/export_markdown.py <图集目录> atlas-md.zip    # 直接出 zip
+python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --no-images
+```
+
+产物：`README.md` + 每分类一个目录 + `<页面>.md` + `images/<页面>.svg`（图源原样导出，含内联字体）。
+图用 SVG：GitHub / Typora / Obsidian / VSCode 支持；部分企业 Wiki 不支持内联 SVG，会显示空白。
+
+> 两个出口别混用：HTML 给"看"，Markdown 给"改"。`pack_atlas.py` 不生成 Markdown，见 1.1。
+
 ## 二、打包范围
 
 | 文件 | 是否随产物发放 | 依据 |

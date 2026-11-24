@@ -125,10 +125,13 @@ def main():
             svg = f.read()
         raw_bytes += len(svg.encode("utf-8"))
         svg = XML_DECL.sub("", svg)
+        before = font_stat[0]
         svg = extract_fonts(svg)
+        had_fonts = font_stat[0] > before
         if not SVG_ROOT.search(svg):
             report.append("%s 内容不是 SVG" % pid)
-        block = '<template data-demo="1" data-view="%s">%s</template>' % (pid, svg)
+        block = '<template data-demo="1" data-view="%s"%s>%s</template>' % (
+            pid, ' data-fonts="1"' if had_fonts else '', svg)
         if tpl_pattern(pid).search(html):
             html = tpl_pattern(pid).sub(lambda m: block, html, count=1)
         else:

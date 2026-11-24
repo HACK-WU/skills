@@ -15,6 +15,7 @@ description: 把项目的架构与核心链路装配成一个可切换视图的�
 - **视图策划**：按项目实际结构决定出哪几张图、分几个分类、每张图回答什么问题（先出计划，用户确认后才生成）
 - **配置驱动渲染**：一份 `atlas.config.json` 管标题 / 大纲 / 层级 / 页面清单 / 每页图源与代码映射；框架在运行时读取并渲染，**换 JSON 刷新即生效，不改一行代码**
 - **内置示例兜底**：没有配置时框架渲染自带示例（打开即有效果页），配置就位后自动切换成真实图集
+- **导出 Markdown**：页面顶栏「导出 ↓」或 `export_markdown.py`，把图集导成 **Markdown 目录包**（zip，按大纲建目录，每页一个 `.md` + `images/*.svg`）。ZIP 由前端自写（`CompressionStream` + 手写文件头），不引第三方库；纯前端、无需后端与重跑构建
 - **节点级代码关联**：点击节点打开右侧抽屉，显示 `路径:起-止行` + commit + 一句 why + 行号对齐的高亮代码
 - **片段采集与校验**：脚本从源码抽取片段，双向校验"节点 ↔ 片段"（零孤儿、零悬空）
 - **字体去重**：archify 每张 SVG 内嵌 3 份 base64 字体（占文件 27%），装配时提到壳层去重，实测单图 330 KB → 235 KB
@@ -67,7 +68,7 @@ archify-svg-export（导 SVG） ──┼──▶ project-atlas（本 skill：�
 阶段 5  校验：scripts/check_atlas.py（三方对齐 / 图源 / 片段 / 体积 / 导出文件）
 阶段 6  验收走查：浏览器实测（内置示例态 + 真实配置态 + 三档视口 + 五类交互）
 阶段 7  更新：改配置即可；图源或片段变更后重跑阶段 3–5；刷新 commit 基线
-阶段 8  分发（可选）：导出单文件 → 校验 → 拷到目标系统，见 deploy.md
+阶段 8  分发与导出（可选）：HTML 单文件发人（deploy.md）/ Markdown 目录包进文档库（export-md.md）
 ```
 
 ## 阶段 0：前置探测
@@ -275,9 +276,11 @@ python3 <project-atlas skill 目录>/scripts/check_atlas.py . --html dist/atlas.
 - `.atlas/.gitignore` 内容固定为 `*`（含 `.gitignore` 自身需 `!.gitignore` 才能生效于空目录，脚本已处理）
 - **不做**：视图级差量、片段级增量、监听文件自动重建（这些留到确有需求时再验证）
 
-## 阶段 8：分发（可选）
+## 阶段 8：分发与导出（可选）
 
-要发到别的系统（本地双击 / 静态站 / iframe / 企业 Wiki）时，走 [deploy.md](deploy.md)：
+两个出口，目标不同：**HTML 给"看"，Markdown 给"改"**。
+
+### 8.1 分发 HTML（给看的人）
 
 ```bash
 python3 <skill>/scripts/pack_atlas.py <图集目录> dist/          # build → check → 收拢依赖 → 清单
@@ -285,9 +288,19 @@ python3 <skill>/scripts/pack_atlas.py <图集目录> dist/ --zip    # 额外打 
 ```
 
 一条命令完成构建、校验、`interactive` 依赖收拢与清单（`dist/MANIFEST.txt` 含大小与 sha256），任一步失败即终止。
+产物是**自包含单文件**，分发 = 拷这一个文件（图源、字体、片段、配置全内联）。
+落地形态、打包范围、四种目标系统的注意事项、`interactive` 外链陷阱、分发前自检与回滚，见 [deploy.md](deploy.md)。
 
-产物是**自包含单文件**，分发 = 拷这一个文件（图源、字体、片段、配置全在内联）。
-落地形态、打包范围、四种目标系统的注意事项、已知陷阱（`interactive` 外链不会被打包）、分发前自检清单与回滚方式，见 [deploy.md](deploy.md)。
+### 8.2 导出 Markdown（给改的人 / 进文档库）
+
+```bash
+# 页面：顶栏「导出 ↓」一点即可（纯前端，无需脚本）
+# 命令行：
+python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 xxx.zip
+```
+
+产物按大纲建目录：`README.md` + `<分类>/<页面>.md` + `images/*.svg`（图源原样，含内联字体）。
+两个入口输出 md **逐字节一致**（共用同一份模板）。md 模板、五个实现要点（ZIP UTF-8 标志位 / 图源取值优先级 / 补 xmlns / 补字体 / 别给手绘图补字体）、已知限制（企业 Wiki 不支持内联 SVG、需解压后查看）与验证方法，见 [export-md.md](export-md.md)。
 
 ## 数据契约（一份配置）
 
@@ -381,9 +394,11 @@ python3 <skill>/scripts/pack_atlas.py <图集目录> dist/ --zip    # 额外打 
 
 - 视图策划模板与挑选示例、`atlas.config.json` 字段细则、目录树模式、交互规范（可点态 / 抽屉 / 响应式三档）、体积与字体去重原理、校验项逐条判定、验收走查清单：见 [reference.md](reference.md)
 - **分发与集成**：打包范围、四种落地形态（本地 / 静态站 / iframe / Wiki）、`interactive` 外链陷阱、分发前自检与回滚：见 [deploy.md](deploy.md)
+- **导出 Markdown**：两个入口、产物结构、md 模板、五个实现要点、已知限制与验证：见 [export-md.md](export-md.md)
 - 框架：`framework/index.html`（样式 + 运行时渲染 + 内置示例；**这是唯一真源**，demo 只作设计归档）
 - 片段采集：`scripts/collect_snippets.py`（输入图集目录或显式 `atlas.config.json`，输出 `snippets.json` + 覆盖率报告，自动提取类名/函数名作为符号）
 - 输入加载：`scripts/atlas_io.py`（目录树与单文件的统一加载层，三个脚本共用；改目录约定只改这一处）
 - 导出：`scripts/build_atlas.py`（真实配置烘焙 + 图源内联 + 字体去重 + 原子替换，仅分发时用）
 - 校验：`scripts/check_atlas.py`（三方对齐 / 图源 / 片段 / 导出文件）
 - 打包：`scripts/pack_atlas.py`（build + check + 收拢 interactive 依赖 + `MANIFEST.txt` + 可选 zip）
+- 导出 Markdown：`scripts/export_markdown.py`（与页面「导出 ↓」同一份模板：README + 每页 md + images/*.svg，可输出目录或 zip）
