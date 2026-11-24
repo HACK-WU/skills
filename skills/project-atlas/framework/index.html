@@ -35,16 +35,16 @@ body{margin:0;color:var(--ink);
   border-bottom:1px solid rgba(215,222,213,.82);box-shadow:0 1px 12px rgba(23,33,28,.025)}
 .top .brand{font-size:13.5px;font-weight:700;letter-spacing:.015em;white-space:nowrap;color:#14251c}
 .top .sub{font-size:12.5px;color:var(--ink-3);padding-left:16px;border-left:1px solid var(--line)}
-.buildbar{display:flex;align-items:center;gap:9px;padding:7px 32px;
-  font:11px var(--mono);color:#7f8b82;background:#f2f5ef;border-bottom:1px solid #e4e9e0;
+.buildbar{display:flex;align-items:center;gap:9px;padding:10px 32px 0;
+  font:11px var(--mono);color:#8b968c;
   letter-spacing:.02em;flex-wrap:wrap}
 .buildbar b{color:#2b3b31;font-weight:600}
 .buildbar .bb-text{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0}
 .buildbar .dot{width:3px;height:3px;border-radius:50%;background:#c7d0c7;flex:none}
-.buildbar code{font-family:var(--mono);color:#2b3b31}
-.export-btn{display:inline-flex;align-items:center;gap:6px;margin-left:auto;
-  font:11.5px/1 -apple-system,sans-serif;color:var(--accent-2);background:var(--surface-pure);
-  border:1px solid #d7e4da;padding:5px 11px;border-radius:7px;cursor:pointer;
+.buildbar code{font-family:var(--mono);color:#4c5951;background:none;padding:0;border:0}
+.export-btn{display:inline-flex;align-items:center;gap:5px;margin-left:auto;
+  font:11px/1 -apple-system,sans-serif;color:var(--accent-2);background:var(--surface-pure);
+  border:1px solid #d7e4da;padding:3px 9px;border-radius:6px;cursor:pointer;
   transition:background .16s,border-color .16s,transform .16s}
 .export-btn:hover{background:var(--wash);border-color:#c5dccb}
 .export-btn:active{transform:translateY(1px)}
@@ -176,9 +176,6 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   padding:6px 9px;border-radius:7px;border:1px solid #e4e9e1;box-shadow:0 2px 8px -7px rgba(23,33,28,.35)}
 
 /* ── 代码抽屉 ── */
-.mask{position:fixed;inset:0;background:rgba(17,29,22,.2);backdrop-filter:blur(3px);opacity:0;pointer-events:none;
-  transition:opacity .24s ease;z-index:40}
-.mask.on{opacity:1}
 .codepanel{position:fixed;top:0;right:0;height:100vh;width:min(960px,70vw);
   background:var(--surface);border-left:1px solid #d9e1d6;
   box-shadow:-28px 0 70px -32px rgba(15,26,21,.45);transform:translateX(103%);
@@ -267,7 +264,6 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   <main id="main"></main>
 </div>
 
-<div class="mask" id="mask"></div>
 <aside class="codepanel" id="panel" aria-hidden="true">
   <div class="cp-head">
     <div class="cp-title">
@@ -686,7 +682,6 @@ main>:first-child{animation:page-in .38s var(--ease) both}
       }
     }
     $('#panel').classList.add('on');
-    $('#mask').classList.add('on');
     $('#panel').setAttribute('aria-hidden', 'false');
   }
 
@@ -694,7 +689,6 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     const p = $('#panel');
     if(!p) return;
     p.classList.remove('on');
-    $('#mask').classList.remove('on');
     p.setAttribute('aria-hidden', 'true');
     document.querySelectorAll('.fig-body div').forEach(box => {
       const sr = box.shadowRoot;
