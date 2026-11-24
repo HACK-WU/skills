@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>项目知识地图</title>
+<style>
+/* 字体去重注入点（build 导出单文件时填充） */
+/* __ATLAS_FONTS__ */
+:root{
+  --paper:#f6f7f3; --surface:#fffefa; --surface-pure:#fff;
+  --ink:#17211c; --ink-2:#4c5951; --ink-3:#7d8981;
+  --line:#e1e6de; --line-2:#edf0e9;
+  --accent:#1d6b4f; --accent-2:#124c38; --wash:#eaf2ec;
+  --amber:#80601d; --amber-wash:#faf3e3;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --sh-1:0 1px 2px rgba(23,33,28,.035),0 5px 16px -12px rgba(23,33,28,.16);
+  --sh-2:0 1px 2px rgba(23,33,28,.04),0 20px 45px -28px rgba(23,33,28,.28);
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;color:var(--ink);
+  background:
+    radial-gradient(ellipse 65% 42% at 82% 0%,rgba(207,220,207,.3),transparent 72%),
+    linear-gradient(180deg,#fafaf7 0%,var(--paper) 52%,#f4f5f0 100%) fixed;
+  font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:#d8e7dc;color:var(--accent-2)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:5px}
+
+/* ── 顶栏：细、贴边、半透明 ── */
+.top{position:sticky;top:0;z-index:30;height:56px;display:flex;align-items:center;gap:16px;
+  padding:0 32px;background:rgba(250,250,247,.84);backdrop-filter:blur(18px) saturate(140%);
+  border-bottom:1px solid rgba(215,222,213,.82);box-shadow:0 1px 12px rgba(23,33,28,.025)}
+.top .brand{font-size:13.5px;font-weight:700;letter-spacing:.015em;white-space:nowrap;color:#14251c}
+.top .sub{font-size:12.5px;color:var(--ink-3);padding-left:16px;border-left:1px solid var(--line)}
+.buildbar{display:flex;align-items:center;gap:9px;padding:7px 32px;
+  font:11px var(--mono);color:#7f8b82;background:#f2f5ef;border-bottom:1px solid #e4e9e0;
+  letter-spacing:.02em;flex-wrap:wrap}
+.buildbar b{color:#2b3b31;font-weight:600}
+.buildbar .dot{width:3px;height:3px;border-radius:50%;background:#c7d0c7;flex:none}
+.buildbar code{font-family:var(--mono);color:#2b3b31}
+.top .meta{margin-left:auto;font:10.5px var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;letter-spacing:.025em}
+.toc-btn{display:none;align-items:center;gap:6px;font:12px/1 -apple-system,sans-serif;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  padding:7px 10px;border-radius:8px;cursor:pointer;box-shadow:var(--sh-1);
+  transition:background .18s,border-color .18s,transform .18s}
+.toc-btn:hover{background:var(--wash);border-color:#d6e3d9}
+.toc-btn:active{transform:translateY(1px)}
+
+/* ── 骨架 ── */
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);margin:0}
+.side{padding:24px 16px 40px 32px;border-right:1px solid rgba(221,227,218,.88);
+  background:rgba(255,255,252,.2);position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto}
+main{padding:34px 44px 96px 40px;min-width:0;max-width:1200px}
+main>:first-child{animation:page-in .38s var(--ease) both}
+@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── 侧栏：无卡片，靠字重与缩进分层 ── */
+.nav-home{font-size:13px;font-weight:650;padding:8px 11px;border-radius:8px;cursor:pointer;
+  color:var(--ink);margin-bottom:3px;transition:background .18s,color .18s,box-shadow .18s}
+.nav-home:hover{background:rgba(255,255,255,.72);box-shadow:var(--sh-1)}
+.nav-home.on{background:linear-gradient(135deg,#e8f1ea,#f0f5ef);color:var(--accent-2);
+  box-shadow:inset 0 0 0 1px rgba(29,107,79,.07)}
+.grp-h{display:flex;align-items:center;justify-content:space-between;
+  margin:23px 0 7px;padding:0 11px;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:#89938c;font-weight:650}
+.grp-h .n{font:9.5px var(--mono);letter-spacing:0;color:#9aa49d}
+.nav-i{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 11px;border-radius:8px;font-size:13px;color:var(--ink-2);cursor:pointer;
+  transition:background .18s,color .18s,box-shadow .18s,transform .18s}
+.nav-i.l2{padding-left:22px;font-size:12.5px;color:#6f7b73}
+.nav-i:hover{background:rgba(255,255,255,.74);color:var(--ink);box-shadow:var(--sh-1);transform:translateX(1px)}
+.nav-i.on{background:linear-gradient(135deg,#e7f0e9,#f0f5ef);color:var(--accent-2);font-weight:650;
+  box-shadow:inset 0 0 0 1px rgba(29,107,79,.075)}
+.nav-i.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
+  border-radius:3px;background:var(--accent);box-shadow:0 0 8px rgba(29,107,79,.18)}
+.nav-i .tag{font:9.5px var(--mono);color:#96a098;font-variant-numeric:tabular-nums}
+.nav-i.on .tag{color:var(--accent)}
+
+/* ── 首页 ── */
+.hero{max-width:700px;margin:12px 0 44px}
+.hero h1{font-size:32px;line-height:1.25;letter-spacing:-.035em;margin:0 0 16px;font-weight:720;
+  color:#142019;text-wrap:balance}
+.hero p{margin:0;font-size:15px;line-height:1.82;color:#4b5850;letter-spacing:.002em}
+.hero .note{margin-top:20px;display:flex;gap:9px;align-items:flex-start;
+  font-size:12.5px;line-height:1.75;color:var(--amber);
+  background:linear-gradient(135deg,rgba(251,245,230,.9),rgba(250,246,236,.7));
+  border:1px solid #eee4cd;border-radius:11px;padding:12px 15px;box-shadow:0 6px 20px -18px rgba(128,96,29,.5)}
+.hero .note b{font-weight:700}
+
+.sec{margin:0 0 34px}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin:0 0 4px;
+  padding:0 12px 10px;border-bottom:1px solid rgba(216,223,214,.85)}
+.sec-h .name{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#2a3a30}
+.sec-h .q{font-size:12.5px;color:#849087}
+.sec-h .n{margin-left:auto;font:10px var(--mono);color:#98a299;font-variant-numeric:tabular-nums}
+/* 目录行：稀疏目录不用卡片网格（1-2 项时空列会把右侧撑空） */
+.rows{display:flex;flex-direction:column;padding:5px 7px;background:rgba(255,255,252,.46);
+  border:1px solid rgba(226,231,223,.7);border-radius:14px;box-shadow:0 10px 30px -28px rgba(23,33,28,.5)}
+.row{display:flex;align-items:center;gap:16px;padding:14px 12px;border-radius:9px;
+  cursor:pointer;border-bottom:1px solid var(--line-2);
+  transition:background .18s,box-shadow .18s,transform .18s var(--ease)}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--surface-pure);box-shadow:var(--sh-1);transform:translateY(-1px)}
+.row:active{transform:translateY(0)}
+.row .ttl{flex:0 0 auto;min-width:210px;font-size:13.5px;font-weight:650;letter-spacing:-.012em;color:#24332a}
+.row .desc{flex:1;min-width:0;font-size:12.5px;color:#7c8880;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .meta{flex:0 0 auto;display:flex;gap:6px;align-items:center}
+.row .arrow{flex:0 0 auto;color:#b6c2b8;font-size:14px;transition:transform .18s var(--ease),color .18s}
+.row:hover .arrow{transform:translateX(3px);color:var(--accent)}
+.pill{font-size:10px;line-height:1;padding:5px 7px;border-radius:6px;
+  background:#f1f3ee;color:#78847b;letter-spacing:.025em;white-space:nowrap;
+  border:1px solid #e9ede6;font-variant-numeric:tabular-nums}
+.pill.t{font-family:var(--mono);letter-spacing:0}
+.pill.code{background:#e9f2eb;color:var(--accent-2);border-color:#dfeae1}
+
+/* ── 图页 ── */
+.crumb{font:10.5px var(--mono);color:#89948c;margin:0 0 15px;letter-spacing:.025em}
+.pg-head{max-width:840px;margin:0 0 26px}
+.pg-head h1{font-size:26px;line-height:1.3;letter-spacing:-.028em;margin:0 0 11px;font-weight:700;color:#17241c}
+.pg-head p{margin:0;font-size:14px;line-height:1.8;color:var(--ink-2)}
+
+.fig{background:var(--surface-pure);border:1px solid #dfe6dc;border-radius:16px;
+  overflow:hidden;box-shadow:var(--sh-2);margin:0 0 11px}
+.fig-bar{display:flex;align-items:center;gap:10px;padding:11px 16px;
+  border-bottom:1px solid #e8ece5;background:linear-gradient(180deg,#fdfefb,#fafcf8)}
+.fig-bar .chip{font:10px var(--mono);color:var(--accent-2);background:#e8f1e9;
+  padding:3px 7px;border-radius:5px;letter-spacing:.025em;border:1px solid #dde9df}
+.fig-bar .sep{width:3px;height:3px;border-radius:50%;background:#c7d0c7;flex:none}
+.fig-bar .t{font-size:11px;color:#879289;font-variant-numeric:tabular-nums}
+.fig-bar a{margin-left:auto;font-size:11.5px;color:var(--accent-2);text-decoration:none;
+  padding:5px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface-pure);
+  box-shadow:var(--sh-1);transition:background .18s,border-color .18s,transform .18s}
+.fig-bar a:hover{background:var(--wash);border-color:#d7e4da;transform:translateY(-1px)}
+.fig-body{padding:8px 0;background:
+  radial-gradient(ellipse 70% 90% at 50% 40%,rgba(237,244,237,.52),transparent 80%),
+  radial-gradient(circle at 1px 1px,#e5ebe2 1px,transparent 0) 0 0/22px 22px,#fdfefc}
+.fig-body .ph{padding:46px 18px;text-align:center;font-size:13px;color:var(--ink-3)}
+.hint{margin:11px 0 0;font-size:11.5px;color:#7f8b82;display:flex;gap:7px;align-items:center}
+.hint::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);
+  opacity:.65;flex:none;box-shadow:0 0 0 3px rgba(29,107,79,.08)}
+
+/* ── 解读：两栏 dt/dd ── */
+.read{margin:34px 0 0;display:grid;grid-template-columns:132px minmax(0,1fr);column-gap:20px}
+.read-h{grid-column:1/-1;font-size:10.5px;letter-spacing:.09em;color:#7f8b82;font-weight:700;margin:0 0 4px;padding-bottom:10px;
+  border-bottom:1px solid var(--line)}
+.read dt{font-size:12.5px;font-weight:650;color:#2b3b31;padding:12px 0 0;line-height:1.65}
+.read dd{margin:0;font-size:12.5px;line-height:1.78;color:#56635a;
+  padding:12px 0;border-bottom:1px solid var(--line-2)}
+
+/* ── 文档 chip ── */
+.docs{margin:32px 0 0}
+.docs-h{font-size:10.5px;letter-spacing:.09em;color:#7f8b82;
+  font-weight:700;margin:0 0 13px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.docs ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.docs ul.codelist{flex-direction:column;flex-wrap:nowrap;gap:2px}
+.codelist li{display:flex;align-items:baseline;gap:10px;padding:9px 10px;border-radius:8px;
+  cursor:pointer;font:11.5px var(--mono);color:#56645a;transition:background .15s}
+.codelist li:hover{background:rgba(255,255,252,.9);box-shadow:0 2px 10px -8px rgba(23,33,28,.4)}
+.codelist li .p{color:var(--accent-2);font-weight:600;flex:none}
+.codelist li .sym{color:#2b3b31;background:#eef2ea;padding:1px 6px;border-radius:4px;flex:none;font-size:11px}
+.codelist li .why{color:#849087;font-family:-apple-system,sans-serif;font-size:11.5px;margin-left:auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docs li{font:11px var(--mono);color:#56645a;background:rgba(255,255,252,.72);
+  padding:6px 9px;border-radius:7px;border:1px solid #e4e9e1;box-shadow:0 2px 8px -7px rgba(23,33,28,.35)}
+
+/* ── 代码抽屉 ── */
+.mask{position:fixed;inset:0;background:rgba(17,29,22,.2);backdrop-filter:blur(3px);opacity:0;pointer-events:none;
+  transition:opacity .24s ease;z-index:40}
+.mask.on{opacity:1}
+.codepanel{position:fixed;top:0;right:0;height:100vh;width:min(960px,70vw);
+  background:var(--surface);border-left:1px solid #d9e1d6;
+  box-shadow:-28px 0 70px -32px rgba(15,26,21,.45);transform:translateX(103%);
+  transition:transform .28s var(--ease);z-index:50;
+  display:flex;flex-direction:column}
+.codepanel.on{transform:none}
+.cp-head{padding:18px 20px 15px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fffefa,#fbfcf8)}
+.cp-title{display:flex;align-items:center;gap:9px}
+.cp-title .n{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.cp-title .badge{font:10px var(--mono);color:var(--accent-2);background:var(--wash);
+  padding:3px 6px;border-radius:5px;border:1px solid #dfe9e0}
+.cp-close{margin-left:auto;border:0;background:transparent;font-size:20px;line-height:1;
+  color:var(--ink-3);cursor:pointer;padding:4px 8px;border-radius:7px;transition:background .18s,color .18s}
+.cp-close:hover{background:var(--line-2);color:var(--ink)}
+.cp-path{margin-top:8px;font:11px var(--mono);color:var(--ink-3);word-break:break-all;line-height:1.65}
+.cp-path i{color:var(--accent-2);font-style:normal}
+.cp-why{padding:13px 20px;font-size:12.5px;line-height:1.75;color:var(--ink-2);
+  border-bottom:1px solid var(--line);background:#fdfdf9}
+.cp-why .w{margin-top:6px;font-size:10.5px;color:var(--ink-3)}
+.cp-code{margin:0;flex:1;overflow:auto;background:#101a15;color:#d4dfd7;
+  font:12.5px/1.95 var(--mono);padding:15px 0}
+.cp-code .cl{display:flex;white-space:pre;transition:background .15s}
+.cp-code .cl:hover{background:rgba(255,255,255,.025)}
+.cp-code .ln{flex:0 0 56px;text-align:right;padding-right:14px;color:#52665a;
+  user-select:none;font-variant-numeric:tabular-nums}
+.cp-code .lc{flex:1;padding-right:18px}
+.cp-code .k{color:#e7afd3}.cp-code .s{color:#9ed6ac}.cp-code .c{color:#6e8275;font-style:italic}.cp-code .n{color:#e6c889}
+.cp-empty{padding:44px 24px;text-align:center;font-size:12.5px;color:#91a398;line-height:1.8}
+.cp-foot{padding:11px 20px;border-top:1px solid var(--line);font:10.5px var(--mono);
+  color:var(--ink-3);font-variant-numeric:tabular-nums;background:#fbfcf8}
+
+/* ── 滚动条 ── */
+.side::-webkit-scrollbar,.cp-code::-webkit-scrollbar{width:8px;height:8px}
+.side::-webkit-scrollbar-thumb,.cp-code::-webkit-scrollbar-thumb{background:#d5ddd3;border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+.side::-webkit-scrollbar-thumb:hover{background:#c4cfc2;border:2px solid transparent;background-clip:padding-box}
+.cp-code::-webkit-scrollbar-thumb{background:#33483c;border:2px solid transparent;background-clip:padding-box}
+
+@media(max-width:1080px){
+  .shell{grid-template-columns:1fr}
+  .toc-btn{display:inline-flex}
+  .side{position:fixed;top:56px;left:0;right:0;bottom:0;height:auto;z-index:35;
+    background:rgba(248,249,245,.98);backdrop-filter:blur(18px);border-right:0;padding:16px 20px 40px;
+    transform:translateX(-100%);transition:transform .24s var(--ease);overflow:auto}
+  .side.open{transform:none;box-shadow:0 20px 50px rgba(23,33,28,.12)}
+  main{padding:26px 20px 76px;max-width:none}
+  /* 图不被压缩到不可读：允许横向滚动，保持最小可读宽度 */
+  .fig-body{overflow-x:auto}
+  .fig-body>div{min-width:680px}
+  .codepanel{top:auto;bottom:0;left:0;right:0;width:100%;height:64vh;
+    border-left:0;border-top:1px solid #d9e1d6;border-radius:18px 18px 0 0;
+    transform:translateY(103%);box-shadow:0 -28px 70px -32px rgba(15,26,21,.45)}
+  .codepanel.on{transform:none}
+  .cp-head{padding-top:13px}
+}
+@media(max-width:640px){
+  .top{padding:0 14px;gap:9px}
+  .top .sub{display:none}
+  .top .brand{font-size:12px}
+  .top .meta{font-size:9.5px;white-space:nowrap}
+  .toc-btn{padding:7px 8px;font-size:11px}
+  .hero h1{font-size:25px;letter-spacing:-.025em}
+  .pg-head h1{font-size:22px}
+  .read{grid-template-columns:1fr}
+  .read dt{padding-bottom:0}
+  .read dd{padding-top:4px}
+  main{padding:22px 16px 64px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="toc-btn" id="tocBtn" aria-label="打开目录">☰ 目录</button>
+  <div class="brand" id="brand">项目知识地图</div>
+  <div class="sub" id="sub"></div>
+  <div class="meta" id="stat"></div>
+</header>
+
+<div class="buildbar" id="buildbar"></div>
+
+<div class="shell">
+  <nav class="side" id="side"></nav>
+  <main id="main"></main>
+</div>
+
+<div class="mask" id="mask"></div>
+<aside class="codepanel" id="panel" aria-hidden="true">
+  <div class="cp-head">
+    <div class="cp-title">
+      <span class="n" id="cpName">节点</span>
+      <span class="badge" id="cpBadge" hidden>concept</span>
+      <button class="cp-close" id="cpClose" title="关闭（ESC）">×</button>
+    </div>
+    <div class="cp-path" id="cpPath"></div>
+  </div>
+  <div class="cp-why" id="cpWhy" hidden></div>
+  <pre class="cp-code" id="cpCode"></pre>
+  <div class="cp-foot" id="cpFoot"></div>
+</aside>
+
+<!-- ===== 站点配置：标题 / 大纲 / 层级 / 页面清单（改这里就能改整站结构） ===== -->
+<script id="demo-config" type="application/json">{"title": "kisearch 知识地图", "subtitle": "不看文档列表，也能先看清这个系统", "intro": "把架构、核心链路、后台进程分别画成图，每张图配一段解读。点节点可看生成时的代码快照。新增一张图，只需写一个页面配置、在大纲里挂一行。", "baseline": "de5c495", "generated_at": "2026-11-23", "nav": [{"id": "arch", "name": "架构总览", "q": "这个系统由什么组成，谁和谁相连？", "children": [{"id": "overview", "page": "overview"}]}, {"id": "flow", "name": "核心链路", "q": "一次操作到底经过哪些环节？", "children": [{"id": "search", "page": "search"}, {"id": "import", "page": "import"}]}, {"id": "ops", "name": "后台进程", "q": "哪些东西在我没操作时也在跑？", "page": "daemons"}, {"id": "conf", "name": "配置与环境", "q": "想改行为，该动哪一段？", "page": "config"}], "notice": "当前为内置示例配置：把 atlas.config.json 放到本文件同目录并起本地服务，即渲染成你的真实图集。", "pages": {"overview": {"title": "运行时架构总览", "type": "architecture", "summary": "三种入口（Agent、Web、CLI）都汇到同一个 daemon，再由它分发给领域服务；真正的数据只有 kb/ 里的 Markdown，向量与全文索引都是可重建的派生物。", "points": [["daemon 只做路由", "鉴权、并发、锁都在这里，业务逻辑不在——所以改业务不用动它。"], ["领域服务才是本体", "import / query / relation 都在这里，对应 src/lib 下的大量模块。"], ["索引不是原始数据", "zvec 与 FTS 删掉都能从 kb/ 重建，kb/ 才是不能丢的。"]], "docs": ["src/lib/mcp-http-api.ts", "src/lib/import.ts", "src/lib/scope.ts"], "code": [{"id": "daemon", "file": "src/lib/mcp-http-api.ts", "lines": [2127, 2142], "why": "HTTP 入口与路由分发集中在这里"}, {"id": "domain", "file": "src/lib/import.ts", "lines": [48, 62], "why": "领域服务入口，导入管线的第一跳"}, {"id": "kb", "file": "src/lib/scope.ts", "lines": [12, 26], "why": "kb 目录是唯一不可丢的原始数据"}, {"id": "web", "concept": true}, {"id": "agent", "concept": true}, {"id": "llm", "concept": true}]}, "search": {"title": "一次搜索怎么算出结果", "type": "sequence", "summary": "先把问题向量化，再同时走向量和全文两路召回，最后融合排序并回取正文。", "points": [["先向量化问题", "整条链路唯一调用外部服务的一步，也是最常见的超时来源。"], ["两路召回缺一不可", "向量管意思相近，全文管字面精确，只留一路都会漏。"], ["最后才取正文", "命中之后再回 kb/ 取片段，避免前期读大量原文。"]], "docs": ["src/search.ts", "src/lib/fts-client.ts"], "code": [{"id": "embed", "file": "src/search.ts", "lines": [88, 100], "why": "问题向量化，唯一出网点"}, {"id": "fusion", "file": "src/search.ts", "lines": [141, 158], "why": "两路候选合并排序"}, {"id": "user", "concept": true}]}, "import": {"title": "数据源同步与导入管线", "type": "workflow", "summary": "从定时触发到可检索，中间有拉取、扫描分块、索引构建、落盘四步；任何一步失败都回滚本批。", "points": [["扫描先拦一道", "内容没变的文件直接跳过，这是省向量化额度的关键。"], ["索引是双通道", "同一份正文同时进向量和全文，不是先后关系。"], ["可以不要向量", "--no-vector 只建全文索引，适合没配向量化服务的场景。"]], "docs": ["src/lib/import.ts", "src/lib/chunker.ts"], "code": [{"id": "cron", "concept": true}, {"id": "chunk", "file": "src/lib/chunker.ts", "lines": [31, 44], "why": "分块策略决定检索粒度"}, {"id": "write", "file": "src/lib/import.ts", "lines": [210, 224], "why": "索引写入与落盘的收口"}]}, "daemons": {"title": "后台进程与它们读写的资源", "type": "architecture", "summary": "除了响应请求的 daemon，还有数据源调度、索引优化、备份三类后台工作，它们落在同一批资源上。", "points": [["调度器按数据源计时", "每个数据源自带 schedule，互不影响。"], ["向量化是唯一出网动作", "后台进程里只有它会访问外部服务。"], ["两个常见症状的定位", "「新文档搜不到」看同步与向量化；「删了还能搜到」看索引残留。"]], "docs": ["src/lib/datasource-scheduler.ts", "src/backup.ts"], "code": [{"id": "sched", "file": "src/lib/datasource-scheduler.ts", "lines": [55, 70], "why": "按数据源独立计时"}, {"id": "zvec", "concept": true}, {"id": "fts", "concept": true}]}, "config": {"title": "配置项地图", "type": "tree", "summary": "所有行为都收在一个 config.json 里：顶层管全局服务，scopes 段管每个知识库自己的目录、清洗与导入规则。", "points": [["改模型看 llm 与 embedding", "前者管对话与分析，后者管向量化，是两个独立配置。"], ["改对外行为看 mcp", "监听地址、鉴权、上传大小上限都在这里。"], ["改某个库看 scopes", "kbDir、wikiSync、clean、import 都是库级的。"]], "docs": ["src/lib/config-schema.ts", "docs/configuration.md"], "code": [{"id": "llm", "file": "src/lib/config-schema.ts", "lines": [20, 34], "why": "llm 与 embedding 两段配置的形状"}, {"id": "mcp", "concept": true}, {"id": "scopes", "concept": true}]}}, "snippets": {"overview": {"daemon": {"file": "src/lib/mcp-http-api.ts", "line": 2127, "endLine": 2142, "commit": "de5c495", "why": "HTTP 入口与路由分发集中在这里", "snippet": "// HTTP 入口：只做鉴权、并发与路由分发\nexport async function handleRequest(req, res) {\n  const ctx = await authenticate(req);\n  if (!ctx) return deny(res, 401);\n  const route = router.match(req.method, req.url);\n  if (!route) return deny(res, 404);\n  return route.handler(ctx, req, res);\n}\n\n// 路由表：一个入口分发到领域服务\nconst router = new Router([\n  { method: 'POST', path: '/import',   handler: importRun },\n  { method: 'GET',  path: '/query',    handler: queryFn },\n  { method: 'POST', path: '/relation', handler: relation }\n]);"}, "domain": {"file": "src/lib/import.ts", "line": 48, "endLine": 62, "commit": "de5c495", "why": "领域服务入口，导入管线的第一跳", "snippet": "export async function importRun(ctx, req, res) {\n  const { source, mode } = await readBody(req);\n  const job = await pipeline.start(source, { mode });\n  return res.json({ jobId: job.id });\n}"}, "kb": {"file": "src/lib/scope.ts", "line": 12, "endLine": 26, "commit": "de5c495", "why": "kb 目录是唯一不可丢的原始数据", "snippet": "// kbDir 是唯一不可丢的原始数据；索引只是派生物\nexport function resolveKbDir(scope) {\n  const dir = scope.kbDir || path.join(root, \"kb\");\n  if (!fs.existsSync(dir)) throw new Error(\"kb 目录不存在: \" + dir);\n  return dir;\n}"}}, "search": {"embed": {"file": "src/search.ts", "line": 88, "endLine": 100, "commit": "de5c495", "why": "问题向量化，唯一出网点", "snippet": "async function embedQuery(text) {\n  const vec = await llm.embed({ input: text, model });\n  return new Float32Array(vec.embedding);\n}"}, "fusion": {"file": "src/search.ts", "line": 141, "endLine": 158, "commit": "de5c495", "why": "两路候选合并排序", "snippet": "function fuse(dense, sparse, k) {\n  const scored = [...dense, ...sparse].map(hit => ({\n    id: hit.id, score: w1 * hit.dense + w2 * hit.sparse,\n  }));\n  return scored.sort((a, b) => b.score - a.score).slice(0, k);\n}"}}, "import": {"chunk": {"file": "src/lib/chunker.ts", "line": 31, "endLine": 44, "commit": "de5c495", "why": "分块策略决定检索粒度", "snippet": "function chunk(text, { size = 800, overlap = 120 }) {\n  const out = [];\n  for (let i = 0; i < text.length; i += size - overlap) {\n    out.push(text.slice(i, i + size));\n  }\n  return out;\n}"}, "write": {"file": "src/lib/import.ts", "line": 210, "endLine": 224, "commit": "de5c495", "why": "索引写入与落盘的收口", "snippet": "await Promise.all([\n  zvec.upsert(batch),\n  fts.index(batch),\n]);"}}, "daemons": {"sched": {"file": "src/lib/datasource-scheduler.ts", "line": 55, "endLine": 70, "commit": "de5c495", "why": "按数据源独立计时", "snippet": "for (const source of sources) {\n  const timer = setInterval(\n    () => sync(source).catch(logError),\n    source.schedule.interval\n  );\n}"}}, "config": {"llm": {"file": "src/lib/config-schema.ts", "line": 20, "endLine": 34, "commit": "de5c495", "why": "llm 与 embedding 两段配置的形状", "snippet": "export const schema = {\n  llm: { provider, model, apiKey, timeout },\n  embedding: { provider, model, dim },\n};"}}}, "demo": true, "branch": "main"}</script>
+
+<!-- ===== 页面配置：每页加载哪张图 + 解读 + 代码映射（新增图只改这里） ===== -->
+
+<!-- ===== 图源：真实项目里是 views/{id}.svg（archify 交付 + 导出 SVG） ===== -->
+<template data-demo="1" data-view="overview">
+<svg viewBox="0 22 900 238" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .lb{font-size:14px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11.5px;fill:#7d8983;text-anchor:middle}
+    .ln{stroke:#b7c7b9;stroke-width:1.2;fill:none}
+    .cap{font-size:10.5px;fill:#96a29a;text-anchor:middle;letter-spacing:.04em}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <g data-node-id="web"><rect class="bx" x="24" y="34" width="146" height="50" rx="9"/><text class="lb" x="97" y="56">Web 控制台</text><text class="sb" x="97" y="72">React</text></g>
+  <g data-node-id="agent"><rect class="bx" x="24" y="108" width="146" height="50" rx="9"/><text class="lb" x="97" y="130">AI Agent</text><text class="sb" x="97" y="146">MCP 客户端</text></g>
+  <g data-node-id="cli"><rect class="bx" x="24" y="182" width="146" height="50" rx="9"/><text class="lb" x="97" y="204">ki CLI</text><text class="sb" x="97" y="220">bin/ki.mjs</text></g>
+  <g data-node-id="daemon"><rect class="bxa" x="248" y="104" width="158" height="76" rx="11"/><text class="lb" x="327" y="132">daemon</text><text class="sb" x="327" y="150">HTTP :7423</text><text class="cap" x="327" y="168">routing only</text></g>
+  <g data-node-id="domain"><rect class="bxa" x="468" y="104" width="164" height="76" rx="11"/><text class="lb" x="550" y="132">领域服务</text><text class="sb" x="550" y="150">import · query</text><text class="cap" x="550" y="168">业务本体</text></g>
+  <g data-node-id="llm"><rect class="bx" x="468" y="26" width="164" height="50" rx="9"/><text class="lb" x="550" y="48">LLM 服务</text><text class="sb" x="550" y="64">chat / embedding</text></g>
+  <g data-node-id="kb"><rect class="bx" x="700" y="104" width="172" height="76" rx="9"/><text class="lb" x="786" y="132">kb/</text><text class="sb" x="786" y="150">Markdown 源</text><text class="cap" x="786" y="168">不可丢</text></g>
+  <g data-node-id="zvec"><rect class="bx" x="700" y="206" width="172" height="48" rx="9"/><text class="lb" x="786" y="228">zvec 向量库</text><text class="sb" x="786" y="244">可重建</text></g>
+  <g data-node-id="fts"><rect class="bx" x="468" y="206" width="164" height="48" rx="9"/><text class="lb" x="550" y="228">FTS 索引</text><text class="sb" x="550" y="244">可重建</text></g>
+  <path class="ln" d="M170 59 H209 V142 H248"/>
+  <path class="ln" d="M170 133 H248"/>
+  <path class="ln" d="M170 207 H209 V170 H248"/>
+  <path class="ln" d="M406 142 H468"/>
+  <path class="ln" d="M632 126 H700"/>
+  <path class="ln" d="M632 150 V230 H700"/>
+  <path class="ln" d="M550 180 V206"/>
+  <path class="ln" d="M550 76 V104"/>
+  <text class="cap" x="437" y="132">分发</text>
+  <text class="cap" x="666" y="118">读写</text>
+</svg>
+</template>
+
+<template data-demo="1" data-view="search">
+<svg viewBox="0 48 900 206" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .lb{font-size:14px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11.5px;fill:#7d8983;text-anchor:middle}
+    .ln{stroke:#b7c7b9;stroke-width:1.2;fill:none}
+    .cap{font-size:10.5px;fill:#96a29a;text-anchor:middle;letter-spacing:.04em}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <g data-node-id="user"><rect class="bx" x="24" y="124" width="132" height="54" rx="9"/><text class="lb" x="90" y="147">用户提问</text><text class="sb" x="90" y="164">自然语言</text></g>
+  <g data-node-id="embed"><rect class="bxa" x="206" y="124" width="150" height="54" rx="9"/><text class="lb" x="281" y="147">问题向量化</text><text class="sb" x="281" y="164">唯一出网点</text></g>
+  <g data-node-id="vec"><rect class="bx" x="410" y="52" width="150" height="50" rx="9"/><text class="lb" x="485" y="74">向量召回</text><text class="sb" x="485" y="90">语义相近</text></g>
+  <g data-node-id="fts"><rect class="bx" x="410" y="200" width="150" height="50" rx="9"/><text class="lb" x="485" y="222">全文召回</text><text class="sb" x="485" y="238">字面精确</text></g>
+  <g data-node-id="fusion"><rect class="bxa" x="614" y="124" width="146" height="54" rx="9"/><text class="lb" x="687" y="147">融合排序</text><text class="sb" x="687" y="164">各自带分</text></g>
+  <g data-node-id="kb"><rect class="bx" x="790" y="124" width="88" height="54" rx="9"/><text class="lb" x="834" y="147">回取</text><text class="sb" x="834" y="164">kb/</text></g>
+  <path class="ln" d="M156 151 H206"/>
+  <path class="ln" d="M356 151 H383 V77 H410"/>
+  <path class="ln" d="M356 151 H383 V225 H410"/>
+  <path class="ln" d="M560 77 H587 V151 H614"/>
+  <path class="ln" d="M560 225 H587 V151 H614"/>
+  <path class="ln" d="M760 151 H790"/>
+  <text class="cap" x="181" y="141">query</text>
+  <text class="cap" x="775" y="141">top-k</text>
+</svg>
+</template>
+
+<template data-demo="1" data-view="import">
+<svg viewBox="0 82 900 104" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .lb{font-size:14px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11.5px;fill:#7d8983;text-anchor:middle}
+    .ln{stroke:#b7c7b9;stroke-width:1.2;fill:none}
+    .cap{font-size:10.5px;fill:#96a29a;text-anchor:middle;letter-spacing:.04em}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <g data-node-id="cron"><rect class="bx" x="24" y="86" width="136" height="54" rx="9"/><text class="lb" x="92" y="109">定时触发</text><text class="sb" x="92" y="126">schedule</text></g>
+  <g data-node-id="pull"><rect class="bx" x="216" y="86" width="136" height="54" rx="9"/><text class="lb" x="284" y="109">拉取数据</text><text class="sb" x="284" y="126">git / 文档站</text></g>
+  <g data-node-id="chunk"><rect class="bxa" x="408" y="86" width="146" height="54" rx="9"/><text class="lb" x="481" y="109">扫描分块</text><text class="sb" x="481" y="126">内容没变则跳过</text></g>
+  <g data-node-id="write"><rect class="bxa" x="610" y="86" width="146" height="54" rx="9"/><text class="lb" x="683" y="109">索引构建</text><text class="sb" x="683" y="126">向量 + 全文</text></g>
+  <g data-node-id="kb"><rect class="bx" x="812" y="86" width="66" height="54" rx="9"/><text class="lb" x="845" y="109">落盘</text><text class="sb" x="845" y="126">kb/</text></g>
+  <path class="ln" d="M160 113 H216"/><path class="ln" d="M352 113 H408"/>
+  <path class="ln" d="M554 113 H610"/><path class="ln" d="M756 113 H812"/>
+  <text class="cap" x="481" y="176">任一步失败 → 回滚本批</text>
+</svg>
+</template>
+
+<template data-demo="1" data-view="daemons">
+<svg viewBox="0 30 900 234" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .lb{font-size:14px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11.5px;fill:#7d8983;text-anchor:middle}
+    .ln{stroke:#b7c7b9;stroke-width:1.2;fill:none}
+    .cap{font-size:10.5px;fill:#96a29a;text-anchor:middle;letter-spacing:.04em}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <g data-node-id="sched"><rect class="bxa" x="30" y="34" width="190" height="58" rx="10"/><text class="lb" x="125" y="59">数据源调度器</text><text class="sb" x="125" y="77">按源独立计时</text></g>
+  <g data-node-id="opt"><rect class="bx" x="30" y="118" width="190" height="58" rx="10"/><text class="lb" x="125" y="143">索引优化</text><text class="sb" x="125" y="161">周期任务</text></g>
+  <g data-node-id="backup"><rect class="bx" x="30" y="202" width="190" height="58" rx="10"/><text class="lb" x="125" y="227">备份</text><text class="sb" x="125" y="245">kb/ 快照</text></g>
+  <g data-node-id="zvec"><rect class="bx" x="430" y="52" width="150" height="52" rx="9"/><text class="lb" x="505" y="74">zvec</text><text class="sb" x="505" y="91">向量</text></g>
+  <g data-node-id="fts"><rect class="bx" x="430" y="130" width="150" height="52" rx="9"/><text class="lb" x="505" y="152">FTS</text><text class="sb" x="505" y="169">全文</text></g>
+  <g data-node-id="kb"><rect class="bx" x="430" y="208" width="150" height="52" rx="9"/><text class="lb" x="505" y="230">kb/</text><text class="sb" x="505" y="247">原始数据</text></g>
+  <g data-node-id="llm"><rect class="bx" x="706" y="52" width="164" height="52" rx="9"/><text class="lb" x="788" y="74">LLM 服务</text><text class="sb" x="788" y="91">唯一出网</text></g>
+  <path class="ln" d="M220 63 H325 V78 H430"/>
+  <path class="ln" d="M220 147 H430"/>
+  <path class="ln" d="M220 231 H430"/>
+  <path class="ln" d="M580 78 H706"/>
+  <path class="ln" d="M580 156 H640 V234 H580"/>
+</svg>
+</template>
+
+<template data-demo="1" data-view="config">
+<svg viewBox="0 20 900 172" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .lb{font-size:14px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11.5px;fill:#7d8983;text-anchor:middle}
+    .ln{stroke:#b7c7b9;stroke-width:1.2;fill:none}
+    .cap{font-size:10.5px;fill:#96a29a;text-anchor:middle;letter-spacing:.04em}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <g data-node-id="root"><rect class="bx" x="356" y="24" width="188" height="52" rx="9"/><text class="lb" x="450" y="47">config.json</text><text class="sb" x="450" y="64">唯一配置文件</text></g>
+  <g data-node-id="llm"><rect class="bxa" x="18" y="132" width="196" height="56" rx="9"/><text class="lb" x="116" y="156">llm</text><text class="sb" x="116" y="174">对话 / 分析</text></g>
+  <g data-node-id="embedding"><rect class="bx" x="236" y="132" width="196" height="56" rx="9"/><text class="lb" x="334" y="156">embedding</text><text class="sb" x="334" y="174">向量化</text></g>
+  <g data-node-id="mcp"><rect class="bx" x="454" y="132" width="196" height="56" rx="9"/><text class="lb" x="552" y="156">mcp</text><text class="sb" x="552" y="174">监听 / 鉴权 / 上限</text></g>
+  <g data-node-id="scopes"><rect class="bx" x="672" y="132" width="210" height="56" rx="9"/><text class="lb" x="777" y="156">scopes</text><text class="sb" x="777" y="174">每个库的目录与规则</text></g>
+  <path class="ln" d="M450 76 V104 H116 V132"/>
+  <path class="ln" d="M450 76 V104 H334 V132"/>
+  <path class="ln" d="M450 76 V132"/>
+  <path class="ln" d="M450 76 V104 H777 V132"/>
+</svg>
+</template>
+
+<div id="view-sources" hidden></div>
+
+<script>
+(async function(){
+  const DEMO = JSON.parse(document.getElementById('demo-config').textContent);
+  let SITE = DEMO, PAGES = DEMO.pages || {}, SNIP = DEMO.snippets || {};
+  let ITEMS = [], SOURCE = 'demo', cur = 'home', MOUNT_SEQ = 0;
+
+  function leaves(){
+    const out = [];
+    for(const g of SITE.nav){
+      const kids = (Array.isArray(g.children) && g.children.length) ? g.children : [g];
+      for(const k of kids){
+        out.push({ id: k.id, page: k.page || k.id, group: g.id, groupName: g.name, groupQ: g.q,
+                   nested: !!(Array.isArray(g.children) && g.children.length) });
+      }
+    }
+    return out;
+  }
+  const codeOf = pid => ((PAGES[pid] || {}).code || []).filter(c => c.file);
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // 状态源用 hash：支持 #page 深链与后退
+  const fromHash = () => {
+    const h = location.hash.replace('#', '');
+    return (h && ITEMS.some(i => i.page === h)) ? h : 'home';
+  };
+  window.addEventListener('hashchange', () => { cur = fromHash(); render(); });
+
+  function renderSide(){
+    let h = '<a><div class="nav-home ' + (cur==='home'?'on':'') + '" data-id="home">总览</div></a>';
+    for(const g of SITE.nav){
+      const kids = (Array.isArray(g.children) && g.children.length) ? g.children : [g];
+      h += '<div class="grp-h"><span>' + esc(g.name) + '</span><span class="n">' + kids.length + '</span></div>';
+      for(const k of kids){
+        const pid = k.page || k.id;
+        const p = PAGES[pid] || {};
+        const n = codeOf(pid).length;
+        const lvl = (Array.isArray(g.children) && g.children.length) ? ' l2' : '';
+        h += '<a><div class="nav-i' + lvl + (cur===pid?' on':'') + '" data-id="' + pid + '">'
+          + '<span>' + esc(p.title || pid) + '</span>' + (n ? '<span class="tag">' + n + '</span>' : '') + '</div></a>';
+      }
+    }
+    $('#side').innerHTML = h;
+    $('#side').querySelectorAll('[data-id]').forEach(el => {
+      el.onclick = () => go(el.dataset.id);
+    });
+  }
+
+  function renderHome(){
+    let h = '<div class="hero"><h1>' + esc(SITE.subtitle || '先建立整体认知') + '</h1>'
+      + '<p>' + esc(SITE.intro || '') + '</p>'
+      + '<div class="note"><span>▸</span><span>' + (SITE.notice || '图为内联 SVG：带代码的节点可点击，其余为概念节点。') + '</span></div></div>';
+    for(const g of SITE.nav){
+      const pages = ITEMS.filter(i => i.group === g.id);
+      h += '<section class="sec"><div class="sec-h"><span class="name">' + esc(g.name) + '</span>'
+        + '<span class="q">' + esc(g.q || '') + '</span><span class="n">' + pages.length + '</span></div><div class="rows">';
+      for(const it of pages){
+        const p = PAGES[it.page] || {};
+        const n = codeOf(it.page).length;
+        h += '<div class="row" data-id="' + it.page + '">'
+          + '<span class="ttl">' + esc(p.title || it.page) + '</span>'
+          + '<span class="desc">' + esc(p.summary || '（该页未配置 summary）') + '</span>'
+          + '<span class="meta"><span class="pill t">' + esc(p.type || 'page') + '</span>'
+          + '<span class="pill">' + ((p.points || []).length) + ' 解读</span>'
+          + (n ? '<span class="pill code">' + n + ' 可点</span>' : '')
+          + '</span><span class="arrow">→</span></div>';
+      }
+      h += '</div></section>';
+    }
+    $('#main').innerHTML = h;
+    $('#main').querySelectorAll('.row').forEach(el => {
+      el.onclick = () => go(el.dataset.id);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function renderPage(pid){
+    const p = PAGES[pid];
+    const it = ITEMS.find(i => i.page === pid) || {};
+    if(!p){ $('#main').innerHTML = '<div class="hint">页面配置缺失：' + esc(pid) + '</div>'; return; }
+    const n = codeOf(pid).length;
+    let h = '<div class="crumb">' + esc(it.groupName || '') + ' / ' + esc(p.title || pid) + '</div>';
+    h += '<div class="pg-head"><h1>' + esc(p.title || pid) + '</h1><p>' + esc(p.summary || '') + '</p></div>';
+    h += '<div class="fig"><div class="fig-bar">'
+      + '<span class="chip">' + esc(p.type || '') + '</span><span class="sep"></span>'
+      + '<span class="t">' + esc(SITE.generated_at || '') + '</span><span class="sep"></span>'
+      + '<span class="t">' + (n ? n + ' 个节点可点' : '纯展示') + '</span>'
+      + (p.interactive ? '<a href="' + esc(p.interactive) + '" target="_blank" rel="noopener">交互版 ↗</a>' : '')
+      + '</div><div class="fig-body" id="viewbox"><div class="ph">加载图中…</div></div></div>';
+    if(n) h += '<div class="hint">图中 ' + n + ' 个节点有代码，点击可看生成时的源码快照；其余节点为外部依赖或纯概念，点击会给出说明。</div>';
+
+    h += '<dl class="read"><div class="read-h">怎么读这张图</div>';
+    for(const pt of (p.points || [])) h += '<dt>' + esc(pt[0]) + '</dt><dd>' + esc(pt[1]) + '</dd>';
+    h += '</dl>';
+
+    const codes = (p.code || []).filter(c => c.file);
+    h += '<div class="docs"><div class="docs-h">对应代码块</div><ul class="codelist">';
+    if(!codes.length){
+      h += '<li style="cursor:default"><span class="why" style="margin-left:0">该页没有配置代码位置</span></li>';
+    }
+    for(const c of codes){
+      const sn = (SNIP[pid] || {})[c.id] || {};
+      const sym = c.symbol || sn.symbol || '';
+      h += '<li data-node="' + esc(c.id) + '">'
+        + '<span class="p">' + esc(c.file) + ':' + (c.lines ? c.lines[0] : '-') + '-' + (c.lines ? c.lines[1] : '-') + '</span>'
+        + (sym ? '<span class="sym">' + esc(sym) + '</span>' : '')
+        + '<span class="why">' + esc(c.why || '') + '</span></li>';
+    }
+    h += '</ul>';
+    // 参考文件只放"文档"，且排除已出现在代码块里的源码路径（否则纯重复）
+    const codeFiles = new Set(codes.map(c => c.file));
+    const extraDocs = (p.docs || []).filter(d => !codeFiles.has(d));
+    if(extraDocs.length){
+      h += '<div class="docs-h" style="margin-top:18px">参考文档</div><ul>';
+      for(const d of extraDocs) h += '<li style="cursor:default"><span class="p">' + esc(d) + '</span></li>';
+      h += '</ul>';
+    }
+    h += '</div>';
+
+    $('#main').innerHTML = h;
+    closeCode();
+    $('#main').querySelectorAll('.codelist li[data-node]').forEach(el => {
+      el.onclick = ev => { ev.stopPropagation(); openCode(pid, el.dataset.node); };
+    });
+    mountSvg(pid);
+    window.scrollTo(0, 0);
+  }
+
+  const TPL_CACHE = {};
+  async function fetchTemplate(pid, href){
+    if(TPL_CACHE[pid]) return TPL_CACHE[pid];
+    const r = await fetch(href, { cache: 'no-store' });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const txt = await r.text();
+    const tpl = document.createElement('template');
+    tpl.setAttribute('data-view', pid);
+    tpl.innerHTML = txt;
+    document.getElementById('view-sources').appendChild(tpl);
+    TPL_CACHE[pid] = tpl;
+    return tpl;
+  }
+
+  async function mountSvg(pid){
+    const box = $('#viewbox');
+    if(!box) return;
+    const seq = ++MOUNT_SEQ;
+    const page = PAGES[pid] || {};
+    const svgHref = page.svg || ((SITE.views_dir || 'views') + '/' + pid + '.svg');
+    let tpl = null;
+    try{
+      if(SOURCE === 'demo'){
+        tpl = document.querySelector('template[data-demo="1"][data-view="' + pid + '"]');
+      }else{
+        tpl = await fetchTemplate(pid, svgHref);
+      }
+    }catch(e){
+      box.innerHTML = '<div class="ph">图源加载失败：' + esc(svgHref) +
+        '<br><span style="opacity:.7">' + esc(e.message) + '　（file:// 下需起本地服务）</span></div>';
+      return;
+    }
+    if(!tpl){
+      box.innerHTML = '<div class="ph">该页没有图源：' +
+        (SOURCE === 'demo' ? '内置示例里没有这一页' : '请在页面配置里填 svg 路径') + '</div>';
+      return;
+    }
+    if(seq !== MOUNT_SEQ || cur !== pid) return;   // 期间已切页，丢弃过期结果
+    box.innerHTML = '';
+    const host = document.createElement('div');
+    box.appendChild(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    shadow.appendChild(tpl.content.cloneNode(true));
+    // archify 导出的 SVG 带固定 width/height，去掉才能跟着容器缩放（手写图只有 viewBox，本就不受影响）
+    const svgEl = shadow.querySelector('svg');
+    if(svgEl){
+      svgEl.removeAttribute('width');
+      svgEl.removeAttribute('height');
+      svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      svgEl.style.width = '100%';
+      svgEl.style.height = 'auto';
+      svgEl.style.display = 'block';
+    }
+    const codeIds = new Set(codeOf(pid).map(c => c.id));
+    const st = document.createElement('style');
+    st.textContent = '[data-node-id]{cursor:pointer}'
+      + '[data-bare]:hover{filter:drop-shadow(0 2px 8px rgba(23,33,28,.22))}';
+    shadow.insertBefore(st, shadow.firstChild);
+    // 所有节点都可点击：有代码的看代码，无代码的给出说明与相关文件
+    shadow.querySelectorAll('[data-node-id]').forEach(g => {
+      const id = g.getAttribute('data-node-id');
+      g.setAttribute(codeIds.has(id) ? 'data-coded' : 'data-bare', '1');
+      g.addEventListener('click', ev => { ev.stopPropagation(); pickNode(pid, g); });
+    });
+  }
+
+  function pickNode(pid, g){
+    const root = g.getRootNode();
+    if(root && root.querySelectorAll) root.querySelectorAll('[data-coded].is-picked').forEach(x => x.classList.remove('is-picked'));
+    g.classList.add('is-picked');
+    openCode(pid, g.getAttribute('data-node-id'));
+  }
+
+  const KW = /^(const|let|var|function|async|await|return|if|else|for|while|class|export|import|from|new|throw|try|catch|finally|interface|type|extends|implements|of|in|typeof|void|delete|yield|switch|case|break|continue|default|public|private|readonly)\b/;
+  function hl(line){
+    let out = '', i = 0;
+    while(i < line.length){
+      const rest = line.slice(i);
+      if(rest.startsWith('//')){ out += '<span class="c">' + esc(rest) + '</span>'; break; }
+      let m;
+      if((m = rest.match(/^(['"`])((?:\\.|(?!\1)[^\\])*)\1/))){ out += '<span class="s">' + esc(m[0]) + '</span>'; i += m[0].length; continue; }
+      if((m = rest.match(/^(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?)\b/))){ out += '<span class="n">' + esc(m[0]) + '</span>'; i += m[0].length; continue; }
+      if((m = rest.match(KW))){ out += '<span class="k">' + esc(m[0]) + '</span>'; i += m[0].length; continue; }
+      if((m = rest.match(/^[A-Za-z_$][\w$]*/))){ out += esc(m[0]); i += m[0].length; continue; }
+      out += esc(rest[0]); i++;
+    }
+    return out;
+  }
+
+  function openCode(pid, nodeId){
+    const p = PAGES[pid] || {};
+    const rec = (p.code || []).find(c => c.id === nodeId) || {};
+    const snip = (SNIP[pid] || {})[nodeId] || {};
+    const isConcept = !rec.file;
+    $('#cpName').textContent = nodeId;
+    $('#cpBadge').hidden = !isConcept;
+    $('#cpBadge').textContent = 'concept';
+    $('#cpPath').textContent = isConcept ? '该节点为概念节点，无对应源码' : '';
+
+    const why = $('#cpWhy'), code = $('#cpCode'), foot = $('#cpFoot');
+    if(isConcept){
+      why.hidden = true;
+      const rel = (p.docs || []);
+      code.innerHTML = '<div class="cp-empty">该节点没有直接对应的源码'
+        + (rel.length ? '<br><span style="opacity:.8">相关文件：' + rel.map(esc).join(' · ') + '</span>' : '')
+        + '<br><span style="opacity:.55">通常出现在外部依赖或纯概念节点上；如需可点，在配置里给它填 file + lines</span></div>';
+      foot.textContent = '';
+    }else{
+      const lines = String(snip.snippet || '').split('\n');
+      const hasCode = !!snip.snippet;
+      const startLine = snip.line || (rec.lines ? rec.lines[0] : 1);
+      const endLine = snip.endLine || (rec.lines ? rec.lines[1] : startLine);
+      $('#cpPath').innerHTML = '<i>' + esc(snip.file || rec.file) + '</i>:' + startLine + '-' + endLine;
+      why.hidden = false;
+      why.innerHTML = esc(rec.why || '') + '<div class="w">生成时的代码快照，不代表仓库当前 HEAD</div>';
+      if(!hasCode){
+        code.innerHTML = '<div class="cp-empty">该节点有代码位置，但片段表里没有内容'
+          + '<br><span style="opacity:.7">先跑 collect_snippets.py，再刷新</span></div>';
+        foot.textContent = '';
+      }else{
+        code.innerHTML = lines.map((l, i) =>
+          '<div class="cl"><span class="ln">' + (startLine + i) + '</span><span class="lc">' + (hl(l) || ' ') + '</span></div>'
+        ).join('');
+        foot.textContent = '共 ' + lines.length + ' 行 · ' + (snip.commit || SITE.baseline || '') + ' · 与本次图集同期读取';
+      }
+    }
+    $('#panel').classList.add('on');
+    $('#mask').classList.add('on');
+    $('#panel').setAttribute('aria-hidden', 'false');
+  }
+
+  function closeCode(){
+    const p = $('#panel');
+    if(!p) return;
+    p.classList.remove('on');
+    $('#mask').classList.remove('on');
+    p.setAttribute('aria-hidden', 'true');
+    document.querySelectorAll('.fig-body div').forEach(box => {
+      const sr = box.shadowRoot;
+      if(sr) sr.querySelectorAll('[data-coded].is-picked').forEach(x => x.classList.remove('is-picked'));
+    });
+  }
+
+  function go(id){
+    const side = $('#side');
+    if(side) side.classList.remove('open');
+    if(location.hash.slice(1) === id){ cur = id; render(); }
+    else { location.hash = id; }
+  }
+
+  function render(){
+    renderSide();
+    if(cur === 'home') renderHome(); else renderPage(cur);
+  }
+
+  $('#cpClose').onclick = closeCode;
+  $('#tocBtn').onclick = () => $('#side').classList.toggle('open');
+  // 点面板以外的地方关闭抽屉（节点点击已 stopPropagation，不会误关）
+  document.addEventListener('click', ev => {
+    const panel = $('#panel');
+    if(!panel || !panel.classList.contains('on')) return;
+    if(ev.composedPath().includes(panel)) return;
+    closeCode();
+  });
+  document.addEventListener('keydown', ev => { if(ev.key === 'Escape') closeCode(); });
+  // 不注册 document 级点击关闭：点图空白不应收起抽屉
+
+  // 返回 null（视为没有配置）或 {__error}（配置存在但有问题）或配置对象
+  async function loadCfg(){
+    try{
+      const r = await fetch('atlas.config.json', { cache: 'no-store' });
+      if(r.status === 404) return null;              // 没配置 → 用内置示例
+      if(!r.ok) return { __error: 'atlas.config.json 读取失败：HTTP ' + r.status };
+      const txt = await r.text();
+      let cfg;
+      try{
+        cfg = JSON.parse(txt);
+      }catch(e){
+        return { __error: 'atlas.config.json 语法错误：' + e.message };
+      }
+      if(!cfg || !Array.isArray(cfg.nav)) return { __error: 'atlas.config.json 缺少 nav 数组' };
+      return cfg;
+    }catch(e){
+      return null;                                   // file:// 下 fetch 被拦 → 用内置示例
+    }
+  }
+
+  function showCfgError(msg){
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99;padding:9px 16px;'
+      + 'font:12.5px/1.6 -apple-system,sans-serif;color:#7a2e12;background:#fdf0e6;'
+      + 'border-bottom:1px solid #f0d6bf';
+    bar.textContent = '配置未生效：' + msg + '　（当前显示内置示例）';
+    document.body.appendChild(bar);
+  }
+
+  (async function boot(){
+    const isBaked = !!DEMO.baked;                    // 导出单文件：配置与图源都已内联
+    let cfg = isBaked ? DEMO : await loadCfg();
+    if(cfg && cfg.__error){ showCfgError(cfg.__error); cfg = null; }
+    if(cfg){
+      SITE = cfg;
+      PAGES = cfg.pages || {};
+      SNIP = cfg.snippets || {};
+      SOURCE = isBaked ? 'demo' : 'file';            // baked 走内置图源，不 fetch
+      if(!isBaked && !Object.keys(SNIP).length){
+        try{
+          const r = await fetch('snippets.json', { cache: 'no-store' });
+          if(r.ok) SNIP = await r.json();
+        }catch(e){ /* 无片段文件 */ }
+      }
+    }
+    ITEMS = leaves();
+    cur = fromHash();
+    document.title = (SITE.title || '项目知识地图') + (SITE.subtitle ? ' · ' + SITE.subtitle : '');
+    $('#brand').textContent = SITE.title || '项目知识地图';
+    $('#sub').textContent = SITE.subtitle || '';
+    $('#stat').textContent = ITEMS.length + ' 页 · ' + (SITE.nav || []).length + ' 个分类'
+      + (SITE.baseline ? ' · ' + SITE.baseline : '') + (SITE.demo ? ' · 示例' : '');
+    const bb = $('#buildbar');
+    if(bb){
+      const parts = [];
+      parts.push('基于 <b>' + esc(SITE.branch || 'unknown') + '</b> @ <code>' + esc(SITE.baseline || 'unknown') + '</code> 生成');
+      if(SITE.generated_at) parts.push(esc(SITE.generated_at));
+      parts.push('代码为生成时快照，不代表当前 HEAD');
+      bb.innerHTML = parts.join('<span class="dot"></span>');
+    }
+    document.documentElement.setAttribute('data-atlas-source', SOURCE);
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
