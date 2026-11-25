@@ -21,7 +21,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from atlas_io import load_atlas, write_bundle
+from atlas_io import load_atlas, page_ids, write_bundle
 
 FONT_FACE = re.compile(r"@font-face\s*\{[^}]*\}", re.S)
 XML_DECL = re.compile(r"^\s*<\?xml[^>]*\?>\s*", re.S)
@@ -35,16 +35,6 @@ TARGET_BYTES = 3 * 1024 * 1024
 
 def safe_json(obj):
     return json.dumps(obj, ensure_ascii=False).replace("</script>", "<\\/script>")
-
-
-def page_ids(cfg):
-    out = []
-    for g in cfg.get("nav", []):
-        for k in (g.get("children") or [g]):
-            pid = k.get("page") or k.get("id")
-            if pid and pid not in out:
-                out.append(pid)
-    return out
 
 
 def tpl_pattern(pid):

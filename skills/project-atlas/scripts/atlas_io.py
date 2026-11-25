@@ -51,48 +51,62 @@ def load_atlas(path):
         _die("目录模式需要 nav/ 目录（放在 %s）" % base)
 
     nav, pages = [], {}
-    for dname in sorted(os.listdir(nav_root)):
-        dpath = os.path.join(nav_root, dname)
-        if not os.path.isdir(dpath) or dname.startswith("."):
-            continue
+
+    def scan(dpath, dname):
+        """一个目录 = 一个分组节点；子目录递归，目录内 *.json = 该分组的页面。"""
         gpath = os.path.join(dpath, "_group.json")
         if not os.path.isfile(gpath):
-            _die("分类目录缺 _group.json：%s" % dpath)
+            _die("分组目录缺 _group.json：%s" % dpath)
         with open(gpath, encoding="utf-8") as f:
             g = json.load(f)
-        label = dname.split("-", 1)[-1]
-        gid = g.get("id") or label
-        item = {"id": gid, "name": g.get("name") or label, "q": g.get("q", "")}
+        label = dname.split("-", 1)[-1] if "-" in dname else dname
+        item = {"id": g.get("id") or label, "name": g.get("name") or label, "q": g.get("q", "")}
 
+        own_pages = []
         if g.get("page"):
-            pid = g["page"]
+            own_pages.append(g["page"])
+        for fname in sorted(os.listdir(dpath)):
+            if fname.endswith(".json") and not fname.startswith("_"):
+                pid = fname[:-5]
+                if pid not in own_pages:
+                    own_pages.append(pid)
+        for pid in own_pages:
             ppath = os.path.join(dpath, pid + ".json")
             if not os.path.isfile(ppath):
                 _die("%s/_group.json 指向的 %s.json 不存在" % (dname, pid))
             with open(ppath, encoding="utf-8") as f:
                 pages[pid] = json.load(f)
-            item["page"] = pid
-        else:
-            found = []
-            for fname in sorted(os.listdir(dpath)):
-                if not fname.endswith(".json") or fname.startswith("_"):
-                    continue
-                pid = fname[:-5]
-                with open(os.path.join(dpath, fname), encoding="utf-8") as f:
-                    pages[pid] = json.load(f)
-                found.append(pid)
-            if not found:
-                _die("分类目录下没有页面文件：%s" % dpath)
-            # _group.json 的 order 可显式定序；缺省按文件名
-            order = g.get("order")
-            if order:
-                missing = [x for x in order if x not in found]
-                if missing:
-                    _die("%s/_group.json 的 order 指向不存在的页面：%s" % (dname, ", ".join(missing)))
-                extra = [x for x in found if x not in order]
-                found = list(order) + extra
-            item["children"] = [{"id": pid, "page": pid} for pid in found]
-        nav.append(item)
+
+        child_dirs = [d for d in sorted(os.listdir(dpath))
+                      if os.path.isdir(os.path.join(dpath, d)) and not d.startswith(".")]
+
+        # 只有「_group.json 显式写了 page」才压平成"分类即页面"；
+        # 目录里放页面文件 = 分组 + 页面，不能因为只有一个页面就把层级吃掉
+        if g.get("page") and not child_dirs and len(own_pages) == 1:
+            item["page"] = own_pages[0]
+            return item
+
+        childs = [{"id": pid, "page": pid} for pid in own_pages]
+        for sub in child_dirs:
+            childs.append(scan(os.path.join(dpath, sub), sub))
+        if not childs:
+            _die("目录下既没有页面文件也没有子目录：%s" % dpath)
+        order = g.get("order")
+        if order:
+            known = {c.get("page") or c.get("id") for c in childs}
+            missing = [x for x in order if x not in known]
+            if missing:
+                _die("%s/_group.json 的 order 指向不存在的节点：%s" % (dname, ", ".join(missing)))
+            childs.sort(key=lambda c: order.index(c.get("page") or c.get("id"))
+                        if (c.get("page") or c.get("id")) in order else len(order))
+        item["children"] = childs
+        return item
+
+    for dname in sorted(os.listdir(nav_root)):
+        dpath = os.path.join(nav_root, dname)
+        if not os.path.isdir(dpath) or dname.startswith("."):
+            continue
+        nav.append(scan(dpath, dname))
 
     if not nav:
         _die("nav/ 下没有任何分类目录")
@@ -102,13 +116,21 @@ def load_atlas(path):
 
 
 def page_ids(site):
-    """按 nav 顺序拍平出页面 id。"""
+    """按 nav 顺序递归拍平出页面 id（层级不限）。"""
     out = []
-    for g in site.get("nav", []):
-        for k in (g.get("children") or [g]):
-            pid = k.get("page") or k.get("id")
+
+    def walk(items):
+        for it in items or []:
+            if not isinstance(it, dict):
+                continue
+            pid = it.get("page")
             if pid and pid not in out:
                 out.append(pid)
+            kids = it.get("children")
+            if isinstance(kids, list) and kids:
+                walk(kids)
+
+    walk(site.get("nav") or [])
     return out
 
 

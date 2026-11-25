@@ -33,15 +33,27 @@ def safe_dir(name, idx):
 
 
 def groups(site):
+    """递归出叶子分组：dir 是完整相对路径，path 是从根到叶的分组名。"""
     out = []
-    for i, g in enumerate(site.get("nav") or []):
-        kids = g.get("children") or [g]
-        out.append({
-            "dir": safe_dir(g.get("name") or g.get("id"), i),
-            "name": g.get("name") or g.get("id"),
-            "q": g.get("q") or "",
-            "pages": [k.get("page") or k.get("id") for k in kids],
-        })
+
+    def walk(items, parent_dir, parent_path):
+        for i, it in enumerate(items or []):
+            if not isinstance(it, dict):
+                continue
+            label = it.get("name") or it.get("id") or ("item%d" % (i + 1))
+            d = (parent_dir + "/" if parent_dir else "") + safe_dir(label, i)
+            kids = it.get("children")
+            if isinstance(kids, list) and kids:
+                walk(kids, d, parent_path + [label])
+            else:
+                pid = it.get("page") or it.get("id")
+                if not pid:
+                    continue
+                # 叶子并入父目录；顶层页面才自建目录
+                out.append({"dir": parent_dir or d, "name": label, "q": it.get("q") or "",
+                            "pages": [pid], "path": parent_path + [label]})
+
+    walk(site.get("nav") or [], "", [])
     return out
 
 
@@ -121,10 +133,11 @@ def readme_md(gs, site):
     meta.append("%d 页" % sum(len(g["pages"]) for g in gs))
     out += [" · ".join(meta), "", "## 目录", ""]
     for g in gs:
-        out.append("- **%s**%s" % (g["name"], (" — " + g["q"]) if g["q"] else ""))
-        for pid in g["pages"]:
-            page = PAGES_CACHE.get(pid) or {}
-            out.append("  - [%s](%s/%s.md)" % (page.get("title") or pid, g["dir"], pid))
+        pid = g["pages"][0]
+        page = PAGES_CACHE.get(pid) or {}
+        trail = " / ".join(g.get("path") or [g["name"]])
+        out.append("- %s[%s](%s/%s.md)" % (trail + " → " if trail else "",
+                                           page.get("title") or pid, g["dir"], pid))
     out.append("")
     return "\n".join(out)
 

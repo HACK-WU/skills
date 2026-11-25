@@ -61,9 +61,20 @@
 | `views_dir` | - | 图源目录，默认 `views` | 写绝对路径 |
 | `pages` | ✅ | 每页配置对象，键名即 `nav[].page` | 写成数组 |
 | `nav[]` | ✅ | `id` / `name` / `q`，加 `children[]` 或 `page` | 两者都缺 → 该分类无页可点 |
-| `nav[].children[]` | - | 每项 `{id, page}` | 忘记 `page` 字段（会退化成用 id 当文件名） |
+| `nav[].children[]` | - | 子节点数组，**可继续嵌套任意深度** | 子节点既无 `children` 又无 `page` |
 
-> `nav` 一层是分类，`children` 一层是子分类/页面，故最大三级：分类 → 子分类 → 页面。再深说明划分有问题。
+> `nav` 是任意深度的树：节点有 `children` 即分组，可继续嵌套；没有 `children` 的必须有 `page`。
+> 侧栏缩进随深度自动增加（每层 12px），面包屑显示完整路径。
+
+**折叠规则**（深目录的必备）：
+
+| 规则 | 说明 |
+|---|---|
+| 默认折叠深度 | **第 3 层及更深的分组默认折叠**（`DEFAULT_COLLAPSE_DEPTH = 2`），1–2 层始终展开 |
+| 当前路径自动展开 | 打开某页时，它路径上的分组全部展开；用户手动折叠的同级分组不受影响 |
+| 手动切换 | 点分组标题展开/折叠，箭头 `▾` / `▸` 指示状态；只重绘侧栏，不重载图 |
+| 当前页在折叠支里 | 被折叠的分组若包含当前页，标题与箭头转为强调色（`has-cur`），提示"页在这一支里"，不自动展开（尊重用户折叠） |
+| 状态生命周期 | 仅当前会话内存有效，刷新后回到默认（不落 localStorage，避免"状态漂移"） |
 
 ### 2.2 `pages[id]`（每页：图源 / 解读 / 代码）
 
@@ -96,25 +107,41 @@ pages[].code[].file          ──采集──▶  snippets 的 key（同 id）
 
 ## 二·五、目录树模式（与单文件等价）
 
+**层级 = 目录嵌套深度，不设上限**：子目录就是子分组，可以一直往下。
+
 ```
 atlas/
-├── site.json                       全局字段（title / branch / baseline / generated_at / views_dir）
+├── site.json                        全局字段（title / branch / baseline / generated_at / views_dir）
 ├── nav/
-│   ├── 01-架构总览/                 目录名只用于排序，不进入任何 id
-│   │   ├── _group.json             { "id": "arch", "name": "架构总览", "q": "…" }
-│   │   └── overview.json           文件名（去 .json）= 页面 id = snippets 的键
+│   ├── 01-架构总览/                  目录名只用于排序，不进入任何 id
+│   │   ├── _group.json              { "id": "arch", "name": "架构总览", "q": "…" }
+│   │   └── overview.json            文件名（去 .json）= 页面 id = snippets 的键
+│   ├── 02-核心链路/
+│   │   ├── _group.json
+│   │   ├── 01-检索/                  ← 子目录 = 子分组，可再嵌套
+│   │   │   ├── _group.json
+│   │   │   └── search.json
+│   │   └── 02-导入/
+│   │       ├── _group.json
+│   │       └── 01-入口/
+│   │           ├── _group.json
+│   │           └── import.json
 │   └── 03-服务与测试/
-│       ├── _group.json             { "id": "stack", …, "page": "stack" }  ← 有 page = 两级分类
+│       ├── _group.json              { …, "page": "stack" }   ← 有 page = 分类即页面
 │       └── stack.json
 └── views/
 ```
 
-| 字段 | 位置 | 说明 |
-|---|---|---|
-| `_group.json.page` | 分类目录 | 填了就是两级（分类本身是页面），不填则目录内所有 `*.json` 作为子页面 |
-| `_group.json.order` | 分类目录 | 可选，显式指定子页面顺序；缺省按文件名排序；指向不存在的页会直接报错 |
-| `_group.json.id` | 分类目录 | 分类 id（导航锚点用），缺省取目录名去掉数字前缀 |
-| `_` 前缀文件 | 分类目录 | 一律跳过（`_group.json` 之外可放 `_draft.json` 之类草稿） |
+| 规则 | 说明 |
+|---|---|
+| **子目录 = 子分组** | 递归扫描，深度不限；侧栏每层缩进 12px，面包屑显示完整路径 |
+| 目录内的 `*.json` | 该分组的页面；文件名（去 `.json`）= 页面 id |
+| `_group.json.page` | 填了才把该目录压平成"分类即页面"（侧栏不缩进子项）。**不填则保持"分组 + 页面"两层** |
+| `_group.json.order` | 可选，显式指定子节点顺序；缺省按文件名排序；指向不存在的节点直接报错 |
+| `_group.json.id` | 分组 id（缺省取目录名去掉数字前缀） |
+| `_` 前缀文件 | 一律跳过（`_group.json` 之外可放 `_draft.json` 之类草稿） |
+
+> 目录里只有一个页面时**不会**被自动压平——层级由目录结构决定，不做隐式优化。
 
 **合成时机**：`build_atlas.py <目录> <out.html>` 读完目录树后，会在目录根写出 `atlas.config.json`。运行时框架只认这个合成文件——所以**改目录后必须跑一次 build**（只改 `site.json` 或单文件 config 时可跳过）。
 
@@ -205,6 +232,8 @@ atlas/
 | `解读不足 3 条` | 视图只画不解释 | 补 `points` |
 | `缺 why（为什么看这段代码）` | 只有文件行号，读者不知道值不值得点 | 补一句 why（采集脚本会拦下） |
 | `页面配置缺失（pages/ghost.json）` | `nav` 引用了没有配置文件的 page | 补 `pages/ghost.json` 或从 nav 删掉 |
+| `nav 节点同时有 page 和 children` | 二者互斥；前端会忽略 page（页面静默丢失） | 把该页作为 children 第一项 |
+| `nav 最深 N 层`（warning） | 超过 4 层，侧栏缩进会挤到换行 | 收敛层级，或改折叠树 |
 
 **exit code**：`check_atlas.py` → `0` 通过 / `1` 有 error / `2` 体积超硬上限；`build_atlas.py` → `0` 成功 / `1` 有需修正项（文件已写出）/ `2` 体积超限（清理临时文件、不替换正式产物）。
 

@@ -60,19 +60,28 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 @keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* ── 侧栏：无卡片，靠字重与缩进分层 ── */
-.nav-home{font-size:13px;font-weight:650;padding:8px 11px;border-radius:8px;cursor:pointer;
-  color:var(--ink);margin-bottom:3px;transition:background .18s,color .18s,box-shadow .18s}
+.nav-home{font-size:13px;font-weight:600;padding:7px 11px;border-radius:8px;cursor:pointer;
+  color:var(--ink);margin-bottom:2px;transition:background .18s,color .18s,box-shadow .18s}
 .nav-home:hover{background:rgba(255,255,255,.72);box-shadow:var(--sh-1)}
-.nav-home.on{background:linear-gradient(135deg,#e8f1ea,#f0f5ef);color:var(--accent-2);
-  box-shadow:inset 0 0 0 1px rgba(29,107,79,.07)}
+.nav-home.on{background:#eaf1ec;color:var(--accent-2)}
 .grp-h{display:flex;align-items:center;justify-content:space-between;
-  margin:23px 0 7px;padding:0 11px;font-size:10px;letter-spacing:.14em;
-  text-transform:uppercase;color:#89938c;font-weight:650}
-.grp-h .n{font:9.5px var(--mono);letter-spacing:0;color:#9aa49d}
+  margin:18px 0 5px;padding:0 11px 0 calc(11px + var(--d,0) * 12px);font-size:11.5px;
+  color:#7f8b82;font-weight:600;letter-spacing:.01em;cursor:pointer;user-select:none;
+  border-radius:6px;transition:color .15s}
+.grp-h:hover{color:var(--ink-2)}
+.grp-h .grp-t{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.grp-h .caret{font:9px/1 var(--mono);color:#b9c3bb;flex:none;transition:color .15s}
+.grp-h:hover .caret{color:var(--accent)}
+.grp-h.sub{margin:12px 0 3px;font-size:11px;color:#8b968e}
+.grp-h .n{font:9.5px var(--mono);letter-spacing:0;color:#a8b2aa}
+.grp-h.has-cur{color:var(--accent-2)}
+.grp-h.has-cur .caret{color:var(--accent)}
+.grp-h.has-cur .n{color:var(--accent)}
 .nav-i{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:7px 11px;border-radius:8px;font-size:13px;color:var(--ink-2);cursor:pointer;
+  padding:7px 11px 7px calc(11px + var(--d,0) * 12px);border-radius:8px;
+  font-size:13px;color:var(--ink-2);cursor:pointer;
   transition:background .18s,color .18s,box-shadow .18s,transform .18s}
-.nav-i.l2{padding-left:22px;font-size:12.5px;color:#6f7b73}
+.nav-i:not([data-d="0"]){font-size:12.5px;color:#6f7b73}
 .nav-i:hover{background:rgba(255,255,255,.74);color:var(--ink);box-shadow:var(--sh-1);transform:translateX(1px)}
 .nav-i.on{background:linear-gradient(135deg,#e7f0e9,#f0f5ef);color:var(--accent-2);font-weight:650;
   box-shadow:inset 0 0 0 1px rgba(29,107,79,.075)}
@@ -427,16 +436,62 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   let SITE = DEMO, PAGES = DEMO.pages || {}, SNIP = DEMO.snippets || {};
   let ITEMS = [], SOURCE = 'demo', cur = 'home', MOUNT_SEQ = 0;
 
+  // nav 是任意深度的树：有 children → 分组，否则 → 页面（page 或 id）
+  const kidsOf = it => (Array.isArray(it.children) ? it.children.filter(Boolean) : null);
   function leaves(){
     const out = [];
-    for(const g of SITE.nav){
-      const kids = (Array.isArray(g.children) && g.children.length) ? g.children : [g];
-      for(const k of kids){
-        out.push({ id: k.id, page: k.page || k.id, group: g.id, groupName: g.name, groupQ: g.q,
-                   nested: !!(Array.isArray(g.children) && g.children.length) });
+    (function walk(items, path, root, idx){
+      for(let i = 0; i < (items || []).length; i++){
+        const it = items[i];
+        if(!it || typeof it !== 'object') continue;
+        const kids = kidsOf(it);
+        const label = it.name || it.id || '';
+        const myIdx = idx.concat(i);
+        if(kids && kids.length){
+          walk(kids, path.concat(label), root || it, myIdx);
+        }else{
+          const pid = it.page || it.id;
+          if(!pid) continue;
+          const grp = root || it;
+          out.push({ id: it.id || pid, page: pid, depth: path.length, path, idx: myIdx,
+                     group: grp.id, groupName: path[0] || '', label });
+        }
       }
-    }
+    })(SITE.nav, [], null, []);
     return out;
+  }
+  // 折叠状态：key = 节点在 nav 里的索引链（如 "1.0.2"）
+  const COLLAPSED = new Set();
+  const idxKey = idx => idx.join('.');
+  const DEFAULT_COLLAPSE_DEPTH = 2;   // 第 3 层及更深默认折叠
+
+  function initCollapsed(){
+    COLLAPSED.clear();
+    (function walk(items, depth, idx){
+      (items || []).forEach((it, i) => {
+        const kids = kidsOf(it);
+        if(kids && kids.length){
+          const my = idx.concat(i);
+          if(depth >= DEFAULT_COLLAPSE_DEPTH) COLLAPSED.add(idxKey(my));
+          walk(kids, depth + 1, my);
+        }
+      });
+    })(SITE.nav, 0, []);
+  }
+  // 展开到某个页面：把它路径上的分组从折叠集合里移除
+  // 展开到某页：把它索引链上的每个前缀（即路径上的分组）从折叠集合移除。
+  // 用索引而非分组名，避免同名分组串到错误分支。
+  function expandPathTo(pid){
+    const it = ITEMS.find(i => i.page === pid);
+    if(!it || !it.idx) return;
+    for(let n = 1; n < it.idx.length; n++){
+      COLLAPSED.delete(idxKey(it.idx.slice(0, n)));
+    }
+  }
+  function countLeaves(it){
+    const kids = kidsOf(it);
+    if(kids && kids.length) return kids.reduce((a, k) => a + countLeaves(k), 0);
+    return 1;
   }
   const codeOf = pid => ((PAGES[pid] || {}).code || []).filter(c => c.file);
   const $ = s => document.querySelector(s);
@@ -446,26 +501,74 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     const h = location.hash.replace('#', '');
     return (h && ITEMS.some(i => i.page === h)) ? h : 'home';
   };
-  window.addEventListener('hashchange', () => { cur = fromHash(); render(); });
+  window.addEventListener('hashchange', () => {
+    cur = fromHash();
+    expandPathTo(cur);
+    render();
+  });
 
-  function renderSide(){
-    let h = '<a><div class="nav-home ' + (cur==='home'?'on':'') + '" data-id="home">总览</div></a>';
-    for(const g of SITE.nav){
-      const kids = (Array.isArray(g.children) && g.children.length) ? g.children : [g];
-      h += '<div class="grp-h"><span>' + esc(g.name) + '</span><span class="n">' + kids.length + '</span></div>';
-      for(const k of kids){
-        const pid = k.page || k.id;
+  // 当前页的索引链：用来判断某个折叠分组是不是它的祖先
+  function curIdx(){
+    const it = ITEMS.find(i => i.page === cur);
+    return it && it.idx ? it.idx : null;
+  }
+  function isAncestor(prefix, full){
+    if(!full || prefix.length >= full.length) return false;
+    for(let i = 0; i < prefix.length; i++) if(prefix[i] !== full[i]) return false;
+    return true;
+  }
+
+  function navTree(items, depth, idxPath){
+    let h = '';
+    const idx = idxPath || [];
+    for(let i = 0; i < (items || []).length; i++){
+      const it = items[i];
+      if(!it || typeof it !== 'object') continue;
+      const kids = kidsOf(it);
+      const myIdx = idx.concat(i);
+      const key = idxKey(myIdx);
+      if(kids && kids.length){
+        const folded = COLLAPSED.has(key);
+        const hasCur = folded && isAncestor(myIdx, curIdx());
+        h += '<div class="grp-h' + (depth ? ' sub' : '') + ' ' + (folded ? 'folded' : '')
+          + (hasCur ? ' has-cur' : '') + '"'
+          + ' data-g="' + key + '" style="--d:' + depth + '">'
+          + '<span class="grp-t"><i class="caret">' + (folded ? '▸' : '▾') + '</i>'
+          + '<span>' + esc(it.name || it.id) + '</span></span>'
+          + '<span class="n">' + countLeaves(it) + '</span></div>';
+        if(!folded) h += navTree(kids, depth + 1, myIdx);
+      }else{
+        const pid = it.page || it.id;
+        if(!pid) continue;
         const p = PAGES[pid] || {};
         const n = codeOf(pid).length;
-        const lvl = (Array.isArray(g.children) && g.children.length) ? ' l2' : '';
-        h += '<a><div class="nav-i' + lvl + (cur===pid?' on':'') + '" data-id="' + pid + '">'
-          + '<span>' + esc(p.title || pid) + '</span>' + (n ? '<span class="tag">' + n + '</span>' : '') + '</div></a>';
+        h += '<a><div class="nav-i' + (cur===pid?' on':'') + '" data-id="' + pid
+          + '" data-d="' + depth + '" style="--d:' + depth + '">'
+          + '<span>' + esc(p.title || pid) + '</span>'
+          + (n ? '<span class="tag">' + n + '</span>' : '') + '</div></a>';
       }
     }
-    $('#side').innerHTML = h;
+    return h;
+  }
+  function renderSide(){
+    const side = $('#side');
+    const keepScroll = side ? side.scrollTop : 0;
+    let h = '<a><div class="nav-home ' + (cur==='home'?'on':'') + '" data-id="home">总览</div></a>';
+    h += navTree(SITE.nav, 0, []);
+    side.innerHTML = h;
     $('#side').querySelectorAll('[data-id]').forEach(el => {
       el.onclick = () => go(el.dataset.id);
     });
+    $('#side').querySelectorAll('.grp-h[data-g]').forEach(el => {
+      el.onclick = ev => {
+        ev.stopPropagation();
+        const k = el.dataset.g;
+        if(COLLAPSED.has(k)) COLLAPSED.delete(k); else COLLAPSED.add(k);
+        renderSide();
+      };
+    });
+    // 重绘后恢复滚动位置（深目录下折叠一次就跳回顶部很难用）
+    if(side) side.scrollTop = keepScroll;
   }
 
   function renderHome(){
@@ -501,7 +604,8 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     const it = ITEMS.find(i => i.page === pid) || {};
     if(!p){ $('#main').innerHTML = '<div class="hint">页面配置缺失：' + esc(pid) + '</div>'; return; }
     const n = codeOf(pid).length;
-    let h = '<div class="crumb">' + esc(it.groupName || '') + ' / ' + esc(p.title || pid) + '</div>';
+    const crumbPath = (it.path || []).join(' / ');
+    let h = '<div class="crumb">' + esc(crumbPath ? crumbPath + ' / ' : '') + esc(p.title || pid) + '</div>';
     h += '<div class="pg-head"><h1>' + esc(p.title || pid) + '</h1><p>' + esc(p.summary || '') + '</p></div>';
     h += '<div class="fig"><div class="fig-bar">'
       + '<span class="chip">' + esc(p.type || '') + '</span><span class="sep"></span>'
@@ -762,13 +866,29 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     return new Blob(parts.concat(central, [new Uint8Array(eocd.buffer)]), { type: 'application/zip' });
   }
 
+  // 导出用：递归出"叶子分组"，dir 是完整相对路径，path 是从根到叶的分组名
   function navGroups(){
-    return (SITE.nav || []).map((g, i) => ({
-      dir: String(i + 1).padStart(2, '0') + '-' + String(g.name || g.id).replace(/[\/\\:*?"<>|]/g, '-'),
-      name: g.name || g.id,
-      q: g.q || '',
-      pages: (Array.isArray(g.children) && g.children.length ? g.children : [g]).map(c => c.page || c.id)
-    }));
+    const out = [];
+    (function walk(items, parentDir, parentPath){
+      (items || []).forEach((it, i) => {
+        if(!it || typeof it !== 'object') return;
+        const label = it.name || it.id || ('item' + (i + 1));
+        const seg = String(i + 1).padStart(2, '0') + '-'
+          + String(label).replace(/[\/\\:*?"<>|]/g, '-');
+        const dir = parentDir ? parentDir + '/' + seg : seg;
+        const kids = kidsOf(it);
+        if(kids && kids.length){
+          walk(kids, dir, parentPath.concat(label));
+        }else{
+          const pid = it.page || it.id;
+          if(!pid) return;
+          // 叶子不再单独占一层目录：有父目录就并入，顶层页面才自建目录
+          out.push({ dir: parentDir || dir, name: label, q: it.q || '', pages: [pid],
+                     depth: parentPath.length, path: parentPath.concat(label) });
+        }
+      });
+    })(SITE.nav, '', []);
+    return out;
   }
   // 壳层已把各图的 @font-face 抽出来去重；导出成独立 SVG 时要补回去，
   // 否则图里的文字会 fallback 到系统字体（字形/间距全变）
@@ -875,11 +995,10 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     meta.push(groups.reduce((a, g) => a + g.pages.length, 0) + ' 页');
     out.push(meta.join(' · '), '', '## 目录', '');
     for(const g of groups){
-      out.push('- **' + g.name + '**' + (g.q ? ' — ' + g.q : ''));
-      for(const pid of g.pages){
-        const page = PAGES[pid] || {};
-        out.push('  - [' + (page.title || pid) + '](' + g.dir + '/' + pid + '.md)');
-      }
+      const pid = g.pages[0];
+      const page = PAGES[pid] || {};
+      const trail = (g.path || []).join(' / ');
+      out.push('- ' + (trail ? trail + ' → ' : '') + '[' + (page.title || pid) + '](' + g.dir + '/' + pid + '.md)');
     }
     out.push('');
     return out.join('\n');
@@ -1003,6 +1122,8 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     }
     ITEMS = leaves();
     cur = fromHash();
+    initCollapsed();
+    expandPathTo(cur);
     document.title = (SITE.title || '项目知识地图') + (SITE.subtitle ? ' · ' + SITE.subtitle : '');
     const meta = $('#bbMeta');
     if(meta){

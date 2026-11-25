@@ -319,7 +319,7 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
 
   "nav": [
     { "id": "arch", "name": "架构总览", "q": "由什么组成，谁和谁相连？",
-      "children": [ { "id": "overview", "page": "overview" } ] },   // 有 children = 三级
+      "children": [ { "id": "overview", "page": "overview" } ] },   // 有 children = 分组，可继续嵌套
     { "id": "ops", "name": "后台进程", "q": "哪些东西在后台跑？", "page": "daemons" }  // 无 = 两级
   ],
 
@@ -350,7 +350,7 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
 
 | 约定 | 说明 |
 |---|---|
-| `nav[].page` / `nav[].children[].page` | 指向 `pages` 里的键名 |
+| `nav[].page` | 指向 `pages` 里的键名。nav 是**任意深度**的树：节点有 `children` 即分组（可继续嵌套），否则必须有 `page`。侧栏**第 3 层起默认折叠**，当前页路径自动展开，点分组标题可手动切换 |
 | `pages[].code[].id` | 必须与 SVG 里 `data-node-id` **完全一致**；`check_atlas.py` 三方对齐校验 |
 | `pages[].code[].lines` | `[起行, 止行]`，1-based 闭区间；`concept: true` 与 `file` 互斥 |
 | `pages[].code[].symbol` | 可选。关键符号（类名/函数名）；不填则由 `collect_snippets.py` 从片段首行自动提取 |

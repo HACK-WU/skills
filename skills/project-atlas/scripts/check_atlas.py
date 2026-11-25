@@ -43,6 +43,31 @@ def main():
     if not ids:
         errors.append("nav 里没有引用任何页面")
 
+    deep = [0]
+
+    def walk_nav(items, depth=0):
+        """递归查 nav 结构本身：每个叶子必须有 page，分组必须有 children。"""
+        for it in items or []:
+            if not isinstance(it, dict):
+                errors.append("nav 里有非对象节点（第 %d 层）" % depth)
+                continue
+            deep[0] = max(deep[0], depth + 1)
+            kids = it.get("children")
+            has_kids = isinstance(kids, list) and len(kids) > 0
+            if has_kids:
+                if it.get("page"):
+                    errors.append(
+                        "nav 节点 %s 同时有 page 和 children（二者互斥；"
+                        "要让分组本身也是页面，把该页作为 children 的第一项）" % (it.get("id") or it.get("name") or "?"))
+                walk_nav(kids, depth + 1)
+            elif not it.get("page"):
+                errors.append("nav 节点 %s 既没有 children 也没有 page（第 %d 层）"
+                              % (it.get("id") or it.get("name") or "?", depth))
+
+    walk_nav(cfg.get("nav") or [])
+    if deep[0] > 4:
+        warns.append("nav 最深 %d 层：侧栏每层缩进 12px，超过 4 层文字会挤到换行" % deep[0])
+
     snip_path = os.path.join(root, "snippets.json")
     snippets = cfg.get("snippets") or {}
     if not snippets:
