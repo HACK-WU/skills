@@ -182,7 +182,7 @@ flowchart TD
 
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
-| **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，出报告前做**需求缺口六维回扫**，一次成型出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演）；发现属其他 skill 职责的问题时**主动接力**（UI 方案 → `ui-designer`、Bug → `debug` 定位，改码前停）；界面类结论**必附基本 UI ASCII 图**（`ui-to-ascii`），关系表达善用文字树；最终结论必附**实施可行性 + 复杂度**（可实施/有条件/待验证/阻塞 四档；复杂度四维取最高 + 主导维度，不参与优先级公式） | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
+| **[product-manager](./skills/product-manager/SKILL.md)** | 站在产品经理视角的四模式能力：M1 需求定义（编排 `requirement-mining` + `negative-requirement`，**先出「产品预期」经用户确认再做细致分析**——轻量调研后 ≤25 行讲清理解 / 行为 / 取舍 / 成功标准 / 待拍板项，涉及交互 · 数据流 · 复杂逻辑时配流程图 / 数据流图 / 状态图；确认后才做**需求缺口六维回扫**并出需求报告）、M2 已实现产品的体验走查（六维 + Kano/价值×成本排优先级）、M3 从代码推演缺失功能（证据三级制防臆造）、M4 前端界面视觉走查（能力探测自动降级：自动截图 / 请用户上传 / 静态推演）；发现属其他 skill 职责的问题时**主动接力**（UI 方案 → `ui-designer`、Bug → `debug` 定位，改码前停）；界面类结论**必附基本 UI ASCII 图**（`ui-to-ascii`），关系表达善用文字树；最终结论必附**实施可行性 + 复杂度**（可实施/有条件/待验证/阻塞 四档；复杂度四维取最高 + 主导维度，不参与优先级公式） | "站在产品角度看看"、"体验一下这个产品"、"还能优化什么"、"还缺什么功能"、"看看这个页面怎么样" |
 | **[requirement-mining](./skills/requirement-mining/SKILL.md)** | 深度挖掘真实需求，打穿表象找根因，转译为技术需求清单；分析阶段即给出「现状 → 预期」图示（Mermaid/ASCII）呈现流程、数据流、UI 变化；集成 CRUD 脚本持久化；快速实现路径默认交接 `plan-track` 建档 | "我想做一个xxx"、"帮我分析需求"、"这个流程改动前后是啥样" |
 | **[interaction-design](./skills/interaction-design/SKILL.md)** | 设计人机交互层——谁在用、怎么操作、看到什么、出错怎么办 | "设计一下怎么用"、"交互怎么设计" |
 | **[ui-designer](./skills/ui-designer/SKILL.md)** | 设计界面视觉方案（页面结构、布局栅格、组件状态、配色、字体、响应式），先出 **ASCII 布局图定稿（demo 前置闸门）**，可按场景加载外部风格工具库（taste-skill / anthropics/skills），并编写零构建可运行的 HTML demo；可复用项目级视觉参考库（`ui-tools/design-reference/`），优先用已有组件库 + 主题 token，按参考重实现而非复制；**demo 确认后归档到需求目录 `demo/ui/{slug}/` 并登记确认版本、转为实施期只读基线** | "设计这个界面"、"页面怎么布局"、"写个 HTML demo" |
@@ -211,7 +211,7 @@ flowchart TD
 | 技能 | 作用 | 触发词 |
 |------|------|--------|
 | **[code-review](./skills/code-review/SKILL.md)** | 多语言多维度 Code Review，覆盖安全、性能、架构等七大维度；产出可审计的检查覆盖表，P0 修复可转 `plan-track` 台账跟踪；**前端改动（三重门通过、无阻塞项、有运行环境）自动按交接单接力 `frontend-walkthrough` 做定向走查**，走查的阻塞级发现回写合入结论 | "review 这个提交"、"code review" |
-| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→修复闭环；本地无法复现的线上 Bug 支持人工代执行的只读取证、证据固定（`.debug/`）与可选排查报告，并提供只读自查脚本；修复后可接力 code-change-impact 质检 | "排查这个 bug"、"debug 一下"、"线上 Bug 本地复现不了" |
+| **[debug](./skills/debug/SKILL.md)** | 系统化排错，运行时证据驱动的复现→假设→验证→定位→**方案**闭环；**默认不改代码**，产出根因 + 可执行解决方案（五要素）+ 多 Bug 分批实施建议（独立 commit + 独立验证判据），仅用户明确要求或低风险自决时落地；本地无法复现的线上 Bug 支持人工代执行的只读取证、证据固定（`.debug/`）与可选排查报告，并提供只读自查脚本；方案可交 code-change-impact 评影响面 | "排查这个 bug"、"debug 一下"、"线上 Bug 本地复现不了"、"给我修复方案先别改" |
 | **[challenger](./skills/challenger/SKILL.md)** | 质疑者，对代码变更/设计文档/分析报告进行二次质疑，代码支持三种策略、设计文档与报告复用设计质疑策略 | "质疑这个修复"、"质疑这个设计"、"二次审查" |
 | **[auto-review](./skills/auto-review/SKILL.md)** | 文件写入后自动触发审查修复闭环，判断复杂场景并调用 challenger | "review 这个提交"、"code review" |
 | **[test-planner](./skills/test-planner/SKILL.md)** | 自动生成结构化测试计划，支持需求文档/设计文档/API 设计三种来源模式 | "生成测试计划"、"从设计生成测试"、"API 契约测试" |
