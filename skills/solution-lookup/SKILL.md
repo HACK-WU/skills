@@ -106,7 +106,7 @@ description: 查找并复用已沉淀的解决方案 skill（项目级 .solution
 ```
 1. 提取错误信息关键词
 2. 查 solution-lookup（本 skill）→ 有则复用
-3. solution-lookup 命中率低（报错文本变体多，INDEX.md 关键词匹配易漏）→ 先贴报错原文查 ki 错误库（use_skill("ki-memory-lookup") 错误库策略，整段堆栈语义命中）→ 有则复用
+3. solution-lookup 命中率低（报错文本变体多，INDEX.md 关键词匹配易漏）→ 先贴报错原文查 ki 错误库（`use_skill("ki-memories")` 错误库查询：先 §2 `ki_recall`，hints 放错误码/文件路径；无候选再按 §4 贴整段堆栈做语义检索）→ 有则复用
 4. 查 ki 记忆索引 → 有则参考
 5. 查代码库 → 有则定位
 6. 从头排查

@@ -1,6 +1,6 @@
 # 强关联记录参考
 
-本 skill 的**识别细则**。主指令见 SKILL.md。ki 写入细节（API/分组/tags/模板/格式硬约束）下沉到 `ki-memory-write` 的强关联策略，见 `use_skill("ki-memory-write")` → 其 `reference-strong-relation.md`；查询强关联记录调用 `use_skill("ki-memory-lookup")`。
+本 skill 的**识别细则**。主指令见 SKILL.md。ki 读写细节（API/查重/分组/tags/格式硬约束）统一下沉 `ki-memories`：写入按 §6 + §7 落点（`关联关系/{功能模块名}` / `relation`），查询走 §5 目录直查。
 
 ## 强关联识别细则
 
@@ -34,8 +34,7 @@
 
 | skill | 关系 |
 |-------|------|
-| ki-memory-write | **写入动作下沉**：本 skill 负责识别关联 + 判定方向（Step 1~3），写 ki 动作下沉到 ki-memory-write 的强关联策略（API/分组/tags/格式硬约束 SSOT） |
-| ki-memory-lookup | **查询侧**：强关联查询由 ki-memory-lookup 提供（只查不写，SSOT），引用方 skill 都调用 ki-memory-lookup |
+| ki-memories | **读写公共动作下沉**：本 skill 负责识别关联 + 判定方向（Step 1~3）；写 ki 按 ki-memories §6 + §7 落点（API/查重/分组/tags/格式硬约束 SSOT），查询走 §5 目录直查。引用方 skill 都经 ki-memories 查强关联 |
 | expert-team | 产出的模块专家是其触发前置；本 skill 记录模块间强关联，与其专题记忆互补（专题记忆=模块内部路标；本 skill=模块间耦合） |
 | expert-lookup | expert-lookup 的 C4（数据流向与消费）记录模块**内部**的数据流向与消费方（模块级概括）；本 skill 记录**跨模块**的强关联（含多端代码位置、方向、强度）。同一消费关系若跨模块，C4 写模块内视角，本 skill 写跨模块视角，互补不重复 |
 | data-flow-model | data-flow-model 画"设计期未来"的数据流/ER 图；本 skill 记录"现存代码"的强耦合，不画图 |

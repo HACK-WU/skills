@@ -27,7 +27,7 @@ description: 代码索引（.fe-index/）的统一查询入口：按代码路径
 | 邻接能力 | 它做什么 | 本 skill 做什么 |
 |---|---|---|
 | `frontend-index` / `backend-index` | **provider**：建库 / 校验 / 查询自己那一端（产物格式、退出码、查询口径的 SSOT） | **消费侧门面**：只做"选哪个 + 指向查询入口"；查询口径**一律引用 provider 文档，不复制** |
-| `expert-lookup` / `solution-lookup` / `ki-memory-lookup` | 资产复用家族（专家包 / 方案 / 记忆） | 同一模式的**代码结构层**门面 |
+| `expert-lookup` / `solution-lookup` / `ki-memories` | 资产复用家族（专家包 / 方案 / 记忆） | 同一模式的**代码结构层**门面 |
 | `grep` / LSP | 随机访问（搜到什么算什么） | 索引 = **穷举反查的缓存**（被依赖 / 表反查 / 接口反查）；本 skill 负责把"要不要用这个缓存"判明白 |
 
 ---

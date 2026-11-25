@@ -221,10 +221,8 @@ flowchart TD
 | **[e2e-testing](./skills/e2e-testing/SKILL.md)** | 对真实运行系统执行端到端验证，按业务旅程编排多类型步骤，验证跨组件终态 | "端到端验证"、"真实链路测试"、"跑一遍完整流程" |
 | **[acceptance-verify](./skills/acceptance-verify/SKILL.md)** | 功能/模块级交付前验收：指标清单驱动逐条核验，三层证据（已有套件为基础 + 临时场景测试与 e2e 为重点），只判定不修改代码，产出锚定 commit 的验收报告并支持二次验收。**含「片级验收模式」**（被测对象为一个砖头包，由 `integration-merge` 阶段 0.5 调用；不起容器、不进 L3）。**默认模式低频，仅显式调用**（不参与自动技能匹配，须人工发起） | "验收这个功能"、"验收一下这个模块"、"复验"、"acceptance test"、"acceptance verify" |
 | **[frontend-walkthrough](./skills/frontend-walkthrough/SKILL.md)** | 对已有前端页面做**真实操作走查 + 隐藏缺陷推演**：A/B/C 取证档位自适应（浏览器实操 / 用户提供画面 / 纯静态）并如实降级声明；先读代码穷举入口与八态状态矩阵（白盒规划），再用两条腿挖隐藏缺陷——**A 腿「异步态 × 动作」矩阵**（接口未返回/失败/乱序时继续操作、重复提交、竞态覆盖、状态串台）+ **B 腿十类缺陷族**（状态一致性 / 生命周期副作用 / 表单输入 / 边界计算展示 / 权限安全 / 路由导航 / 集成发版白屏 / 环境兼容 / 错误兜底），每条假设回实操定向复现（时序类推演 🟡、复现才 🟢，写法缺失类代码即 🟢）；**支持定向模式**——接手 `code-review` 交接单，只走改动面 + 一步下游，按改动性质裁维度（纯交互逻辑跳过布局样式，裁掉的维度必须写理由）；**走查前先出「功能回归清单」**（改动 → 受影响功能：调用方/数据消费方/共享能力/页面入口，≤12 项、用户语言），走完逐项闭环（✅ 须附证据 / ❌ 转发现 / ⚠️ 写原因，留空即未完成）；加载性能做到体检级（深入交 `performance-analysis`），五类发现合并为一张带证据清单，按用户视角 + PM 视角（Kano/价值×成本）排序；有 `ui-tools/design-reference/` 时以其为视觉基线（只读，漂移按有意偏离/实现误差/参考过时分类） | "前端走查"、"体验一下这个页面"、"点一遍看看"、"前端页面有什么问题"、"找出这个页面的隐藏 bug"、"接口慢或挂了会怎样"、"前端还有哪些常见坑"、"这次改动的前端部分验一下" |
-| **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memory-write | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
-| **[ki-search-first](./skills/ki-search-first/SKILL.md)** | 项目记忆优先（任务前置门）：任何任务前先 `use_skill("ki-search")` 检索项目记忆，命中则带记忆求解，未命中再降级到 expert-solution-workflow 复用路径；改代码时必查强关联关系（`use_skill("ki-memory-lookup")`） | "查记忆"、"改A要连带改B吗"、"遇事不决 ki-search" |
-| **[ki-memory-write](./skills/ki-memory-write/SKILL.md)** | 统一往 ki 记忆写入的 SSOT，按类型分发七类：专题记忆 / 接口信息 / 数据流 / 决策记忆（expert-team 调用）、强关联（strong-relation 调用）、错误库（debug / solution-capture 调用）、待生效变更（code-review 调用，纯 KB 不向量化） | "写专题记忆"、"写 ki 记忆"、"记录决策"、"登记待生效变更"、"ki memory write" |
-| **[ki-memory-lookup](./skills/ki-memory-lookup/SKILL.md)** | 统一查 ki 记忆的 SSOT，按类型分发七类：专题记忆（模块内路标）、接口信息（对外 API）、数据流（数据实体流向）、强关联（跨模块耦合）、决策记忆、错误库、待生效变更（待合入资产变更台账，只能目录直查） | "查记忆"、"查强关联"、"改A要连带改B吗"、"这个模块牵动哪些"、"这个报错见过吗" |
+| **[strong-relation](./skills/strong-relation/SKILL.md)** | 识别并判定跨文件强关联关系（契约/业务耦合），写 ki 动作下沉到 ki-memories（§6 写入 + §7 落点） | "记录强关联"、"模块间强耦合"、"改A要连带改B" |
+| **ki-memories**（仓外 skill：`/root/knowledge-indexer/skills/ki-memories/SKILL.md`） | ki 记忆**唯一入口**（原 `ki-search-first` / `ki-memory-lookup` / `ki-memory-write` / `ki-search` 合并而来）：§2 `ki_recall` 主路径（不知读哪篇）、§4 `ki_search` 四步走兜底、§5 目录直查（强关联 / 决策记录 / 待生效变更）、§6 写入（默认只读，需授权、`ki_sync_relation` 系）、§7 七类记忆落点（专题记忆 / 接口信息 / 数据流 / 决策记录 / 错误库 / 关联关系 / 待生效变更） | "查记忆"、"改A要连带改B吗"、"当初为什么这么定"、"写 ki 记忆"、"遇事不决 ki-memories" |
 
 ### 质量与优化
 
@@ -310,12 +308,13 @@ curl -fsSL https://raw.githubusercontent.com/HACK-WU/skills/master/scripts/skill
 <a id="rules"></a>
 ## 📜 规则
 
+> **记忆前置已无独立规则文件**：原 `rules/ki-search-first.md`（项目记忆优先）随 `ki-search-first` / `ki-memory-lookup` / `ki-memory-write` 一并下线，要求改由 `use_skill("ki-memories")` 承载（§2 主路径 / §4 兜底 / §5 目录直查），各 skill 已内联该前置步骤；常驻层面仍由 `expert-solution-workflow.md` 规则第 1 步与 `agents-memory.md` 规则兜住「先查记忆 / 主动沉淀」。
+
 | 规则 | 作用 | 适用场景 |
 |------|------|----------|
 | **[gitnexus-mcp-rules](./rules/gitnexus-mcp-rules.md)** | GitNexus MCP 强制规则，指导工具选择和使用方式 | 使用 GitNexus MCP 时 |
 | **[writing-pipeline](./rules/writing-pipeline.md)** | 自动审查修复闭环，复杂场景调用 challenger 二次质疑 | 文档或代码编写完成后 |
 | **[expert-solution-workflow](./rules/expert-solution-workflow.md)** | 资产复用工作流，区分"业务专家团（expert-lookup/team）"与"解决方案（solution-lookup/capture）"两类资产的本质区别与调用场景 | 遇到业务模块任务 / 具体技术问题时 |
-| **[ki-search-first](./rules/ki-search-first.md)** | 项目记忆优先规则，遇事不决 ki-search；已定位要改的代码/已修改时必查强关联关系（ki-memory-lookup） | 任何任务/问题开始前、改代码时 |
 | **[proactive-extension](./rules/proactive-extension.md)** | 解决小问题后主动联想关联功能，主动补充优化而非等用户逐个提出 | 解决小问题/小需求后 |
 | **[temp-and-timeout](./rules/temp-and-timeout.md)** | 调试/验证用临时文件统一建在 workspace temp 目录且只增不删；耗时命令加 timeout 防挂起 | 调试/验证涉及临时文件、执行耗时命令时 |
 | **[plan-track](./rules/plan-track.md)** | **plan 模式的场景识别与触发**：七类场景（多文件 / 多模块 / 多阶段 / 跨轮续做 / 需中途可见进度 / 前置文档落地 / 上游 skill 交接）识别到即调用 plan-track skill；并定义进入后的节奏与四条不可妥协，执行细则以 skill 为准 | 复杂任务开始前、执行中、完成后 |

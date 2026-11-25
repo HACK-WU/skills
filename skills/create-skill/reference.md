@@ -23,7 +23,7 @@
 | **编排 / 派发** | 拆子任务并行，主 agent 汇总 | `task-dispatch`、`auto-review`、`expert-team` | 子任务卡契约、汇总复核协议、降级串行路径 |
 | **调研 / 检索** | 查现有资产，命中/未命中分支 | `code-survey`、`expert-lookup`、`solution-lookup` | 分层检索顺序、命中/未命中分支、工具不可用降级 |
 | **验证 / 测试** | 跑通判据，产出证据 | `acceptance-verify`、`e2e-testing`、`scenario-rehearsal` | 三层证据结构、happy/异常/边界路径、推演方法论 |
-| **沉淀 / 记录** | 写入持久资产 | `solution-capture`、`memory-creator`、`ki-memory-write` | 查重、格式硬约束、降级不阻塞 |
+| **沉淀 / 记录** | 写入持久资产 | `solution-capture`、`memory-creator`、`ki-memories` | 查重、格式硬约束、降级不阻塞 |
 | **教学 / 讲解** | 长内容、分阶段、重产物结构 | `topic-teach`、`module-teach` | 阶段化产物树、大块细则外置 `reference.md`、独立评审维度文件 |
 | **工具 / 索引** | 确定性操作 + 薄封装 | `web-index`、`gitnexus-index` | 确定性工作交给脚本、skill 只做薄封装、消费/建造双模式分离 |
 | **创建 / 元** | 指导创建某类资产 | `create-skill`、`create-rules`、`create-sub-agent` | 前置守门、AI 说明层、SSOT 指路 |
