@@ -7,6 +7,7 @@
 设计约束：
 - 行号越界 / 文件缺失 / 区间非法 / 缺 why → 直接失败，不截断、不"尽力而为"
 - concept: true 的节点跳过（无代码，前端标为不可点）
+- external: true 的节点跳过（外部服务只有契约，没有本仓源码）
 - 疑似密钥行脱敏，并在报告中列出
 """
 import argparse
@@ -17,7 +18,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from atlas_io import load_atlas, page_ids
+from atlas_io import load_atlas, page_ids, resolve_code
 
 SENSITIVE = re.compile(
     r"(?i)(api[_-]?key|secret|password|passwd|token|access[_-]?key)\s*[:=]\s*['\"][^'\"]{8,}"
@@ -57,7 +58,7 @@ def main():
 
     base, cfg, all_pages = load_atlas(args.config)
     commit = git_short(args.repo_root)
-    snippets, errors, masked, concept = {}, [], [], []
+    snippets, errors, masked, concept, external = {}, [], [], [], []
     cache = {}
 
     for pid in page_ids(cfg):
@@ -66,10 +67,13 @@ def main():
             errors.append("nav 引用了 %s，但 pages 里没有它的配置" % pid)
             continue
 
-        for node in (page.get("code") or []):
+        for node in resolve_code(page, cfg):
             nid = node.get("id")
             if not nid:
                 errors.append("%s: code 条目缺 id" % pid)
+                continue
+            if node.get("external"):
+                external.append("%s/%s" % (pid, nid))
                 continue
             if node.get("concept"):
                 concept.append("%s/%s" % (pid, nid))
@@ -125,9 +129,12 @@ def main():
 
     covered = sum(len(v) for v in snippets.values())
     total = covered + len(concept)
-    print("片段采集：%d/%d 可点节点已挂代码（概念节点 %d 个不计入）" % (covered, total, len(concept)))
+    print("片段采集：%d/%d 内部节点已挂代码（概念节点 %d 个、外部节点 %d 个不计入）"
+          % (covered, total, len(concept), len(external)))
     if concept:
-        print("概念节点（无代码，不可点）：%s" % ", ".join(concept))
+        print("概念节点（无代码，前端显示说明）：%s" % ", ".join(concept))
+    if external:
+        print("外部节点（只依赖契约，不采集源码）：%s" % ", ".join(external))
     if masked:
         print("已脱敏行（含疑似密钥）：%s" % ", ".join(masked))
     if errors:

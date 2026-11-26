@@ -81,17 +81,23 @@
 | 字段 | 必填 | 约束 | 常见错误 |
 |---|---|---|---|
 | `title` | ✅ | 页面标题 | 与 nav 名重复 |
-| `type` | - | archify 图种（architecture / sequence / workflow / tree / dataflow …） | 自造图种名 |
-| `svg` | - | 默认 `views/{id}.svg` | 指向 archify 原文件名（`x.architecture.svg`） |
-| `interactive` | - | 交互版 HTML 外链，文件须存在 | 指向不存在的文件（check 会 warning） |
-| `summary` | ✅ | 一段话说明这张图讲什么 | 复制 `points` 首条 |
-| `points` | ✅ | ≥3 条 `[标题, 说明]` | 写成长段落 |
+| `summary` | ✅ | 一段话说明这页讲什么 | 复制 `points` 首条 |
 | `docs` | ✅ | 相关文件路径 | 写目录 |
-| `code[]` | - | 见下 | 漏了 → 整页不可点 |
-| `code[].id` | ✅ | 等于 SVG 的 `data-node-id` | 用序号或中文 |
-| `code[].file` / `lines` | 二选一 | `lines: [起, 止]`，1-based 闭区间 | 与 `concept` 同时出现 |
+| `figures[]` | - | 一页多图。不写则把页级 `type`/`svg`/`points` 当单图 | 漏 `id` 或 id 重复 |
+| `figures[].id` | ✅（多图时） | 本页唯一——跨图关联与图源 key 都靠它 | 用序号 `1`/`2`，改序即失配 |
+| `figures[].name` / `q` | - | 图名 / 这张图回答什么问题（多图建议都给） | 两张图 `q` 写成同一个问题 |
+| `figures[].svg` | - | 默认第 1 张 `views/{pid}.svg`、其后 `views/{pid}-{n}.svg` | 指向 archify 原文件名 |
+| `figures[].points` | ✅ | **每张图** ≥3 条 `[标题, 说明]` | 只给第一张写解读 |
+| `figures[].interactive` | - | 交互版 HTML 外链（`pack_atlas.py` 会一并收拢） | 文件不存在（check 会 warning） |
+| `type` / `svg` / `points` / `interactive` | - | **单图简写**，等价于只有一个 `figures[0]`。两者都写时以 `figures` 为准 | 同时写两套且内容不一致 |
+| `code[]` | - | **页级一维**：同一 id 在多张图之间共用一段代码 | 漏了 → 整页不可点 |
+| `code[].id` | ✅ | 等于**本页任一**图源的 `data-node-id` | 用序号或中文 |
+| `code[].file` / `lines` | 三选一 | `lines: [起, 止]`，1-based 闭区间 | 与 `concept` / `external` 同时出现 |
 | `code[].why` | ✅（有代码时） | 一句"为什么看这里" | 写"核心逻辑"这类空话 |
-| `code[].concept` | 二选一 | `true` = 概念节点，不可点 | 给概念节点硬编行号 |
+| `code[].concept` | 三选一 | `true` = 概念节点（**仍可点**，给"无源码 + 相关文件"） | 给概念节点硬编行号 |
+| `code[].external` | 三选一 | `true` = 外部服务：需 `owner` + `contract`；`returnsTo` 落回本页内部节点，或 `oneWay: true` | 编一个不存在的外部服务 |
+| `links[]` | - | 衔接关系（见 2.4）：`from`/`to` 必须是本页 `code[]` 里的 id | 指向不存在的节点 |
+| `site.externals` | - | 外部服务字典（按 id），页面只写引用 | 同一服务在多页各填一份 |
 
 **节点 id 用语义 slug**（`daemon` / `domain` / `kb`），不要用 `node-1`：三方对齐校验、后续增量、人工核对全靠它。
 
@@ -99,11 +105,105 @@
 
 ```
 atlas.config.json  nav[].page  ──指向──▶  pages 里的键
-pages[].code[].id            ──必须等于──▶  views/{id}.svg 里的 data-node-id
+pages[].code[].id            ──必须等于──▶  本页任一 figures[].svg 里的 data-node-id
 pages[].code[].file          ──采集──▶  snippets 的 key（同 id）
+pages[].links[].from / to    ──必须存在──▶  本页 code[] 里的 id
+pages[].code[].external      ──补齐──▶  site.externals 里同 id 的契约字段
 ```
 
-任一处对不上，`check_atlas.py` 都会报出来（见第五节）。
+任一处对不上，`check_atlas.py` 都会报出来（见第五节）。多图时"节点对齐"按**页级并集**判定——一个 id 只要在任意一张图里出现就算对齐，因为它可能本来只在第 2 张图上。
+
+### 2.4 一页多图与外部节点
+
+**一页多图的唯一理由是「必须同屏对照」**——通常是两种坐标打架：空间归属（architecture）说不清时序，时序（sequence）说不清归属。
+
+| 场景 | 做法 |
+|---|---|
+| 两个问题、各问一件事 | 拆成两页（nav 本来就支持分组） |
+| 同一功能的两个视角，读者要交叉参照 | 一页多图 |
+| 一张图 8 个节点以内就说得清 | 不要多图 |
+
+**四条硬约定**：
+
+1. `figures[].id` 本页内唯一——跨图关联与图源 key（`pid::figId`）都靠它
+2. 每图 ≥3 条解读；**代码表整页合并**（同一组件不要在图 1 图 2 下面各列一遍）
+3. 每图独立失败态：一张图 404 只在该图位置报路径与原因，不拖垮同页其他图
+4. 第 1 张图的 template key 沿用 `pid`（兼容旧 `tpl_pattern`），其后为 `pid::figId`
+
+**跨图同 id 共享一份代码**：`code[]` 是页级一维，`snippets[pid][nodeId]` 也是一维，这是有意的——同一个组件在不同视角下就是同一个东西。**不支持"按图覆盖行号"**（片段表一维、抽屉按 id 查找，覆盖会静默失效）；确实需要两段代码就用两个 id（`zvec-write` / `zvec-read`），代价是图上要分开命名。
+
+**外部节点**（`external: true`）三个字段：
+
+| 字段 | 必填 | 作用 |
+|---|---|---|
+| `owner` | ✅ | 谁负责。缺了读者不知道该找谁 |
+| `contract` | ✅ | 怎么交互（协议 / topic / 幂等语义） |
+| `returnsTo` | ✅，或 `oneWay: true` | 回程落在本页哪个**内部**节点 |
+
+- `returnsTo` 指向另一个外部服务 = 假闭环（出去又出去，没回来），`check_atlas.py` 会拦
+- 只发不收的链路（日志上报、埋点）标 `oneWay: true`——显式声明比编一个假回程好
+- 契约写在 `site.externals` 字典，页面只留引用；否则同一服务在 N 页各填一份，改一处忘一处
+- **外部信息没有唯一真源**：代码变了能重跑脚本，外部服务改名/下线不会通知你。这是整套图集里唯一必须人工定期复核的部分——所以只到契约粒度，不画它内部的多跳
+
+**衔接关系**（`links[]`）——"闭环"还差一层：两头靠**什么**对上。
+
+`data_id` 这类标识符是**边**的属性，不是节点的属性。所以它在图上看不出来（箭头只表示"有连接"），必须结构化：
+
+| 字段 | 说明 |
+|---|---|
+| `from` / `to` | 本页 `code[]` 里的 id；悬空即报错 |
+| `carries` | 传的是什么；`identifier` 必填（标识符得有名字） |
+| `kind` | `identifier` / `event` / `status` / `none` |
+| `shape` | 形态（`string(32)`、`uuid`），便于对接 |
+| `storedAt` | 标识符存在哪——**最容易漏的一格** |
+| `cardinality` | `1:1` / `1:N`（一次批量导入返回 N 个 id） |
+
+**判据：只有「能被别人拿去做下一次查询或定位」的返回值才是衔接键。**
+
+| 场景 | 返回 | 算不算 |
+|---|---|---|
+| 写 MySQL | 成功 / 失败 | ❌ 是本次操作的结果，不是下次操作的入口 |
+| 写日志 / 埋点 | 无返回 | ❌ 单向，没有下游需要定位它 |
+| 写 ETL 平台 | `data_id` | ✅ 后续查询 / 对账 / 删数据都靠它定位同一条记录 |
+
+`status` / `none` 的边**记录但不展示**（表格里折叠成一行）——不是漏掉，是需要时能查。
+
+**一个标识符有四个时刻，少一步链就断**：
+
+```
+① 生成   ETL 写入成功 → 返回 data_id
+   ▼
+② 传递   回调请求体带着它回来
+   ▼
+③ 消费   用它查详情 / 做对账 / 写下一跳
+   ▼
+④ 持久化 存在哪？ scope_meta.remote_id        ← 最容易漏
+```
+
+第 ④ 步只活在内存里，进程重启后这条记录就永久对不上——**图上看还是闭环，实际已经断了**。这就是 `storedAt` 缺失要告警的原因。
+
+**三种承载，按需组合**：
+
+| 方式 | 怎么做 | 适合 |
+|---|---|---|
+| **图下表格** | `links[]` 自动渲染（无需额外配置） | 全部衔接键：可穷举、可校验、可导出 |
+| **图上边标签** | 图源给边加 `data-link="from->to"`，框架按 `links[]` 在中点叠加 | 主链路 1–3 个，一眼看到"这条线传的是 data_id" |
+| **单独一张图** | `figures[]` 加一张 `dataflow`（节点 3–5 个、每条边都有键名） | 要看"id 怎么流转、在哪分叉、存哪" |
+
+**边标签的实现**：`<path data-link="etl->callback" d="...">` → 框架用 `getPointAtLength(len/2)` 取中点，叠加 `<text>` + 圆角背景。identifier 实底绿标、event 淡色、`status`/`none` 不标。**没有 `data-link` 的边不标**，所以老图源零改动。
+
+两条已知边界：
+
+- `data-link` 必须写在 **`<path>` / `<line>` / `<polyline>`** 上——写在 `<g>` 上算不出路径长度，会静默跳过（图上没标签、表格仍完整）
+- 标签固定放在线的中点上方 22px；**竖直边**上会略显拥挤，横平竖直的图最合适
+
+> 为什么不能全自动：SVG 的边只有 `d="M220 63 H325"`，几何上解析不出"谁连到谁"。`data-link` 就是给边补的语义 id——和给节点补 `data-node-id` 是同一件事。缺这个属性的边，表格里仍有记录，只是图上不标。
+
+**同一条键的多段流转合并成一行**：`data_id` 走 `etl → callback → store → query` 时，表格显示成一行完整路径（`mergeIdLinks` / `merge_id_links`），不是三行重复；`storedAt` 只要任一段写了就够。
+
+**图上要不要标**：主链路 1–3 个可以标，多了会糊——全部交给表格。真要表达"id 怎么流转、在哪分叉"，就补那张 `dataflow` 图（`figures[]` 的正当用法，不需要新机制）。
+
+> 口径同步：`framework/index.html` 的 `figsOf` / `resolveCode` / `externalOf` / `linksOf` 与 `scripts/atlas_io.py` 的 `figures_of` / `resolve_code` / `externals_of` / `links_of` 必须一致，改一处必须改另一处（否则出现"浏览器能看、导出坏"）。
 
 ## 二·五、目录树模式（与单文件等价）
 

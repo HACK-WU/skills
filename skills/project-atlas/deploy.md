@@ -65,7 +65,7 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --no-images
 | `atlas.config.json` | ❌ | 已内联 |
 | `site.json` / `nav/` | ❌ | 已内联 |
 | `framework/index.html` | ❌ | 已在产物里 |
-| `interactive` 指向的 HTML | ⚠️ **条件带上** | 见第四节陷阱 1 |
+| `interactive` 指向的 HTML | ⚠️ **条件带上** | 页级与 figure 级都收（pack 已处理）；见第四节陷阱 1 |
 
 实测：把 `atlas.html` 拷进一个空目录改名 `index.html`，`file://` 双击可正常翻页、点节点看代码、字体正常。
 
@@ -128,11 +128,14 @@ location /atlas/ {
 
 ### 4.1 `interactive` 外链（pack 已自动处理）
 
-如果某页配置了：
+如果某页（或某张图）配置了：
 
 ```jsonc
-{ "interactive": "views/overview.architecture.html" }
+{ "interactive": "views/overview.architecture.html" }                  // 页级
+{ "figures": [{ "id": "f1", "interactive": "views/overview.html" }] }  // figure 级
 ```
+
+两级都会被 `pack_atlas.py` 收拢，相对路径保持不变。
 
 build 只内联 **SVG**，这个 HTML 是外链，不会自动进产物。
 

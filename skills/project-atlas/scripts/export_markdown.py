@@ -11,6 +11,9 @@
     01-架构总览/overview.md
     01-架构总览/images/overview.svg     图源原样导出（含内联字体，可单独打开）
 
+一页多图：第 1 张图 images/<pid>.svg，其后 images/<pid>-<figId>.svg，
+每张图在 md 里各成一节（图名 + 图片 + 这张图的解读）；代码表整页合并去重。
+
 与页面内导出的关系：两处实现同一份 md 模板，改动时需同步
 （framework/index.html 的 pageMarkdown/readmeMarkdown ↔ 本脚本）。
 """
@@ -22,7 +25,8 @@ import sys
 import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from atlas_io import load_atlas, page_ids
+from atlas_io import (load_atlas, page_ids, figures_of, resolve_code,
+                      links_of, merge_id_links, link_path)
 
 SVG_START = re.compile(r"<svg\b[^>]*>", re.S)
 XML_DECL = re.compile(r"^\s*<\?xml[^>]*\?>\s*", re.S)
@@ -75,11 +79,19 @@ def cell(t):
     return re.sub(r"\s*\n\s*", " ", str(t if t is not None else "")).replace("|", "\\|")
 
 
-def page_md(pid, page, snippets, site, has_image=True):
+def page_md(pid, page, snippets, site, img_names=None):
+    """img_names: {figId: 文件名}，由 main 决定哪几张图成功导出；None = 不导出图。"""
+    figs = figures_of(page, pid, site.get("views_dir") or "views")
+    many = len(figs) > 1
+
     out = ["# " + (page.get("title") or pid), ""]
     meta = []
     if page.get("type"):
         meta.append(page["type"])
+    elif not many and figs[0].get("type"):
+        meta.append(figs[0]["type"])
+    if many:
+        meta.append("%d 张图" % len(figs))
     if site.get("generated_at"):
         meta.append("生成于 " + site["generated_at"])
     if site.get("branch") and site.get("baseline"):
@@ -88,17 +100,24 @@ def page_md(pid, page, snippets, site, has_image=True):
         out += ["> " + " · ".join(meta), ""]
     if page.get("summary"):
         out += [page["summary"], ""]
-    if has_image:
-        out += ["![%s](./images/%s.svg)" % (page.get("title") or pid, pid), ""]
 
-    points = page.get("points") or []
-    if points:
-        out += ["## 怎么读这张图", ""]
-        for p in points:
-            out.append("- **%s**：%s" % (p[0], p[1] if len(p) > 1 else ""))
-        out.append("")
+    for i, f in enumerate(figs):
+        if many:
+            out += ["## 图 %d · %s" % (i + 1, f.get("name") or f.get("id") or ""), ""]
+        if f.get("q"):
+            out += ["> 这张图回答：" + f["q"], ""]
+        name = (img_names or {}).get(f["id"])
+        if name:
+            out += ["![%s](./images/%s)" % (f.get("name") or (page.get("title") or pid), name), ""]
+        if f.get("points"):
+            out += ["### 怎么读这张图" if many else "## 怎么读这张图", ""]
+            for p in f["points"]:
+                out.append("- **%s**：%s" % (p[0], p[1] if len(p) > 1 else ""))
+            out.append("")
 
-    codes = [c for c in (page.get("code") or []) if c.get("file")]
+    code = resolve_code(page, site)
+
+    codes = [c for c in code if c.get("file")]
     if codes:
         out += ["## 对应代码", "", "| 节点 | 位置 | 符号 | 说明 |", "| --- | --- | --- | --- |"]
         for c in codes:
@@ -108,6 +127,53 @@ def page_md(pid, page, snippets, site, has_image=True):
             loc = "`%s:%s-%s`" % (c["file"], lines[0] if lines else "-", lines[1] if lines else "-")
             out.append("| %s | %s | %s | %s |" % (cell(c.get("id")), loc, cell(sym or "-"), cell(c.get("why") or "")))
         out.append("")
+
+    exts = [c for c in code if c.get("external")]
+    if exts:
+        out += ["## 外部依赖", "",
+                "> 只到契约粒度：外部服务的内部实现不展开，它有自己的知识地图。", "",
+                "| 外部服务 | 归属 | 契约 | 回程 |", "| --- | --- | --- | --- |"]
+        for c in exts:
+            if c.get("oneWay"):
+                ret = "单向（不要求回程）"
+            else:
+                ret = "→ %s" % (c.get("returnsTo") or "-")
+                if c.get("returnForm"):
+                    ret += "（%s）" % c["returnForm"]
+            out.append("| %s | %s | %s | %s |" % (
+                cell(c.get("id")), cell(c.get("owner") or "-"),
+                cell(c.get("contract") or "-"), cell(ret)))
+        out.append("")
+
+    links = links_of(page)
+    if links:
+        id_links = merge_id_links(links)
+        flow_links = [l for l in links if l["kind"] not in ("identifier", "status", "none")]
+        quiet = [l for l in links if l["kind"] in ("status", "none")]
+        out += ["## 衔接关系", ""]
+        if id_links:
+            out += ["**标识符（后续操作靠它定位）**", "",
+                    "| 衔接键 | 流转路径 | 形态 | 持久化 | 说明 |",
+                    "| --- | --- | --- | --- | --- |"]
+            for m in id_links:
+                key = m["key"] + (("（%s）" % m["cardinality"]) if m["cardinality"] else "")
+                out.append("| %s | %s | %s | %s | %s |" % (
+                    cell(key), cell(link_path(m)),
+                    cell(m["shape"] or "-"), cell(m["storedAt"] or "⚠ 未说明"),
+                    cell(m["note"] or "-")))
+            out.append("")
+        if flow_links:
+            out += ["**传递内容（不构成标识符）**", "",
+                    "| 内容 | 产出 → 消费 | 说明 |", "| --- | --- | --- |"]
+            for l in flow_links:
+                out.append("| %s | %s → %s | %s |" % (
+                    cell(l["carries"] or "-"), cell(l["from"]), cell(l["to"]),
+                    cell(l["note"] or "-")))
+            out.append("")
+        if quiet:
+            out.append("> 另有 %d 条状态型返回（成功 / 失败）不构成衔接键：%s"
+                       % (len(quiet), "、".join(l["from"] + " → " + l["to"] for l in quiet)))
+            out.append("")
 
     docs = page.get("docs") or []
     if docs:
@@ -170,20 +236,31 @@ def main():
     for g in gs:
         for pid in g["pages"]:
             page = pages.get(pid) or {}
-            has_image = False
+            img_names = {}
             if not args.no_images:
-                rel = page.get("svg") or os.path.join(views_dir, pid + ".svg")
-                path = rel if os.path.isabs(rel) else os.path.join(base, rel)
-                if os.path.isfile(path):
-                    with open(path, encoding="utf-8", errors="replace") as f:
-                        svg = norm_svg(f.read())
-                    if svg:
-                        files.append(("%s/images/%s.svg" % (g["dir"], pid), svg.encode("utf-8")))
-                        has_image = True
-                else:
-                    missing.append("%s → %s" % (pid, rel))
+                figs = figures_of(page, pid, views_dir)
+                for i, f in enumerate(figs):
+                    rel = f["svg"]
+                    path = rel if os.path.isabs(rel) else os.path.join(base, rel)
+                    fname = ("%s.svg" % pid) if i == 0 else ("%s-%s.svg" % (pid, f["id"]))
+                    if os.path.isfile(path):
+                        with open(path, encoding="utf-8", errors="replace") as fh:
+                            svg = norm_svg(fh.read())
+                        if svg:
+                            files.append(("%s/images/%s" % (g["dir"], fname), svg.encode("utf-8")))
+                            img_names[f["id"]] = fname
+                    else:
+                        missing.append("%s/图 %d → %s" % (pid, i + 1, rel))
             files.append(("%s/%s.md" % (g["dir"], pid),
-                          page_md(pid, page, snippets, site, has_image).encode("utf-8")))
+                          page_md(pid, page, snippets, site, img_names).encode("utf-8")))
+
+    # 缺图源就中止：md 里图片断链的交付物比不出更糟（确实要无图版请显式加 --no-images）
+    if missing and not args.no_images:
+        print("\n导出中止：%d 处缺图源（未写出产物）" % len(missing), file=sys.stderr)
+        for m in missing:
+            print("  ✗ " + m, file=sys.stderr)
+        print("确实要出无图版请加 --no-images", file=sys.stderr)
+        return 1
 
     want_zip = args.out.lower().endswith(".zip")
     if want_zip:
@@ -222,11 +299,8 @@ def main():
     imgs_n = len([f for f in files if f[0].endswith(".svg")])
     print("导出：%d 页 · %d 个 md · %d 张图 · %.0f KB" % (pages_n, pages_n + 1, imgs_n, size / 1024))
     print("产物：%s%s" % (args.out, "（zip）" if want_zip else "（目录）"))
-    if missing:
-        print("\n以下页面缺图源，已跳过（md 里的图片会指向不存在的文件）：", file=sys.stderr)
-        for m in missing:
-            print("  ! " + m, file=sys.stderr)
-        return 1
+    if args.no_images:
+        print("提示：--no-images，md 里不含图片引用")
     return 0
 
 

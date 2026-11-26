@@ -37,6 +37,8 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --clean      
 
 ## 三、单页 md 模板
 
+**单图页**：
+
 ```markdown
 # {title}
 
@@ -44,7 +46,7 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --clean      
 
 {summary}
 
-![{title}](./images/{id}.svg)
+![{title}](./images/{pid}.svg)
 
 ## 怎么读这张图
 
@@ -56,13 +58,72 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --clean      
 | --- | --- | --- | --- |
 | daemon | `src/mcp-server.ts:1065-1080` | startMcpServer | MCP 入口：三种运行形态与会话在这里分流 |
 
+## 外部依赖                       ← 仅当有 external 条目
+
+| 外部服务 | 归属 | 契约 | 回程 |
+| --- | --- | --- | --- |
+| etl | 数据平台团队 | MQ · topic kb.changed · at-least-once | → callback（回写 zvec + POST /internal/index-ready） |
+
+## 衔接关系                       ← 仅当有 links
+
+**标识符（后续操作靠它定位）**
+
+| 衔接键 | 流转路径 | 形态 | 持久化 | 说明 |
+| --- | --- | --- | --- | --- |
+| data_id（1:N） | etl → callback → store → query | string(32) | scope_meta.remote_id | 后续查详情、对账都靠它 |
+
+**传递内容（不构成标识符）**
+
+| 内容 | 产出 → 消费 | 说明 |
+| --- | --- | --- |
+| kb.changed | outbox → etl | 异步投递，at-least-once |
+
+> 另有 1 条状态型返回（成功 / 失败）不构成衔接键：callback → etl
+
 ## 参考文档
 
 - docs/architecture.md
 ```
 
-- 只列**有 `file` 的** code 条目；`concept` 节点不进表
+**多图页**：每张图各成一节，图下的解读降一级；**代码表 / 外部依赖 / 衔接关系仍是整页一份**（同一 id 不在两张图下面各列一遍）：
+
+```markdown
+# {title}
+
+> {N} 张图 · 生成于 … · 基线 …
+
+{summary}
+
+## 图 1 · {figures[0].name}
+
+> 这张图回答：{figures[0].q}
+
+![{figures[0].name}](./images/{pid}.svg)
+
+### 怎么读这张图
+
+- **…**：…
+
+## 图 2 · {figures[1].name}
+
+> 这张图回答：{figures[1].q}
+
+![{figures[1].name}](./images/{pid}-{figId}.svg)
+
+### 怎么读这张图
+
+…
+
+## 对应代码                      ← 整页合并
+…
+```
+
+规则：
+
+- 图源命名：第 1 张 `images/{pid}.svg`，其后 `images/{pid}-{figId}.svg`
+- 只列**有 `file` 的** code 条目；`concept` 不进代码表，`external` 进「外部依赖」
 - 「符号」取 `code[].symbol`，没填则用 `collect_snippets.py` 自动提取的（类名/函数名）
+- 同一标识符的多段流转**合并成一行**（`etl → callback → store → query`），不是三行重复
 - 不带代码块正文——需要完整代码回页面点节点
 
 ## 四、实现要点（逐个踩过）

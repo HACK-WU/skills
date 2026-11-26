@@ -1,6 +1,6 @@
 ---
 name: project-atlas
-description: 把项目的架构与核心链路装配成一个可切换视图的离线 HTML 图集，节点可点开对应源码。触发："项目知识地图"、"架构图集"、"模块数据流"、"atlas"。
+description: 把项目的架构、核心链路、跨服务闭环装配成一个可切换视图的离线 HTML 图集：一页可挂多图，节点可点开源码或外部契约，衔接关系（data_id 这类标识符）单列成表。触发："项目知识地图"、"架构图集"、"模块数据流"、"跨服务闭环"、"衔接键"、"atlas"。
 ---
 
 # 项目知识地图（Project Atlas）
@@ -17,6 +17,9 @@ description: 把项目的架构与核心链路装配成一个可切换视图的�
 - **内置示例兜底**：没有配置时框架渲染自带示例（打开即有效果页），配置就位后自动切换成真实图集
 - **导出 Markdown**：页面顶部「导出 ↓」或 `export_markdown.py`，把图集导成 **Markdown 目录包**（zip，按大纲建目录，每页一个 `.md` + `images/*.svg`）。ZIP 由前端自写（`CompressionStream` + 手写文件头），不引第三方库；纯前端、无需后端与重跑构建
 - **节点级代码关联**：点击节点打开右侧抽屉，显示 `路径:起-止行` + commit + 一句 why + 行号对齐的高亮代码
+- **一页多图**：一页可挂多张图（`pages[].figures[]`），每图独立 fig-bar、解读与失败态；同一节点在多图间共用一份代码映射，抽屉里提示「也出现在哪几张图」。不写 `figures` 即退回单图，老配置零改动
+- **外部服务第三态**：`external: true` 的节点没有源码，抽屉显示**归属 / 契约 / 回程落点**；站点级 `externals` 字典让同一份契约只写一处；可点率分母排除它们
+- **衔接关系**：`links[]` 声明节点之间传什么、靠什么标识符对上（`data_id` 这类）。标识符单列成表（形态 / 持久化落点 / 基数），事件次之，状态型返回折叠成一行不展示——**闭环的判据不只是"流回去了"，还要能说清"两头靠什么对上"**
 - **片段采集与校验**：脚本从源码抽取片段，双向校验"节点 ↔ 片段"（零孤儿、零悬空）
 - **字体去重**：archify 每张 SVG 内嵌 3 份 base64 字体（占文件 27%），装配时提到壳层去重，实测单图 330 KB → 235 KB
 - **范围参数化**：全项目 / 指定模块（指定模块时视图集合自动收窄）
@@ -47,7 +50,7 @@ archify-svg-export（导 SVG） ──┼──▶ project-atlas（本 skill：�
 1. **图源不自研**：视图由 `archify` 生成（JSON IR → deliver → SVG）；`archify` 不可用时降级复用已有 SVG/HTML，仍不可用才手写 SVG，并声明降级
 2. **框架是资产，配置是唯一变量**：`framework/index.html` 固定（样式 + 渲染逻辑 + 内置示例），AI 只写 `atlas.config.json`。**禁止每次现场重写框架**，也**不要为加一页去改脚本**——框架一旦漂移，交互约束全部失效
 3. **一份配置管一个图集**：站点结构与每页内容都收在 `atlas.config.json`；**禁止一图一 HTML**（那是 archify 的产物形态）
-4. **视图预算是硬约束**：去重后每视图约 235 KB（实测），故默认 6–8 页、单文件目标 ≤3 MB（≈12 页）、硬上限 10 MB。超限先减视图，不许"先做出来再说"
+4. **视图预算是硬约束，按图不按页**：去重后每视图约 235 KB（实测），故默认 6–8 张图、单文件目标 ≤3 MB（≈12 张）、硬上限 10 MB。**一页多图不占页数预算但占图数预算**；多图的唯一理由是"必须同屏对照"，否则拆页。超限先减图，不许"先做出来再说"
 5. **所有节点都可点，且尽量都有代码**：模板给每个 `data-node-id` 绑点击，有 `code[]` 的看代码块，没有的显示"该节点无直接源码 + 相关文件"。**可点率目标 ≥80%**（次要/外部节点可为 concept，但点开必须有反馈，不能死节点）——覆盖率低于 50% 时 `check_atlas.py` 会告警
 6. **抽屉由四种操作关闭**：`×` / `ESC` / 切换视图 / **点面板以外的任意处**（含图空白、侧栏、正文）。点节点本身不关闭，直接在节点间切换
 7. **窄屏走底部抽屉**：视口 <1000px 时抽屉改为底部半屏，不遮挡图体
@@ -55,7 +58,8 @@ archify-svg-export（导 SVG） ──┼──▶ project-atlas（本 skill：�
 9. **片段是生成时快照**：面板必须显示 commit 与"生成时快照，不代表 HEAD"，且 `why` 不说空话
 10. **视图必配解读**：每个视图至少 3 条"怎么读这张图"，只画不解释的图等于没画
 11. **先策划后生成**：视图列表 / 分类 / 每图问题 / 片段覆盖范围，先出计划交用户确认（唯一确认点），确认后一次做完
-12. **失败不留半成品**：导出先写临时文件，校验通过再原子替换；运行时渲染失败要显示具体原因（图源路径 + 错误），不静默空白
+12. **失败不留半成品**：导出先写临时文件，校验通过再原子替换；**有阻断项就不写产物**（"导出失败但留下旧版/空壳"比直接失败更危险，调用方会以为成功）。运行时每张图独立失败态：一张图加载失败只在该图位置报图源路径与原因，不拖垮同页其他图
+13. **外部只到契约粒度**：跨出项目边界的部分只画"谁、什么契约、回程落在本页哪个节点"，不画外部服务的内部多跳——外部信息没有唯一真源，画得越细腐坏得越快。外部节点缺 `owner` / `contract` 即视为编造，这比编造内部组件更危险（内部有 `data-node-id` 可对，外部静态校验抓不到）
 
 ## 工作流总览
 
@@ -134,14 +138,15 @@ archify-svg-export（导 SVG） ──┼──▶ project-atlas（本 skill：�
    - 节点 id 用稳定的语义 slug（`daemon` / `domain` / `kb`），**不要用序号**——后续片段映射靠它
    - 视图里出现的组件必须能在源码找到，或其 `concept: true`
 2. **导 SVG**：调 `use_skill("archify-svg-export")`（仅显式调用型 skill；该 skill 不在可用列表时，用 archify 自带 `Export → SVG` 的等价 CLI 路径，仍不可用则用 HTML 内嵌方案并重算预算）
-3. **落位**：`views/{view-id}.svg`，命名与小写 slug 一致；同时保留 `views/{view-id}.json` 作为图源（便于下次改动）
-4. **优先复用**：已有 `*.svg` 且图源 JSON 未变 → 直接复用，不重新生成（阶段 7 增量靠这条）
+3. **给边补语义 id**：画边时顺手写 `data-link="from->to"`（对应 `links[]` 的 `from`/`to`），框架才能在线的中点自动标出 `carries`。**不加就不标**——表格照常完整，所以老图源不用回改；archify 产出的 SVG 目前不带这个属性，需要边标签就得手写或后处理
+4. **落位**：`views/{view-id}.svg`，命名与小写 slug 一致；同时保留 `views/{view-id}.json` 作为图源（便于下次改动）。一页多图时第 1 张 `views/{pid}.svg`、其后 `views/{pid}-{n}.svg`
+5. **优先复用**：已有 `*.svg` 且图源 JSON 未变 → 直接复用，不重新生成（阶段 7 增量靠这条）
 
 ## 阶段 3：片段采集
 
 **不手写片段**（demo 的 `snippets.json` 是手写的，19 条全靠手工对齐，节点改名即静默失配）。
 
-1. 在页面配置的 `code[]` 里声明：`{id, file, lines: [起, 止], why}`（目录模式是 `nav/<分类>/<页面>.json`，单文件模式是 `pages[id]`）；无代码的节点写 `{id, concept: true}`
+1. 在页面配置的 `code[]` 里声明：`{id, file, lines: [起, 止], why}`（目录模式是 `nav/<分类>/<页面>.json`，单文件模式是 `pages[id]`）；抽象名词写 `{id, concept: true}`，外部服务写 `{id, external: true}`（归属与契约从 `site.externals` 补齐）
 2. 跑脚本：
 
 ```bash
@@ -152,8 +157,9 @@ python3 <project-atlas skill 目录>/scripts/collect_snippets.py <图集目录> 
 3. 脚本产出 `snippets.json` + **覆盖率报告**：
 
 ```
-片段采集：19/49 节点已挂代码（38.8%）
-未挂代码：web, agent, cli, llm, sources, zvec, fts   ← 将标为概念节点，不可点
+片段采集：19/45 内部节点已挂代码（概念节点 7 个、外部节点 2 个不计入）
+概念节点（无代码，前端显示说明）：web, agent, cli, llm
+外部节点（只依赖契约，不采集源码）：etl, audit
 校验失败：overview/daemon  行号越界（文件仅 2100 行，声明 2127-2142）
 ```
 
@@ -239,14 +245,17 @@ python3 <project-atlas skill 目录>/scripts/check_atlas.py . --html dist/atlas.
 | 检查项 | 通过标准 |
 |---|---|
 | 配置引用 | `nav[].page` 必须都有对应 `pages[id]` → **0 个缺失** |
-| 节点对齐 | `code[].id` 必须都能在 `views/{id}.svg` 的 `data-node-id` 里找到 → **0 个** |
-| 片段对齐 | 有 `file` 的 `code[]` 必须有片段；`concept` 与片段互斥 → **0 个孤儿 / 0 个缺失** |
-| 覆盖率 | 报告实际比例，**不要求 100%**，但"标了可点却没内容"= 0 |
-| 体积（导出时） | 单文件 ≤3 MB 目标、≤10 MB 硬上限 |
+| 图源完整性 | 每页每张 `figures[]` 的 svg 都存在；`figures[].id` 本页内唯一 → **0 个缺失 / 0 个重复** |
+| 节点对齐 | `code[].id` 必须能在本页**任一**图源的 `data-node-id` 里找到 → **0 个** |
+| 片段对齐 | 有 `file` 的 `code[]` 必须有片段；`concept` / `external` 与片段互斥 → **0 个孤儿 / 0 个缺失** |
+| 漏配节点 | 报 warn：图上有节点但 `code[]` 里没有（多半是新加节点忘了配） |
+| 外部契约 | 每个 `external` 都有 `owner` + `contract`；有 `returnsTo` 且落回本页内部节点，或显式 `oneWay: true` → **0 个缺失 / 0 个悬空** |
+| 衔接关系 | `links[].from/to` 都在本页 `code[]` 里；`identifier` 必须有 `carries`，缺 `storedAt` 报 warn（标识符没说明存哪）→ **0 个悬空 / 0 个无名** |
+| 页面完整性 | 每页有 title + summary + ≥1 个 docs；**每张图** ≥3 条解读，`q` 写在 nav 的分类上 |
+| 可点覆盖率 | 每页「内部可点节点 / 内部节点」≥50%，建议 ≥80%；**外部节点不计入分母**，脚本逐页报比例 |
+| 体积（导出时） | 单文件 ≤3 MB 目标、≤10 MB 硬上限——按**总图数**估，不按页数（一页 3 图 = 3 份体积） |
 | 离线（导出时） | 无外链资源；无未替换占位符 |
-| 页面完整性 | 每页有 title + summary + ≥3 条解读 + ≥1 个 docs 条目（`q` 在 nav 的分类上） |
-| 可点覆盖率 | 每页「可点节点 / 图内节点」≥50%，建议 ≥80%；脚本逐页报比例 |
-| 交互约束 | 所有节点可点（`data-coded`/`data-bare` 区分）；抽屉由 `×`/`ESC`/切页/**点面板外**关闭 |
+| 交互约束 | 所有节点可点（`data-coded` / `data-bare` / `data-external` 三态）；抽屉由 `×`/`ESC`/切页/**点面板外**关闭。**静态脚本不覆盖，此项靠阶段 6 实测** |
 
 不合格 → 修 `atlas.config.json` 的 `pages` 或图源，重跑阶段 3–5；最多 2 轮，第 3 轮仍不过则把未通过项写进交付说明，不静默放行。
 
@@ -317,6 +326,13 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
   "generated_at": "2026-11-24 11:45",    // 生成时间（带时分更直观）
   "views_dir": "views",                  // 可省，默认 views
 
+  // 站点级外部服务字典：契约写一处，多页引用；页面里只写 { "id": "etl", "external": true }
+  "externals": {
+    "etl":   { "owner": "数据平台团队", "contract": "MQ · topic kb.changed · at-least-once",
+               "returnsTo": "callback", "returnForm": "回写 zvec + POST /internal/index-ready" },
+    "audit": { "owner": "安全审计平台", "contract": "Syslog over TLS · 单向上报", "oneWay": true }
+  },
+
   "nav": [
     { "id": "arch", "name": "架构总览", "q": "由什么组成，谁和谁相连？",
       "children": [ { "id": "overview", "page": "overview" } ] },   // 有 children = 分组，可继续嵌套
@@ -324,7 +340,7 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
   ],
 
   "pages": {                              // 每页：加载哪张图 + 怎么读 + 点节点看哪段代码
-    "overview": {
+    "overview": {                         // 单图页（老形态，仍然有效）
       "title": "运行时架构总览",
       "type": "architecture",
       "svg": "views/overview.svg",        // 可省，默认 views/{id}.svg
@@ -335,7 +351,34 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
       "code": [
         { "id": "daemon", "file": "src/lib/mcp-http-api.ts", "lines": [1016, 1030],
           "why": "入口分发：/api/* 请求统一由 handleApiRequest 处理" },
-        { "id": "llm", "concept": true }   // 概念节点：无代码，前端标为不可点
+        { "id": "llm", "concept": true }   // 概念节点：无代码，点击给出说明与相关文件
+      ]
+    },
+
+    "daemons": {                          // 一页多图（不写 figures 即退回单图）
+      "title": "后台进程：从写入到被读到的闭环",
+      "summary": "上半张是「谁在写」，下半张是「被谁读」。只画生产侧，读者会以为写进去就等于能查到。",
+      "figures": [
+        { "id": "write", "name": "谁在写这些资源", "type": "architecture",
+          "svg": "views/daemons-1.svg",   // 可省，默认 views/{pid}-{序号}.svg
+          "q": "哪些进程在我没操作时改动索引？",   // 这张图回答什么问题
+          "points": [["调度器按源计时", "…"]] },   // 每图至少 3 条
+        { "id": "read", "name": "写完之后被谁读走", "type": "sequence",
+          "svg": "views/daemons-2.svg",
+          "points": [["写入不等于可检索", "…"]] }
+      ],
+      "docs": ["src/lib/datasource-scheduler.ts"],
+      "code": [                           // 页级一维：同一 id 在多图之间共用一段代码
+        { "id": "sched", "file": "src/lib/datasource-scheduler.ts", "lines": [55, 70], "why": "…" },
+        { "id": "zvec", "concept": true },
+        { "id": "etl", "external": true }  // 外部节点：owner/contract/returnsTo 从 site.externals 补齐
+      ],
+      "links": [                          // 衔接关系：节点之间传什么、靠什么标识符对上
+        { "from": "sched", "to": "zvec", "carries": "batch_id", "kind": "identifier",
+          "shape": "string(32)", "storedAt": "scope_meta.last_batch", "cardinality": "1:1",
+          "note": "下一轮增量同步靠它判断从哪继续；没存住就会全量重扫" },
+        { "from": "sched", "to": "kb", "carries": "扫描结果", "kind": "status",
+          "note": "只回成功/失败，不构成衔接键——图上不画、表格里折叠" }
       ]
     }
   },
@@ -351,12 +394,20 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/       # 或 x
 | 约定 | 说明 |
 |---|---|
 | `nav[].page` | 指向 `pages` 里的键名。nav 是**任意深度**的树：节点有 `children` 即分组（可继续嵌套），否则必须有 `page`。侧栏**第 3 层起默认折叠**，当前页路径自动展开，点分组标题可手动切换 |
-| `pages[].code[].id` | 必须与 SVG 里 `data-node-id` **完全一致**；`check_atlas.py` 三方对齐校验 |
-| `pages[].code[].lines` | `[起行, 止行]`，1-based 闭区间；`concept: true` 与 `file` 互斥 |
+| `pages[].figures[]` | 一页多图。不写则把页级 `svg`/`type`/`points` 当单图（老配置零改动）。`figures[].id` **本页内必须唯一**——跨图关联与图源 key 都靠它区分；每图至少 3 条解读 |
+| `pages[].code[].id` | 必须与本页**任一** `figures[].svg` 里的 `data-node-id` 一致（至少一张图里有）；`check_atlas.py` 三方对齐校验 |
+| `pages[].code[].lines` | `[起行, 止行]`，1-based 闭区间；与 `concept` / `external` 互斥 |
 | `pages[].code[].symbol` | 可选。关键符号（类名/函数名）；不填则由 `collect_snippets.py` 从片段首行自动提取 |
-| `pages[].code[].why` | 必填一句话，列出时显示在右侧作为"这行为什么值得看" |
 | `pages[].code[].why` | 必填一句话，说明"为什么看这段"；空则采集脚本拦下 |
-| 可点态 | **不在 SVG 里标**，前端按 `code[]` 运行时打标（有代码 `data-coded`、无代码 `data-bare`）——加图不必改 SVG、不必改脚本 |
+| `pages[].code[].concept` | 概念节点（抽象名词，无源码）。**仍然可点**，点开给"无对应源码 + 相关文件"，不是死节点 |
+| `pages[].code[].external` | 外部服务。**owner + contract 必填**（编造外部服务静态校验抓不到，契约字段是唯一准入门槛）；`returnsTo` 必须落回本页内部节点，只发不收的链路标 `oneWay: true` |
+| `site.externals` | 外部服务字典（按 id）。页面里只写引用，避免同一份契约在多页各填一份而漂移 |
+| `pages[].links[]` | 衔接关系。`from` / `to` 必须是本页 `code[]` 里的 id。`kind`：`identifier`（标识符，后续操作靠它定位）/ `event`（事件载荷）/ `status`（只回成功失败）/ `none`。**只有 `identifier` 是衔接键**，`status` / `none` 不构成下一次操作的入口，不上图、表格里折叠 |
+| `links[].carries` | 传的是什么。`identifier` 必填（标识符得有名字），`event` 建议填 |
+| `links[].storedAt` | 标识符存在哪。同一条键只要**任意一段**写清即可；整条都没写会告警——只在内存里的话，进程重启后就对不上，图上看还是闭环、实际已断 |
+| 图源 `data-link` | 画图时给边加 `data-link="from->to"`，框架按 `links[]` 在**边的中点**自动叠加标签（identifier 实底绿标 / event 淡色 / status·none 不标）。没有这个属性的边不标——老图源零改动，标签数据驱动，改配置即改标签 |
+| 可点率口径 | 分母**只算内部节点**（排除 external）——外部天然没有源码，否则跨服务图的覆盖率永远不达标 |
+| 可点态 | **不在 SVG 里标**，前端按 `code[]` 运行时打标（`data-coded` / `data-bare` / `data-external`）——加图不必改 SVG、不必改脚本 |
 | `branch` | 生成基线分支名（与 `baseline`、`generated_at` 一起渲染在页首信息条上） |
 
 > 新增一张图的完整动作：写图源 → 导 SVG 到 `views/{id}.svg` → 在 `pages` 里加一条 → 在 `nav` 里挂一行。**四步全是配置与素材，框架代码零改动。**

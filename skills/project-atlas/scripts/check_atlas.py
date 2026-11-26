@@ -7,8 +7,13 @@
 
 三方对齐（唯一必须记住的约束）：
     nav[].page            →  pages[id]
-    pages[id].code[].id   =  views/{id}.svg 里的 data-node-id
+    pages[id].code[].id   =  本页任一 figures[].svg 里的 data-node-id（至少一张图里有）
     pages[id].code[].file →  snippets[id][nodeId]
+
+一页多图与外部节点的额外约束：
+    figures[].id 唯一 / 每图 ≥3 条解读 / 每图图源存在
+    external 节点必须有 owner + contract，且 returnsTo 落回本页内部节点（或显式 oneWay）
+    可点率分母只算内部节点（外部天然没有源码）
 
 退出码：0 通过；1 有 error；2 体积超硬上限。
 """
@@ -19,12 +24,13 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from atlas_io import load_atlas, page_ids
+from atlas_io import (load_atlas, page_ids, figures_of, resolve_code, links_of)
 
 MAX_BYTES = 10 * 1024 * 1024
 TARGET_BYTES = 3 * 1024 * 1024
 EXTERNAL = re.compile(r'(?:src|href)\s*=\s*["\'](https?://[^"\']+)', re.I)
 NODE_ID = re.compile(r'data-node-id="([^"]+)"')
+DATA_LINK = re.compile(r'data-link="([^"]+)"')
 
 
 def main():
@@ -85,54 +91,167 @@ def main():
 
         if not (page.get("summary") or "").strip():
             warns.append("%s：缺 summary" % pid)
-        if len(page.get("points") or []) < 3:
-            errors.append("%s：解读不足 3 条" % pid)
+
+        code = resolve_code(page, cfg)
+        coded = [c.get("id") for c in code if c.get("file")]
+        concept = [c.get("id") for c in code if c.get("concept")]
+        exts = [c for c in code if c.get("external")]
+
         docs = page.get("docs") or []
         if not docs:
             warns.append("%s：没有 docs 条目" % pid)
-        dup_docs = [d for d in docs if d in {c.get("file") for c in (page.get("code") or []) if c.get("file")}]
+        dup_docs = [d for d in docs if d in set(coded)]
         if dup_docs:
             warns.append("%s：docs 里混了源码路径，与代码块重复（docs 应放文档）：%s"
                          % (pid, ", ".join(dup_docs)))
 
-        svg_rel = page.get("svg") or os.path.join(views_dir, pid + ".svg")
-        svg_path = svg_rel if os.path.isabs(svg_rel) else os.path.join(root, svg_rel)
-        if not os.path.isfile(svg_path):
-            errors.append("%s：缺图源 %s" % (pid, svg_rel))
-            continue
-        with open(svg_path, encoding="utf-8", errors="replace") as f:
-            svg = f.read()
-        node_ids = set(NODE_ID.findall(svg))
-        if not node_ids:
-            errors.append("%s：图内没有任何 data-node-id，节点无法挂代码" % pid)
-        if page.get("interactive"):
-            ip = page["interactive"] if os.path.isabs(page["interactive"]) else os.path.join(root, page["interactive"])
-            if not os.path.isfile(ip):
-                warns.append("%s：interactive 指向不存在的文件（%s）" % (pid, page["interactive"]))
+        # ── figures 级：id 唯一 / 解读条数 / 图源存在 / 节点收集 ──
+        figs = figures_of(page, pid, views_dir)
+        seen_fig, fig_nodes, fig_links = set(), {}, set()
+        for i, f in enumerate(figs):
+            fid = f["id"]
+            if fid in seen_fig:
+                errors.append("%s：figures[].id 重复（%s）——跨图关联与图源 key 都靠它区分，必须唯一"
+                              % (pid, fid))
+            seen_fig.add(fid)
+            if len(f["points"]) < 3:
+                errors.append("%s/图 %d：解读不足 3 条（每张图都要能说清怎么读）" % (pid, i + 1))
 
-        code = page.get("code") or []
-        coded = [c.get("id") for c in code if c.get("file")]
-        concept = [c.get("id") for c in code if c.get("concept")]
+            svg_rel = f["svg"]
+            svg_path = svg_rel if os.path.isabs(svg_rel) else os.path.join(root, svg_rel)
+            if not os.path.isfile(svg_path):
+                errors.append("%s/图 %d：缺图源 %s" % (pid, i + 1, svg_rel))
+                continue
+            with open(svg_path, encoding="utf-8", errors="replace") as fh:
+                svg = fh.read()
+            node_ids = set(NODE_ID.findall(svg))
+            if not node_ids:
+                errors.append("%s/图 %d：图内没有任何 data-node-id，节点无法挂代码" % (pid, i + 1))
+            fig_nodes[fid] = node_ids
+            for dl in DATA_LINK.findall(svg):
+                pair = [x.strip() for x in dl.split("->", 1)]
+                if len(pair) == 2:
+                    fig_links.add(tuple(pair))
+
+            if f.get("interactive"):
+                ip = f["interactive"] if os.path.isabs(f["interactive"]) else os.path.join(root, f["interactive"])
+                if not os.path.isfile(ip):
+                    warns.append("%s/图 %d：interactive 指向不存在的文件（%s）" % (pid, i + 1, f["interactive"]))
+
+        all_nodes = set()
+        for ns in fig_nodes.values():
+            all_nodes |= ns
+
+        # 多图相关性：两张图一个共享节点都没有，多半该拆成两页（同屏对照是说给读者省一次跳转，
+        # 不是给不相关的图省一页）
+        if len(fig_nodes) > 1:
+            sets = list(fig_nodes.values())
+            if not any(sets[i] & sets[j] for i in range(len(sets)) for j in range(i + 1, len(sets))):
+                warns.append("%s：%d 张图之间没有任何共享节点——若无需同屏对照，建议拆成多页"
+                              % (pid, len(sets)))
+
+        # ── 三方对齐：code[] 是页级，按"至少出现在一张图里"判定 ──
         snip_ids = set((snippets.get(pid) or {}).keys())
-
         for cid in coded:
-            if cid not in node_ids:
-                errors.append("%s/%s：代码条目在图里找不到同名节点（data-node-id 不匹配）" % (pid, cid))
+            if cid not in all_nodes:
+                errors.append("%s/%s：代码条目在本页任何一张图里都找不到同名节点（data-node-id 不匹配）"
+                              % (pid, cid))
             if cid not in snip_ids:
                 errors.append("%s/%s：有代码位置但没有片段（重跑 collect_snippets.py）" % (pid, cid))
         for cid in concept:
             if cid in snip_ids:
                 errors.append("%s/%s：标了 concept 却有片段（二者互斥）" % (pid, cid))
+        ext_set = set(c["id"] for c in exts)
+        for cid in ext_set:
+            if cid in snip_ids:
+                errors.append("%s/%s：标了 external 却有片段（外部服务没有本仓源码，二者互斥）"
+                              % (pid, cid))
+            if cid not in all_nodes:
+                warns.append("%s/%s：外部节点没画在任何一张图里（只在依赖清单中出现，读者在图上看不到它）"
+                              % (pid, cid))
         for sid in snip_ids - set(coded):
             errors.append("%s/%s：孤儿片段（snippets 有、pages 无）" % (pid, sid))
 
-        total_nodes = len(node_ids)
-        covered = len(set(coded) & node_ids)
-        if covered:
-            oks.append("%s：%d/%d 节点可点" % (pid, covered, total_nodes))
-        if total_nodes and covered / total_nodes < 0.5:
-            warns.append("%s：可点覆盖率仅 %.0f%%（%d/%d），建议给主要节点补 code[]"
-                         % (pid, covered / total_nodes * 100, covered, total_nodes))
+        # 图上有节点但没配 code：warning（多半是新加节点忘了配）
+        unlabeled = sorted(all_nodes - set(coded) - set(concept) - ext_set)
+        if unlabeled:
+            warns.append("%s：图上有 %d 个节点没配 code（显示为概念节点）：%s"
+                          % (pid, len(unlabeled), ", ".join(unlabeled[:6])))
+
+        # ── 外部节点：契约必填 + 回程必须落回内部 ──
+        internal_ids = set(coded) | set(concept)
+        for c in exts:
+            cid = c["id"]
+            miss = [k for k in ("owner", "contract") if not (c.get(k) or "").strip()]
+            if miss:
+                errors.append("%s/%s：外部节点缺 %s（外部服务没有源码可校验，契约字段是唯一准入门槛）"
+                              % (pid, cid, " / ".join(miss)))
+            if c.get("oneWay"):
+                continue
+            to = (c.get("returnsTo") or "").strip()
+            if not to:
+                errors.append("%s/%s：外部节点缺 returnsTo——给出回程落点，或显式标 oneWay: true（单向链路）"
+                              % (pid, cid))
+            elif to in ext_set:
+                errors.append("%s/%s：returnsTo 指向另一个外部节点（%s）——回程必须落回本项目内部"
+                              % (pid, cid, to))
+            elif to not in internal_ids:
+                errors.append("%s/%s：returnsTo 指向的 %s 在本页 code[] 里不存在或没有源码"
+                              % (pid, cid, to))
+
+        # ── 衔接关系：两头必须存在；identifier 必须有名字、建议说明存哪 ──
+        links = links_of(page)
+        ids_all = set(c.get("id") for c in code if c.get("id"))
+        # 持久化按"键"判断：同一条 data_id 可能有多段流转，只要任意一段写了 storedAt 就够
+        stored_keys = set(l["carries"] for l in links
+                          if l["kind"] == "identifier" and l["storedAt"].strip())
+        warned_keys = set()
+        for l in links:
+            f, t = l["from"], l["to"]
+            if not f or not t:
+                errors.append("%s：links 条目缺 from / to（衔接关系要说清两头是谁）" % pid)
+                continue
+            for side, nid in (("from", f), ("to", t)):
+                if nid not in ids_all:
+                    errors.append("%s：links 的 %s=%s 不在本页 code[] 里（衔接关系指向了不存在的节点）"
+                                  % (pid, side, nid))
+            if l["kind"] == "identifier":
+                if not l["carries"].strip():
+                    errors.append("%s：%s→%s 标了 identifier 却缺 carries（标识符必须有名字）"
+                                  % (pid, f, t))
+                elif l["carries"] not in stored_keys and l["carries"] not in warned_keys:
+                    warned_keys.add(l["carries"])
+                    warns.append("%s：标识符 %s 整条流转都没写 storedAt"
+                                  "（没说明存在哪，重启后可能对不上）" % (pid, l["carries"]))
+        if links:
+            oks.append("%s：%d 条衔接关系（其中 %d 条标识符）"
+                       % (pid, len(links), len([l for l in links if l["kind"] == "identifier"])))
+
+        # 图源 data-link ↔ links 双向一致（status/none 本就不上图，不参与比对）
+        if links and fig_nodes:
+            labeled = set((l["from"], l["to"]) for l in links
+                          if l["kind"] not in ("status", "none"))
+            for pair in sorted(fig_links - labeled):
+                warns.append("%s：图源标了 data-link=\"%s->%s\"，但 links[] 里没有这条衔接关系"
+                             "（标签不会出现）" % (pid, pair[0], pair[1]))
+            if len(fig_nodes) == len(figs):
+                for l in links:
+                    if l["kind"] == "identifier" and (l["from"], l["to"]) not in fig_links:
+                        warns.append("%s：identifier 边 %s→%s 在图源里没有 data-link，"
+                                     "图上标不出 %s" % (pid, l["from"], l["to"], l["carries"]))
+
+        # ── 覆盖率：分母只算内部节点 ──
+        internal_nodes = all_nodes - ext_set
+        covered = internal_nodes & set(coded)
+        if internal_nodes:
+            oks.append("%s：%d/%d 内部节点可点（%d 张图）"
+                       % (pid, len(covered), len(internal_nodes), len(figs)))
+            if len(covered) / len(internal_nodes) < 0.5:
+                warns.append("%s：内部节点可点率仅 %.0f%%（%d/%d），建议给主要节点补 code[]"
+                             % (pid, len(covered) / len(internal_nodes) * 100,
+                                len(covered), len(internal_nodes)))
+        if exts:
+            oks.append("%s：%d 个外部依赖（只到契约粒度）" % (pid, len(exts)))
 
     # 可选：校验导出单文件
     if args.html:

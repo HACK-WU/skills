@@ -25,7 +25,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from atlas_io import load_atlas, page_ids
+from atlas_io import load_atlas, page_ids, figures_of
 
 
 def run(script, *args):
@@ -80,18 +80,21 @@ def main():
 
     print("\n③ 收拢 interactive 依赖")
     extras, missing = [], []
+    views_dir = site.get("views_dir") or "views"
     for pid in page_ids(site):
-        rel = (pages.get(pid) or {}).get("interactive")
-        if not rel:
-            continue
-        src = rel if os.path.isabs(rel) else os.path.join(base, rel)
-        if not os.path.isfile(src):
-            missing.append("%s → %s" % (pid, rel))
-            continue
-        dst = os.path.join(dist, rel)
-        os.makedirs(os.path.dirname(dst) or dist, exist_ok=True)
-        shutil.copy2(src, dst)
-        extras.append(rel)
+        page = pages.get(pid) or {}
+        # 页级与 figure 级都要收：一页多图时每张图可以各自带交互版
+        rels = [page.get("interactive")] + [f.get("interactive") for f in figures_of(page, pid, views_dir)]
+        for rel in [r for r in rels if r]:
+            src = rel if os.path.isabs(rel) else os.path.join(base, rel)
+            if not os.path.isfile(src):
+                missing.append("%s → %s" % (pid, rel))
+                continue
+            dst = os.path.join(dist, rel)
+            os.makedirs(os.path.dirname(dst) or dist, exist_ok=True)
+            shutil.copy2(src, dst)
+            if rel not in extras:
+                extras.append(rel)
     if extras:
         for e in extras:
             print("  + " + e)

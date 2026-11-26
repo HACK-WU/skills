@@ -150,6 +150,37 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   radial-gradient(ellipse 70% 90% at 50% 40%,rgba(237,244,237,.52),transparent 80%),
   radial-gradient(circle at 1px 1px,#e5ebe2 1px,transparent 0) 0 0/22px 22px,#fdfefc}
 .fig-body .ph{padding:46px 18px;text-align:center;font-size:13px;color:var(--ink-3)}
+.fig-body .ph-err{color:#9c4a2f;background:#fdf6f2}
+/* ── 一页多图 ── */
+.fig-idx{font:10px var(--mono);color:#879289;background:#f1f3ee;border:1px solid #e9ede6;
+  padding:2px 6px;border-radius:5px;letter-spacing:.02em;flex:none}
+.fig-name{font-size:12.5px;font-weight:650;color:#22332a;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fig-q{margin:0;padding:10px 16px 0;font-size:11.5px;line-height:1.7;color:#7f8b82}
+.fig-q b{color:#3c4a41;font-weight:650}
+.read--in{margin:0;padding:4px 16px 14px}
+.infigs{font:10px var(--mono);color:#57685c;background:#eef4ee;border:1px solid #e2ebe3;
+  padding:1px 5px;border-radius:4px;margin-left:8px;white-space:nowrap}
+.cp-also{font-size:11.5px;line-height:1.7;color:#7f8b82;margin-top:7px}
+.cp-also b{color:var(--accent-2);font-weight:600}
+/* ── 衔接关系表 ── */
+.lk-t{font-size:11px;color:#7f8b82;margin:0 0 9px;letter-spacing:.02em}
+.ltab{width:100%;border-collapse:collapse;font-size:11.5px;margin:0 0 16px}
+.ltab th{text-align:left;font-size:10px;letter-spacing:.07em;color:#8b968e;font-weight:700;
+  padding:0 12px 8px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.ltab td{padding:9px 12px 9px 0;border-bottom:1px solid var(--line-2);color:#3c4a41;
+  line-height:1.65;vertical-align:top}
+.ltab td.key{font:12px var(--mono);color:var(--accent-2);font-weight:600;white-space:nowrap}
+.ltab td.key .card{font-size:9.5px;color:#7f8b82;background:#f1f3ee;border:1px solid #e9ede6;
+  border-radius:4px;padding:1px 4px;margin-left:6px;font-weight:400}
+.ltab td.end{font:11px var(--mono);color:#56635a;white-space:nowrap}
+.ltab td.end i{color:#a8b3ac;font-style:normal;padding:0 3px}
+.ltab td.dim{color:#7f8b82;font-size:11px}
+.ltab td .mono{font-family:var(--mono);font-size:10.5px;color:#3d4d43;
+  background:#f1f5ef;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.ltab td.end .br{color:#8b968e;font-size:10.5px;font-family:inherit}
+.warnff{color:#b0663a}
+.lk-quiet{margin:-4px 0 14px;font-size:11px;color:#8b968e;line-height:1.7}
 .hint{margin:11px 0 0;font-size:11.5px;color:#7f8b82;display:flex;gap:7px;align-items:center}
 .hint::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);
   opacity:.65;flex:none;box-shadow:0 0 0 3px rgba(29,107,79,.08)}
@@ -198,6 +229,18 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 .cp-why{padding:13px 20px;font-size:12.5px;line-height:1.75;color:var(--ink-2);
   border-bottom:1px solid var(--line);background:#fdfdf9}
 .cp-why .w{margin-top:6px;font-size:10.5px;color:var(--ink-3)}
+.cp-why .ct{display:flex;gap:10px;padding:6px 0;border-bottom:1px dashed #e7ece3}
+.cp-why .ct:last-child{border-bottom:0;padding-bottom:0}
+.cp-why .ct span{flex:0 0 40px;color:var(--ink-3);font-size:11px;letter-spacing:.04em}
+.cp-why .ct b{font-weight:600;color:#2b3b31;font-size:12px;line-height:1.7;word-break:break-word}
+.docs ul.extlist{display:block}
+.docs ul.extlist li{display:flex;align-items:baseline;gap:10px;padding:9px 12px;margin-bottom:8px;
+  border:1px dashed #d6dfd4;border-radius:9px;background:#fbfcfa;cursor:pointer;
+  transition:background .16s,border-color .16s}
+.docs ul.extlist li:hover{background:var(--wash);border-color:#c9dbcc}
+.extlist .p{font:11.5px var(--mono);color:var(--accent-2);flex:none}
+.extlist .owner{font-size:11px;color:#7f8b82;flex:none}
+.extlist .why{font-size:11.5px;color:#56635a;margin-left:auto;text-align:right;line-height:1.6}
 .cp-code{margin:0;flex:1;overflow:auto;background:#101a15;color:#d4dfd7;
   font:12.5px/1.95 var(--mono);padding:15px 0}
 .cp-code .cl{display:flex;white-space:pre;transition:background .15s}
@@ -274,6 +317,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
       <button class="cp-close" id="cpClose" title="关闭（ESC）">×</button>
     </div>
     <div class="cp-path" id="cpPath"></div>
+    <div class="cp-also" id="cpAlso" hidden></div>
   </div>
   <div class="cp-why" id="cpWhy" hidden></div>
   <pre class="cp-code" id="cpCode"></pre>
@@ -281,7 +325,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 </aside>
 
 <!-- ===== 站点配置：标题 / 大纲 / 层级 / 页面清单（改这里就能改整站结构） ===== -->
-<script id="demo-config" type="application/json">{"title": "kisearch 知识地图", "subtitle": "不看文档列表，也能先看清这个系统", "intro": "把架构、核心链路、后台进程分别画成图，每张图配一段解读。点节点可看生成时的代码快照。新增一张图，只需写一个页面配置、在大纲里挂一行。", "baseline": "de5c495", "generated_at": "2026-11-23", "nav": [{"id": "arch", "name": "架构总览", "q": "这个系统由什么组成，谁和谁相连？", "children": [{"id": "overview", "page": "overview"}]}, {"id": "flow", "name": "核心链路", "q": "一次操作到底经过哪些环节？", "children": [{"id": "search", "page": "search"}, {"id": "import", "page": "import"}]}, {"id": "ops", "name": "后台进程", "q": "哪些东西在我没操作时也在跑？", "page": "daemons"}, {"id": "conf", "name": "配置与环境", "q": "想改行为，该动哪一段？", "page": "config"}], "notice": "当前为内置示例配置：把 atlas.config.json 放到本文件同目录并起本地服务，即渲染成你的真实图集。", "pages": {"overview": {"title": "运行时架构总览", "type": "architecture", "summary": "三种入口（Agent、Web、CLI）都汇到同一个 daemon，再由它分发给领域服务；真正的数据只有 kb/ 里的 Markdown，向量与全文索引都是可重建的派生物。", "points": [["daemon 只做路由", "鉴权、并发、锁都在这里，业务逻辑不在——所以改业务不用动它。"], ["领域服务才是本体", "import / query / relation 都在这里，对应 src/lib 下的大量模块。"], ["索引不是原始数据", "zvec 与 FTS 删掉都能从 kb/ 重建，kb/ 才是不能丢的。"]], "docs": ["src/lib/mcp-http-api.ts", "src/lib/import.ts", "src/lib/scope.ts"], "code": [{"id": "daemon", "file": "src/lib/mcp-http-api.ts", "lines": [2127, 2142], "why": "HTTP 入口与路由分发集中在这里"}, {"id": "domain", "file": "src/lib/import.ts", "lines": [48, 62], "why": "领域服务入口，导入管线的第一跳"}, {"id": "kb", "file": "src/lib/scope.ts", "lines": [12, 26], "why": "kb 目录是唯一不可丢的原始数据"}, {"id": "web", "concept": true}, {"id": "agent", "concept": true}, {"id": "llm", "concept": true}]}, "search": {"title": "一次搜索怎么算出结果", "type": "sequence", "summary": "先把问题向量化，再同时走向量和全文两路召回，最后融合排序并回取正文。", "points": [["先向量化问题", "整条链路唯一调用外部服务的一步，也是最常见的超时来源。"], ["两路召回缺一不可", "向量管意思相近，全文管字面精确，只留一路都会漏。"], ["最后才取正文", "命中之后再回 kb/ 取片段，避免前期读大量原文。"]], "docs": ["src/search.ts", "src/lib/fts-client.ts"], "code": [{"id": "embed", "file": "src/search.ts", "lines": [88, 100], "why": "问题向量化，唯一出网点"}, {"id": "fusion", "file": "src/search.ts", "lines": [141, 158], "why": "两路候选合并排序"}, {"id": "user", "concept": true}]}, "import": {"title": "数据源同步与导入管线", "type": "workflow", "summary": "从定时触发到可检索，中间有拉取、扫描分块、索引构建、落盘四步；任何一步失败都回滚本批。", "points": [["扫描先拦一道", "内容没变的文件直接跳过，这是省向量化额度的关键。"], ["索引是双通道", "同一份正文同时进向量和全文，不是先后关系。"], ["可以不要向量", "--no-vector 只建全文索引，适合没配向量化服务的场景。"]], "docs": ["src/lib/import.ts", "src/lib/chunker.ts"], "code": [{"id": "cron", "concept": true}, {"id": "chunk", "file": "src/lib/chunker.ts", "lines": [31, 44], "why": "分块策略决定检索粒度"}, {"id": "write", "file": "src/lib/import.ts", "lines": [210, 224], "why": "索引写入与落盘的收口"}]}, "daemons": {"title": "后台进程与它们读写的资源", "type": "architecture", "summary": "除了响应请求的 daemon，还有数据源调度、索引优化、备份三类后台工作，它们落在同一批资源上。", "points": [["调度器按数据源计时", "每个数据源自带 schedule，互不影响。"], ["向量化是唯一出网动作", "后台进程里只有它会访问外部服务。"], ["两个常见症状的定位", "「新文档搜不到」看同步与向量化；「删了还能搜到」看索引残留。"]], "docs": ["src/lib/datasource-scheduler.ts", "src/backup.ts"], "code": [{"id": "sched", "file": "src/lib/datasource-scheduler.ts", "lines": [55, 70], "why": "按数据源独立计时"}, {"id": "zvec", "concept": true}, {"id": "fts", "concept": true}]}, "config": {"title": "配置项地图", "type": "tree", "summary": "所有行为都收在一个 config.json 里：顶层管全局服务，scopes 段管每个知识库自己的目录、清洗与导入规则。", "points": [["改模型看 llm 与 embedding", "前者管对话与分析，后者管向量化，是两个独立配置。"], ["改对外行为看 mcp", "监听地址、鉴权、上传大小上限都在这里。"], ["改某个库看 scopes", "kbDir、wikiSync、clean、import 都是库级的。"]], "docs": ["src/lib/config-schema.ts", "docs/configuration.md"], "code": [{"id": "llm", "file": "src/lib/config-schema.ts", "lines": [20, 34], "why": "llm 与 embedding 两段配置的形状"}, {"id": "mcp", "concept": true}, {"id": "scopes", "concept": true}]}}, "snippets": {"overview": {"daemon": {"file": "src/lib/mcp-http-api.ts", "line": 2127, "endLine": 2142, "commit": "de5c495", "why": "HTTP 入口与路由分发集中在这里", "snippet": "// HTTP 入口：只做鉴权、并发与路由分发\nexport async function handleRequest(req, res) {\n  const ctx = await authenticate(req);\n  if (!ctx) return deny(res, 401);\n  const route = router.match(req.method, req.url);\n  if (!route) return deny(res, 404);\n  return route.handler(ctx, req, res);\n}\n\n// 路由表：一个入口分发到领域服务\nconst router = new Router([\n  { method: 'POST', path: '/import',   handler: importRun },\n  { method: 'GET',  path: '/query',    handler: queryFn },\n  { method: 'POST', path: '/relation', handler: relation }\n]);"}, "domain": {"file": "src/lib/import.ts", "line": 48, "endLine": 62, "commit": "de5c495", "why": "领域服务入口，导入管线的第一跳", "snippet": "export async function importRun(ctx, req, res) {\n  const { source, mode } = await readBody(req);\n  const job = await pipeline.start(source, { mode });\n  return res.json({ jobId: job.id });\n}"}, "kb": {"file": "src/lib/scope.ts", "line": 12, "endLine": 26, "commit": "de5c495", "why": "kb 目录是唯一不可丢的原始数据", "snippet": "// kbDir 是唯一不可丢的原始数据；索引只是派生物\nexport function resolveKbDir(scope) {\n  const dir = scope.kbDir || path.join(root, \"kb\");\n  if (!fs.existsSync(dir)) throw new Error(\"kb 目录不存在: \" + dir);\n  return dir;\n}"}}, "search": {"embed": {"file": "src/search.ts", "line": 88, "endLine": 100, "commit": "de5c495", "why": "问题向量化，唯一出网点", "snippet": "async function embedQuery(text) {\n  const vec = await llm.embed({ input: text, model });\n  return new Float32Array(vec.embedding);\n}"}, "fusion": {"file": "src/search.ts", "line": 141, "endLine": 158, "commit": "de5c495", "why": "两路候选合并排序", "snippet": "function fuse(dense, sparse, k) {\n  const scored = [...dense, ...sparse].map(hit => ({\n    id: hit.id, score: w1 * hit.dense + w2 * hit.sparse,\n  }));\n  return scored.sort((a, b) => b.score - a.score).slice(0, k);\n}"}}, "import": {"chunk": {"file": "src/lib/chunker.ts", "line": 31, "endLine": 44, "commit": "de5c495", "why": "分块策略决定检索粒度", "snippet": "function chunk(text, { size = 800, overlap = 120 }) {\n  const out = [];\n  for (let i = 0; i < text.length; i += size - overlap) {\n    out.push(text.slice(i, i + size));\n  }\n  return out;\n}"}, "write": {"file": "src/lib/import.ts", "line": 210, "endLine": 224, "commit": "de5c495", "why": "索引写入与落盘的收口", "snippet": "await Promise.all([\n  zvec.upsert(batch),\n  fts.index(batch),\n]);"}}, "daemons": {"sched": {"file": "src/lib/datasource-scheduler.ts", "line": 55, "endLine": 70, "commit": "de5c495", "why": "按数据源独立计时", "snippet": "for (const source of sources) {\n  const timer = setInterval(\n    () => sync(source).catch(logError),\n    source.schedule.interval\n  );\n}"}}, "config": {"llm": {"file": "src/lib/config-schema.ts", "line": 20, "endLine": 34, "commit": "de5c495", "why": "llm 与 embedding 两段配置的形状", "snippet": "export const schema = {\n  llm: { provider, model, apiKey, timeout },\n  embedding: { provider, model, dim },\n};"}}}, "demo": true, "branch": "main"}</script>
+<script id="demo-config" type="application/json">{"title":"kisearch 知识地图","subtitle":"不看文档列表，也能先看清这个系统","intro":"把架构、核心链路、后台进程分别画成图，每张图配一段解读。点节点可看生成时的代码快照。新增一张图，只需写一个页面配置、在大纲里挂一行。","baseline":"de5c495","generated_at":"2026-11-23","nav":[{"id":"arch","name":"架构总览","q":"这个系统由什么组成，谁和谁相连？","children":[{"id":"overview","page":"overview"}]},{"id":"flow","name":"核心链路","q":"一次操作到底经过哪些环节？","children":[{"id":"search","page":"search"},{"id":"import","page":"import"}]},{"id":"ops","name":"后台进程","q":"哪些东西在我没操作时也在跑？","page":"daemons"},{"id":"cross","name":"跨服务链路","q":"出了本项目之后，怎么闭环回来？","page":"cross"},{"id":"conf","name":"配置与环境","q":"想改行为，该动哪一段？","page":"config"}],"notice":"当前为内置示例配置：把 atlas.config.json 放到本文件同目录并起本地服务，即渲染成你的真实图集。","pages":{"overview":{"title":"运行时架构总览","type":"architecture","summary":"三种入口（Agent、Web、CLI）都汇到同一个 daemon，再由它分发给领域服务；真正的数据只有 kb/ 里的 Markdown，向量与全文索引都是可重建的派生物。","points":[["daemon 只做路由","鉴权、并发、锁都在这里，业务逻辑不在——所以改业务不用动它。"],["领域服务才是本体","import / query / relation 都在这里，对应 src/lib 下的大量模块。"],["索引不是原始数据","zvec 与 FTS 删掉都能从 kb/ 重建，kb/ 才是不能丢的。"]],"docs":["src/lib/mcp-http-api.ts","src/lib/import.ts","src/lib/scope.ts"],"code":[{"id":"daemon","file":"src/lib/mcp-http-api.ts","lines":[2127,2142],"why":"HTTP 入口与路由分发集中在这里"},{"id":"domain","file":"src/lib/import.ts","lines":[48,62],"why":"领域服务入口，导入管线的第一跳"},{"id":"kb","file":"src/lib/scope.ts","lines":[12,26],"why":"kb 目录是唯一不可丢的原始数据"},{"id":"web","concept":true},{"id":"agent","concept":true},{"id":"llm","concept":true}]},"search":{"title":"一次搜索怎么算出结果","type":"sequence","summary":"先把问题向量化，再同时走向量和全文两路召回，最后融合排序并回取正文。","points":[["先向量化问题","整条链路唯一调用外部服务的一步，也是最常见的超时来源。"],["两路召回缺一不可","向量管意思相近，全文管字面精确，只留一路都会漏。"],["最后才取正文","命中之后再回 kb/ 取片段，避免前期读大量原文。"]],"docs":["src/search.ts","src/lib/fts-client.ts"],"code":[{"id":"embed","file":"src/search.ts","lines":[88,100],"why":"问题向量化，唯一出网点"},{"id":"fusion","file":"src/search.ts","lines":[141,158],"why":"两路候选合并排序"},{"id":"user","concept":true}]},"import":{"title":"数据源同步与导入管线","type":"workflow","summary":"从定时触发到可检索，中间有拉取、扫描分块、索引构建、落盘四步；任何一步失败都回滚本批。","points":[["扫描先拦一道","内容没变的文件直接跳过，这是省向量化额度的关键。"],["索引是双通道","同一份正文同时进向量和全文，不是先后关系。"],["可以不要向量","--no-vector 只建全文索引，适合没配向量化服务的场景。"]],"docs":["src/lib/import.ts","src/lib/chunker.ts"],"code":[{"id":"cron","concept":true},{"id":"chunk","file":"src/lib/chunker.ts","lines":[31,44],"why":"分块策略决定检索粒度"},{"id":"write","file":"src/lib/import.ts","lines":[210,224],"why":"索引写入与落盘的收口"}]},"daemons":{"title":"后台进程：从写入到被读到的闭环","summary":"上面一张是「谁在写这些资源」，下面一张是「这些资源被谁读走」。两张图画的是同一批组件——只画生产侧，读者会以为写进去就等于能查到。","figures":[{"id":"write","name":"谁在写这些资源","type":"architecture","q":"除了响应请求，还有哪些进程在我没操作时改动索引与数据？","points":[["调度器按数据源计时","每个数据源自带 schedule，互不影响。"],["向量化是唯一出网动作","后台进程里只有它会访问外部服务。"],["三个进程落在同一批资源上","所以「写」不是某一个进程独占的事，缺一环索引就不完整。"]]},{"id":"read","name":"写完之后被谁读走","type":"sequence","q":"写进 zvec / FTS 之后，这条数据什么时候才算真的「能搜到」？","points":[["写入不等于可检索","两条索引通道都成功、查询侧读到的也是新版本，这一批才算落地。"],["读路径决定新鲜度","优化进行中，读到的可能是旧索引——只看生产侧永远看不到这一条。"],["sched 是两张图里的同一个组件","点它两次看到的是同一段代码，因为它们本来就是同一个东西。"]]}],"docs":["src/lib/datasource-scheduler.ts","src/backup.ts","src/search.ts"],"code":[{"id":"sched","file":"src/lib/datasource-scheduler.ts","lines":[55,70],"why":"按数据源独立计时（两张图共用这一段）"},{"id":"entry","file":"src/search.ts","lines":[88,100],"why":"读路径的起点：把问题向量化"},{"id":"zvec","concept":true},{"id":"fts","concept":true},{"id":"kb","concept":true}]},"config":{"title":"配置项地图","type":"tree","summary":"所有行为都收在一个 config.json 里：顶层管全局服务，scopes 段管每个知识库自己的目录、清洗与导入规则。","points":[["改模型看 llm 与 embedding","前者管对话与分析，后者管向量化，是两个独立配置。"],["改对外行为看 mcp","监听地址、鉴权、上传大小上限都在这里。"],["改某个库看 scopes","kbDir、wikiSync、clean、import 都是库级的。"]],"docs":["src/lib/config-schema.ts","docs/configuration.md"],"code":[{"id":"llm","file":"src/lib/config-schema.ts","lines":[20,34],"why":"llm 与 embedding 两段配置的形状"},{"id":"mcp","concept":true},{"id":"scopes","concept":true}]},"cross":{"title":"跨服务闭环：一次导入出去又回来","summary":"这条链路的消费端不在本项目内——数据平台的 ETL 服务消费变更事件、建好索引后回调本项目。闭环的落点不是发起投递的那个入口，而是另一个回调入口。","figures":[{"id":"flow","name":"变更事件跨边界走了一圈","type":"architecture","q":"投递出去之后，谁在处理，闭环落在本项目的哪个入口？","points":[["投递不是结束","MQ 投递成功只代表消息进了队列；索引到底建没建好，要看回程。"],["回程落在另一个入口","回调 /internal/index-ready 与投递入口不是同一个函数，也不是同一个进程。"],["外部只到契约粒度","ETL 内部经过几个服务不展开——那是它自己的知识地图，画在这里必然过期。"],["靠 data_id 把两头对上","ETL 返回的 data_id 才是这条链的钥匙——没有它，回调回来也不知道是哪一批。"]]},{"id":"idflow","name":"一条 data_id 的生命周期","type":"dataflow","q":"data_id 从生成到被用，经过哪几段、存在哪？","points":[["少了 ② 就等于没接上","拿到 id 却不落库，重启后既不能查详情也不能对账，只能全量重扫。"],["同一条键走三段","生成 → 沉淀 → 取用，是同一个 data_id，不是三个不同的 id。"],["② 的位置决定谁能用","存在 scope_meta 里，说明它是知识库级状态——不是某次请求的临时变量。"]]}],"docs":["docs/integration/datasource-mq.md"],"code":[{"id":"scan","file":"src/lib/import.ts","lines":[48,62],"why":"扫描到变更后进入投递分支"},{"id":"outbox","file":"src/lib/outbox.ts","lines":[31,47],"why":"变更事件投递，只保证入队成功"},{"id":"etl","external":true},{"id":"store","file":"src/lib/scope.ts","lines":[40,52],"why":"data_id 落盘的位置：scope 级状态，重启后还在"},{"id":"query","file":"src/lib/remote-client.ts","lines":[24,38],"why":"查询 / 对账时按 data_id 定位同一条记录"},{"id":"callback","file":"src/lib/index-callback.ts","lines":[18,34],"why":"回程落点：索引就绪后切换可检索版本"}],"links":[{"from":"scan","to":"outbox","carries":"变更文件列表","kind":"event","note":"扫描产出变更清单，是投递的输入"},{"from":"outbox","to":"etl","carries":"kb.changed","kind":"event","shape":"MQ · topic kb.changed","note":"异步投递，at-least-once，无顺序保证"},{"from":"etl","to":"callback","carries":"data_id","kind":"identifier","shape":"string(32)","storedAt":"scope_meta.remote_id","cardinality":"1:N","note":"一次批量导入返回 N 个；没有它，回调回来也不知道是哪一批"},{"from":"callback","to":"store","carries":"data_id","kind":"identifier","storedAt":"scope_meta.remote_id","note":"沉下来，成为知识库级状态"},{"from":"store","to":"query","carries":"data_id","kind":"identifier","note":"查询 ETL 详情、对账、删数据都按它定位"},{"from":"callback","to":"etl","carries":"激活结果","kind":"status","note":"只回成功/失败，不参与后续定位——所以图上不画这条"}]}},"snippets":{"overview":{"daemon":{"file":"src/lib/mcp-http-api.ts","line":2127,"endLine":2142,"commit":"de5c495","why":"HTTP 入口与路由分发集中在这里","snippet":"// HTTP 入口：只做鉴权、并发与路由分发\nexport async function handleRequest(req, res) {\n  const ctx = await authenticate(req);\n  if (!ctx) return deny(res, 401);\n  const route = router.match(req.method, req.url);\n  if (!route) return deny(res, 404);\n  return route.handler(ctx, req, res);\n}\n\n// 路由表：一个入口分发到领域服务\nconst router = new Router([\n  { method: 'POST', path: '/import',   handler: importRun },\n  { method: 'GET',  path: '/query',    handler: queryFn },\n  { method: 'POST', path: '/relation', handler: relation }\n]);"},"domain":{"file":"src/lib/import.ts","line":48,"endLine":62,"commit":"de5c495","why":"领域服务入口，导入管线的第一跳","snippet":"export async function importRun(ctx, req, res) {\n  const { source, mode } = await readBody(req);\n  const job = await pipeline.start(source, { mode });\n  return res.json({ jobId: job.id });\n}"},"kb":{"file":"src/lib/scope.ts","line":12,"endLine":26,"commit":"de5c495","why":"kb 目录是唯一不可丢的原始数据","snippet":"// kbDir 是唯一不可丢的原始数据；索引只是派生物\nexport function resolveKbDir(scope) {\n  const dir = scope.kbDir || path.join(root, \"kb\");\n  if (!fs.existsSync(dir)) throw new Error(\"kb 目录不存在: \" + dir);\n  return dir;\n}"}},"search":{"embed":{"file":"src/search.ts","line":88,"endLine":100,"commit":"de5c495","why":"问题向量化，唯一出网点","snippet":"async function embedQuery(text) {\n  const vec = await llm.embed({ input: text, model });\n  return new Float32Array(vec.embedding);\n}"},"fusion":{"file":"src/search.ts","line":141,"endLine":158,"commit":"de5c495","why":"两路候选合并排序","snippet":"function fuse(dense, sparse, k) {\n  const scored = [...dense, ...sparse].map(hit => ({\n    id: hit.id, score: w1 * hit.dense + w2 * hit.sparse,\n  }));\n  return scored.sort((a, b) => b.score - a.score).slice(0, k);\n}"}},"import":{"chunk":{"file":"src/lib/chunker.ts","line":31,"endLine":44,"commit":"de5c495","why":"分块策略决定检索粒度","snippet":"function chunk(text, { size = 800, overlap = 120 }) {\n  const out = [];\n  for (let i = 0; i < text.length; i += size - overlap) {\n    out.push(text.slice(i, i + size));\n  }\n  return out;\n}"},"write":{"file":"src/lib/import.ts","line":210,"endLine":224,"commit":"de5c495","why":"索引写入与落盘的收口","snippet":"await Promise.all([\n  zvec.upsert(batch),\n  fts.index(batch),\n]);"}},"daemons":{"sched":{"file":"src/lib/datasource-scheduler.ts","line":55,"endLine":70,"commit":"de5c495","why":"按数据源独立计时","snippet":"for (const source of sources) {\n  const timer = setInterval(\n    () => sync(source).catch(logError),\n    source.schedule.interval\n  );\n}"},"entry":{"file":"src/search.ts","line":88,"endLine":100,"commit":"de5c495","why":"读路径的起点：把问题向量化","snippet":"async function embedQuery(text) {\n  const vec = await llm.embed({ input: text, model });\n  return new Float32Array(vec.embedding);\n}"}},"config":{"llm":{"file":"src/lib/config-schema.ts","line":20,"endLine":34,"commit":"de5c495","why":"llm 与 embedding 两段配置的形状","snippet":"export const schema = {\n  llm: { provider, model, apiKey, timeout },\n  embedding: { provider, model, dim },\n};"}},"cross":{"scan":{"file":"src/lib/import.ts","line":48,"endLine":62,"commit":"de5c495","why":"扫描到变更后进入投递分支","snippet":"export async function importRun(ctx, req, res) {\n  const { source, mode } = await readBody(req);\n  const job = await pipeline.start(source, { mode });\n  return res.json({ jobId: job.id });\n}"},"outbox":{"file":"src/lib/outbox.ts","line":31,"endLine":47,"commit":"de5c495","why":"变更事件投递，只保证入队成功","snippet":"// 投递只保证入队；索引是否建好由回程决定\nexport async function publishChanged(files) {\n  await mq.publish('kb.changed', {\n    scope, files, at: Date.now(),\n  }, { dlq: 'kb.changed.dlq' });\n  // 不做同步等待：外部消费者是另一个服务\n}"},"callback":{"file":"src/lib/index-callback.ts","line":18,"endLine":34,"commit":"de5c495","why":"回程落点：索引就绪后切换可检索版本","snippet":"// 回程入口：与投递入口不是同一进程\nexport async function onIndexReady(req, res) {\n  const { scope, version } = await readBody(req);\n  await index.activate(scope, version);   // 切到新版本\n  await cache.invalidate('search:' + scope);\n  return res.json({ ok: true, version });\n}"},"store":{"file":"src/lib/scope.ts","line":40,"endLine":52,"commit":"de5c495","why":"data_id 落盘的位置：scope 级状态，重启后还在","snippet":"// remote_id 是 ETL 平台返回的 data_id：外部系统的唯一凭证\nexport async function saveRemoteId(scope, dataId) {\n  await meta.upsert({\n    scope,\n    remote_id: dataId,\n    saved_at: Date.now(),\n  });\n}"},"query":{"file":"src/lib/remote-client.ts","line":24,"endLine":38,"commit":"de5c495","why":"查询 / 对账时按 data_id 定位同一条记录","snippet":"// 所有对外查询都从这里进来：定位靠 data_id，不靠文件名\nexport async function fetchRemote(scope) {\n  const { remote_id } = await meta.get(scope);\n  if (!remote_id) throw new Error('没有 remote_id，先跑一次导入');\n  return etl.get('/records/' + remote_id);\n}"}}},"demo":true,"branch":"main","externals":{"etl":{"owner":"数据平台团队","contract":"MQ · topic kb.changed · at-least-once · 无顺序保证","returnsTo":"callback","returnForm":"回写 zvec + POST /internal/index-ready"}}}</script>
 
 <!-- ===== 页面配置：每页加载哪张图 + 解读 + 代码映射（新增图只改这里） ===== -->
 
@@ -403,6 +447,173 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 </svg>
 </template>
 
+<!-- 同页第 2 张图：写完之后被谁读走（template key = pid::figId，第 1 张仍用 pid） -->
+<template data-demo="1" data-view="daemons::read">
+<svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .lb{font-size:14px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11.5px;fill:#7d8983;text-anchor:middle}
+    .zone{fill:#fcfdfb;stroke:#e3eae0;stroke-width:1.2;stroke-dasharray:6 5}
+    .zt{font-size:10px;fill:#96a29a;text-anchor:middle;letter-spacing:.06em}
+    .lane{stroke:#d3ddd2;stroke-width:1;stroke-dasharray:4 5;fill:none}
+    .arw{stroke:#17664a;stroke-width:1.6;fill:none}
+    .arwb{stroke:#3b6ea5;stroke-width:1.6;fill:none}
+    .arwd{stroke:#3b6ea5;stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+    .warn{stroke:#c2703f;stroke-width:1.3;fill:none;stroke-dasharray:5 4}
+    .tag{font-size:11px;fill:#5f6c64;text-anchor:middle}
+    .warnt{font-size:10.5px;fill:#a9582f;text-anchor:middle}
+    .stg{font-size:10.5px;fill:#7f8b82;letter-spacing:.05em}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <defs>
+    <marker id="d2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#17664a"/></marker>
+    <marker id="d2b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#3b6ea5"/></marker>
+  </defs>
+
+  <path class="lane" d="M130 70 V412"/>
+  <path class="lane" d="M485 70 V412"/>
+  <path class="lane" d="M770 70 V412"/>
+
+  <text class="stg" x="16" y="72">① 写入</text>
+  <text class="stg" x="16" y="286">② 读取</text>
+  <text class="stg" x="16" y="340">③ 回程</text>
+
+  <g data-node-id="sched"><rect class="bxa" x="36" y="16" width="188" height="48" rx="9"/><text class="lb" x="130" y="38">调度器 / 后台进程</text><text class="sb" x="130" y="55">写入者 · 按源计时</text></g>
+  <g data-node-id="entry"><rect class="bxa" x="676" y="16" width="188" height="48" rx="9"/><text class="lb" x="770" y="38">查询入口</text><text class="sb" x="770" y="55">读取者 · /query</text></g>
+
+  <rect class="zone" x="396" y="86" width="178" height="248" rx="12"/>
+  <text class="zt" x="485" y="103">同一批资源</text>
+  <g data-node-id="zvec"><rect class="bx" x="410" y="112" width="150" height="42" rx="8"/><text class="lb" x="485" y="130" style="font-size:13px">zvec</text><text class="sb" x="485" y="146">向量索引</text></g>
+  <g data-node-id="fts"><rect class="bx" x="410" y="164" width="150" height="42" rx="8"/><text class="lb" x="485" y="182" style="font-size:13px">FTS</text><text class="sb" x="485" y="198">全文索引</text></g>
+  <g data-node-id="kb"><rect class="bx" x="410" y="216" width="150" height="42" rx="8"/><text class="lb" x="485" y="234" style="font-size:13px">kb/</text><text class="sb" x="485" y="250">原始数据</text></g>
+
+  <path class="arw" d="M130 64 V76 H485 V82" marker-end="url(#d2a)"/>
+  <text class="tag" x="300" y="70">写入：向量 + 全文 + 快照</text>
+
+  <path class="arwb" d="M770 64 V290 H582" marker-end="url(#d2b)"/>
+  <text class="tag" x="694" y="284">召回：向量 + 全文</text>
+
+  <path class="warn" d="M410 310 H570"/>
+  <text class="warnt" x="490" y="304">优化进行中 → 读到的是旧版本</text>
+
+  <path class="arwd" d="M574 340 H764" marker-end="url(#d2b)"/>
+  <text class="tag" x="664" y="334">命中片段（回程）</text>
+
+  <path class="arwb" d="M770 340 V368" marker-end="url(#d2b)"/>
+  <g data-node-id="fuse"><rect class="bx" x="706" y="372" width="128" height="34" rx="7"/><text class="lb" x="770" y="394" style="font-size:12px">融合排序 → 返回</text></g>
+</svg>
+</template>
+
+<!-- 跨服务闭环：消费端在本项目之外，回程落在另一个入口 -->
+<template data-demo="1" data-view="cross">
+<svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .bxe{fill:#fafbfa;stroke:#9aa8a0;stroke-width:1.4;stroke-dasharray:6 4}
+    .bnd{fill:none;stroke:#dbe4d8;stroke-width:1.2;stroke-dasharray:7 5}
+    .bnd-e{fill:#fcfdfc;stroke:#c2cec6;stroke-width:1.2;stroke-dasharray:7 5}
+    .lb{font-size:13.5px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11px;fill:#7d8983;text-anchor:middle}
+    .sb-e{font-size:11px;fill:#8b9a91;text-anchor:middle}
+    .zt{font-size:10px;fill:#8f9c94;letter-spacing:.07em}
+    .arw{stroke:#17664a;stroke-width:1.6;fill:none}
+    .arwm{stroke:#c2703f;stroke-width:1.6;fill:none;stroke-dasharray:6 4}
+    .arwl{stroke:#17664a;stroke-width:1.3;fill:none;stroke-dasharray:4 4}
+    .tag{font-size:11px;fill:#5f6c64;text-anchor:middle}
+    .warn{font-size:11px;fill:#a9582f;text-anchor:middle}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <defs>
+    <marker id="c3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#17664a"/></marker>
+    <marker id="c3m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#c2703f"/></marker>
+  </defs>
+
+  <rect class="bnd" x="24" y="74" width="394" height="128" rx="12"/>
+  <text class="zt" x="40" y="92">本项目</text>
+
+  <rect class="bnd-e" x="440" y="74" width="224" height="178" rx="12"/>
+  <text class="zt" x="456" y="92">外部服务 · 只到契约粒度</text>
+
+  <rect class="bnd" x="696" y="74" width="196" height="128" rx="12"/>
+  <text class="zt" x="712" y="92">本项目（另一个入口）</text>
+
+  <g data-node-id="scan"><rect class="bxa" x="48" y="106" width="152" height="62" rx="9"/><text class="lb" x="124" y="132">kb 扫描</text><text class="sb" x="124" y="151">发现变更</text></g>
+  <g data-node-id="outbox"><rect class="bx" x="236" y="106" width="152" height="62" rx="9"/><text class="lb" x="312" y="132">出口 / MQ</text><text class="sb" x="312" y="151">入队成功即返回</text></g>
+
+  <g data-node-id="etl"><rect class="bxe" x="466" y="106" width="172" height="62" rx="9"/><text class="lb" x="552" y="132">ETL（数据平台）</text><text class="sb-e" x="552" y="151">异步消费变更事件</text></g>
+  <text class="sb-e" x="552" y="222">内部：清洗 → 分块 → 建索引</text>
+  <text class="sb-e" x="552" y="240">3 个服务，不展开</text>
+
+  <g data-node-id="callback"><rect class="bxa" x="716" y="106" width="152" height="62" rx="9"/><text class="lb" x="792" y="132">索引就绪回调</text><text class="sb" x="792" y="151">回程落点</text></g>
+
+  <path class="arw" data-link="scan->outbox" d="M200 137 H232" marker-end="url(#c3a)"/>
+  <path class="arwm" data-link="outbox->etl" d="M388 137 H462" marker-end="url(#c3m)"/>
+  <path class="arwm" data-link="etl->callback" d="M638 137 H712" marker-end="url(#c3m)"/>
+
+  <text class="tag" x="415" y="128">投递</text>
+  <text class="tag" x="675" y="128">回调</text>
+
+  <path class="arwl" d="M792 208 V300 H124"/>
+  <circle cx="124" cy="300" r="4" fill="#17664a"/>
+  <text class="tag" x="458" y="293">闭环：索引就绪后，下一次变更才会用上新版本</text>
+  <text class="warn" x="458" y="328">⚠ 投递成功 ≠ 已建好索引；回程落在另一个入口，不是发起投递的那个函数</text>
+</svg>
+</template>
+
+<!-- 同页第 2 张图：一条 data_id 的生命周期（生成 → 沉淀 → 取用） -->
+<template data-demo="1" data-view="cross::idflow">
+<svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
+  <style>
+    .bx{fill:#fff;stroke:#d7e1d6;stroke-width:1.2}
+    .bxa{fill:#f2f8f3;stroke:#17664a;stroke-width:1.4}
+    .bxe{fill:#fafbfa;stroke:#9aa8a0;stroke-width:1.4;stroke-dasharray:6 4}
+    .lb{font-size:13.5px;fill:#0f1a15;text-anchor:middle;font-weight:600}
+    .sb{font-size:11px;fill:#7d8983;text-anchor:middle}
+    .stg{font-size:10.5px;fill:#7f8b82;text-anchor:middle;letter-spacing:.06em}
+    .arw{stroke:#17664a;stroke-width:1.6;fill:none}
+    .arwm{stroke:#c2703f;stroke-width:1.6;fill:none;stroke-dasharray:6 4}
+    .warn{stroke:#c2703f;stroke-width:1.2;fill:none;stroke-dasharray:4 4}
+    .warnbox{fill:#fdf7f3;stroke:#e0c2ae;stroke-width:1;stroke-dasharray:4 4}
+    .warnt{font-size:10.5px;fill:#a9582f;text-anchor:middle}
+    .tag{font-size:11px;fill:#5f6c64;text-anchor:middle}
+    [data-coded]{cursor:pointer;transition:filter .15s}
+    [data-coded]:hover{filter:drop-shadow(0 2px 7px rgba(23,102,74,.28))}
+    .is-picked{filter:drop-shadow(0 0 8px rgba(23,102,74,.45))}
+  </style>
+  <defs>
+    <marker id="cf-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#17664a"/></marker>
+    <marker id="cf-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#c2703f"/></marker>
+  </defs>
+
+  <text class="stg" x="120" y="52">① 生成</text>
+  <text class="stg" x="347" y="52">② 沉淀</text>
+  <text class="stg" x="793" y="52">③ 取用</text>
+
+  <g data-node-id="etl"><rect class="bxe" x="36" y="96" width="168" height="62" rx="9"/><text class="lb" x="120" y="122">ETL 写入</text><text class="sb" x="120" y="141">返回 data_id</text></g>
+  <g data-node-id="callback"><rect class="bxa" x="258" y="96" width="178" height="62" rx="9"/><text class="lb" x="347" y="122">回调入口</text><text class="sb" x="347" y="141">拿到 data_id</text></g>
+  <g data-node-id="store"><rect class="bx" x="490" y="96" width="178" height="62" rx="9"/><text class="lb" x="579" y="122">scope_meta</text><text class="sb" x="579" y="141">remote_id 落库</text></g>
+  <g data-node-id="query"><rect class="bx" x="722" y="96" width="142" height="62" rx="9"/><text class="lb" x="793" y="122">查询 / 对账</text><text class="sb" x="793" y="141">按 id 定位</text></g>
+
+  <path class="arwm" data-link="etl->callback" d="M204 127 H254" marker-end="url(#cf-m)"/>
+  <path class="arw" data-link="callback->store" d="M436 127 H486" marker-end="url(#cf-a)"/>
+  <path class="arw" data-link="store->query" d="M668 127 H718" marker-end="url(#cf-a)"/>
+
+  <path class="warn" d="M579 164 V196"/>
+  <rect class="warnbox" x="432" y="200" width="294" height="44" rx="8"/>
+  <text class="warnt" x="579" y="219">② 不做 → 重启后对不上这条记录</text>
+  <text class="warnt" x="579" y="235">只能全量重扫，或者永远查不到它</text>
+
+  <text class="tag" x="450" y="278">同一条 data_id 走完 ①②③ 才算闭环；缺任何一段，图上看还是闭环、实际已断</text>
+</svg>
+</template>
+
 <template data-demo="1" data-view="config">
 <svg viewBox="0 20 900 172" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,'PingFang SC',sans-serif">
   <style>
@@ -493,7 +704,69 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     if(kids && kids.length) return kids.reduce((a, k) => a + countLeaves(k), 0);
     return 1;
   }
-  const codeOf = pid => ((PAGES[pid] || {}).code || []).filter(c => c.file);
+  // code[] 与站点级 externals 字典合并（页面级字段优先），口径与 atlas_io.resolve_code 一致
+  const resolveCode = pid => {
+    const book = SITE.externals || {};
+    return ((PAGES[pid] || {}).code || []).map(c => {
+      if(c.external && book[c.id]) return Object.assign({}, book[c.id], c, { external: true });
+      return c;
+    });
+  };
+  const codeOf = pid => resolveCode(pid).filter(c => c.file);
+  // 节点第三态：外部服务。有归属与契约、没有源码，不计入内部节点可点率的分子分母
+  const externalOf = pid => resolveCode(pid).filter(c => c.external);
+  // 衔接关系：节点之间传什么、靠什么标识符对上。kind=identifier 才是"衔接键"
+  const linksOf = pid => ((PAGES[pid] || {}).links || []).map(l => ({
+    from: l.from || '', to: l.to || '', carries: l.carries || '',
+    kind: l.kind || 'event', shape: l.shape || '', storedAt: l.storedAt || '',
+    cardinality: l.cardinality || '', note: l.note || ''
+  }));
+  // 同一条标识符可能分多段流转（etl→callback→store→query），合成一行显示完整路径，避免同一个键列三遍
+  const mergeIdLinks = links => {
+    const out = [], by = new Map();
+    for(const l of links.filter(x => x.kind === 'identifier')){
+      const k = l.carries || '—';
+      if(by.has(k)){
+        const m = by.get(k);
+        if(m.path[m.path.length - 1] === l.from) m.path.push(l.to);
+        else m.branches.push(l.from + ' → ' + l.to);
+        m.shape = m.shape || l.shape;
+        m.storedAt = m.storedAt || l.storedAt;
+        m.cardinality = m.cardinality || l.cardinality;
+        m.note = m.note || l.note;
+      }else{
+        const m = { key: k, path: [l.from, l.to], branches: [], shape: l.shape,
+                    storedAt: l.storedAt, cardinality: l.cardinality, note: l.note };
+        by.set(k, m); out.push(m);
+      }
+    }
+    return out;
+  };
+  const linkPath = m => m.path.join(' → ') + (m.branches.length ? '；另：' + m.branches.join('、') : '');
+  // 一页多图：figures 为数组；缺省把旧的 svg/type/points 归一化成单元素，老配置不改也能跑
+  const figsOf = pid => {
+    const p = PAGES[pid] || {};
+    const vs = SITE.views_dir || 'views';
+    if(Array.isArray(p.figures) && p.figures.length){
+      // 页级 type / interactive 作为兜底继承：单图改造成多图时不会静默丢掉
+      return p.figures.map((f, i) => ({
+        id: f.id || ('f' + (i + 1)),
+        name: f.name || '',
+        type: f.type || p.type || '',
+        q: f.q || '',
+        svg: f.svg || (vs + '/' + pid + '-' + (i + 1) + '.svg'),
+        points: f.points || [],
+        interactive: f.interactive || (i === 0 ? (p.interactive || '') : '')
+      }));
+    }
+    return [{
+      id: 'f1', name: '', type: p.type || '', q: '',
+      svg: p.svg || (vs + '/' + pid + '.svg'),
+      points: p.points || [], interactive: p.interactive || ''
+    }];
+  };
+  // 图源 template 的 key：第 1 张沿用 pid（向后兼容 build_atlas 的 tpl_pattern），其后为 pid::<figId>
+  const figKey = (pid, figId, idx) => idx === 0 ? pid : (pid + '::' + figId);
   const $ = s => document.querySelector(s);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   // 状态源用 hash：支持 #page 深链与后退
@@ -574,7 +847,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   function renderHome(){
     let h = '<div class="hero"><h1>' + esc(SITE.subtitle || '先建立整体认知') + '</h1>'
       + '<p>' + esc(SITE.intro || '') + '</p>'
-      + '<div class="note"><span>▸</span><span>' + (SITE.notice || '图为内联 SVG：带代码的节点可点击，其余为概念节点。') + '</span></div></div>';
+      + '<div class="note"><span>' + (SITE.notice || '图为内联 SVG：带代码的节点可点击，其余为概念节点。') + '</span></div></div>';
     for(const g of SITE.nav){
       const pages = ITEMS.filter(i => i.group === g.id);
       h += '<section class="sec"><div class="sec-h"><span class="name">' + esc(g.name) + '</span>'
@@ -599,27 +872,48 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     window.scrollTo(0, 0);
   }
 
+  // 每张图 = 一条 fig-bar + 一个独立图源容器 + 自己的解读；容器 ID 带图 id，互不影响
+  function figBlocks(pid){
+    const figs = figsOf(pid);
+    const many = figs.length > 1;
+    let h = '';
+    figs.forEach((f, i) => {
+      h += '<div class="fig"><div class="fig-bar">'
+        + '<span class="chip">' + esc(f.type || '') + '</span>'
+        + (many ? '<span class="fig-idx">图 ' + (i + 1) + '</span>' : '')
+        + (many ? '<span class="fig-name">' + esc(f.name || '') + '</span>' : '')
+        + '<span class="t" id="figstat-' + esc(f.id) + '" style="margin-left:auto"></span>'
+        + (f.interactive ? '<a href="' + esc(f.interactive) + '" target="_blank" rel="noopener">交互版 ↗</a>' : '')
+        + '</div><div class="fig-body" id="viewbox-' + esc(f.id) + '"><div class="ph">加载图中…</div></div>';
+      if(f.q) h += '<div class="fig-q"><b>这张图回答</b>：' + esc(f.q) + '</div>';
+      if(f.points.length){
+        h += '<dl class="read read--in"><div class="read-h">怎么读这张图</div>';
+        for(const pt of f.points) h += '<dt>' + esc(pt[0]) + '</dt><dd>' + esc(pt[1]) + '</dd>';
+        h += '</dl>';
+      }
+      h += '</div>';
+    });
+    return h;
+  }
+
   function renderPage(pid){
     const p = PAGES[pid];
     const it = ITEMS.find(i => i.page === pid) || {};
     if(!p){ $('#main').innerHTML = '<div class="hint">页面配置缺失：' + esc(pid) + '</div>'; return; }
     const n = codeOf(pid).length;
+    const figs = figsOf(pid);
     const crumbPath = (it.path || []).join(' / ');
     let h = '<div class="crumb">' + esc(crumbPath ? crumbPath + ' / ' : '') + esc(p.title || pid) + '</div>';
     h += '<div class="pg-head"><h1>' + esc(p.title || pid) + '</h1><p>' + esc(p.summary || '') + '</p></div>';
-    h += '<div class="fig"><div class="fig-bar">'
-      + '<span class="chip">' + esc(p.type || '') + '</span><span class="sep"></span>'
-      + '<span class="t">' + esc(SITE.generated_at || '') + '</span><span class="sep"></span>'
-      + '<span class="t">' + (n ? n + ' 个节点可点' : '纯展示') + '</span>'
-      + (p.interactive ? '<a href="' + esc(p.interactive) + '" target="_blank" rel="noopener">交互版 ↗</a>' : '')
-      + '</div><div class="fig-body" id="viewbox"><div class="ph">加载图中…</div></div></div>';
-    if(n) h += '<div class="hint">图中 ' + n + ' 个节点有代码，点击可看生成时的源码快照；其余节点为外部依赖或纯概念，点击会给出说明。</div>';
+    h += figBlocks(pid);
 
-    h += '<dl class="read"><div class="read-h">怎么读这张图</div>';
-    for(const pt of (p.points || [])) h += '<dt>' + esc(pt[0]) + '</dt><dd>' + esc(pt[1]) + '</dd>';
-    h += '</dl>';
+    const nExt = externalOf(pid).length;
+    if(n) h += '<div class="hint">' + (figs.length > 1 ? figs.length + ' 张图共 ' : '图中 ')
+      + n + ' 个内部节点有代码，点击可看生成时的源码快照；'
+      + (nExt ? '外部服务（' + nExt + ' 个）点击看契约，' : '')
+      + '概念节点点击会给出说明。</div>';
 
-    const codes = (p.code || []).filter(c => c.file);
+    const codes = codeOf(pid);
     h += '<div class="docs"><div class="docs-h">对应代码块</div><ul class="codelist">';
     if(!codes.length){
       h += '<li style="cursor:default"><span class="why" style="margin-left:0">该页没有配置代码位置</span></li>';
@@ -630,9 +924,71 @@ main>:first-child{animation:page-in .38s var(--ease) both}
       h += '<li data-node="' + esc(c.id) + '">'
         + '<span class="p">' + esc(c.file) + ':' + (c.lines ? c.lines[0] : '-') + '-' + (c.lines ? c.lines[1] : '-') + '</span>'
         + (sym ? '<span class="sym">' + esc(sym) + '</span>' : '')
-        + '<span class="why">' + esc(c.why || '') + '</span></li>';
+        + '<span class="why">' + esc(c.why || '') + '</span>'
+        + '<span class="infigs"></span></li>';
     }
     h += '</ul>';
+
+    // 外部依赖：只到契约粒度。缺 owner / contract / returnsTo 时前端标红提醒（check 层应拦成 error）
+    const exts = externalOf(pid);
+    if(exts.length){
+      h += '<div class="docs-h" style="margin-top:22px">外部依赖 · 只到契约粒度</div><ul class="extlist">';
+      for(const c of exts){
+        h += '<li data-ext="' + esc(c.id) + '">'
+          + '<span class="p">' + esc(c.id) + '</span>'
+          + '<span class="owner">' + esc(c.owner || '⚠ 缺 owner') + '</span>'
+          + '<span class="why">' + esc(c.contract || '⚠ 缺 contract')
+          + (c.returnsTo ? '　→ 回程 ' + esc(c.returnsTo) : '　⚠ 缺 returnsTo') + '</span>'
+          + '<span class="infigs"></span>'
+          + '</li>';
+      }
+      h += '</ul>';
+    }
+
+    // 衔接关系：标识符单列（后续操作靠它定位），事件类次之，状态型折叠成一行
+    const links = linksOf(pid);
+    if(links.length){
+      const idL = links.filter(l => l.kind === 'identifier');
+      const flowL = links.filter(l => l.kind !== 'identifier' && l.kind !== 'status' && l.kind !== 'none');
+      const quiet = links.filter(l => l.kind === 'status' || l.kind === 'none');
+      h += '<div class="docs-h" style="margin-top:24px">衔接关系 · 节点之间传什么、靠什么对上</div>';
+      const idM = mergeIdLinks(links);
+      if(idM.length){
+        h += '<div class="lk-t">标识符（后续查询 / 对账靠它定位同一条记录）</div>'
+          + '<table class="ltab"><thead><tr><th>衔接键</th><th>流转路径</th><th>形态</th>'
+          + '<th>持久化</th><th>说明</th></tr></thead><tbody>';
+        for(const m of idM){
+          h += '<tr>'
+            + '<td class="key">' + esc(m.key)
+            + (m.cardinality ? '<span class="card">' + esc(m.cardinality) + '</span>' : '') + '</td>'
+            + '<td class="end">' + esc(m.path.join(' → '))
+            + (m.branches.length ? '<br><span class="br">另：' + esc(m.branches.join('、')) + '</span>' : '')
+            + '</td>'
+            + '<td class="dim">' + esc(m.shape || '—') + '</td>'
+            + '<td class="dim">' + (m.storedAt ? '<span class="mono">' + esc(m.storedAt) + '</span>'
+                                              : '<span class="warnff">⚠ 未说明</span>') + '</td>'
+            + '<td>' + esc(m.note || '—') + '</td></tr>';
+        }
+        h += '</tbody></table>';
+      }
+      if(flowL.length){
+        h += '<div class="lk-t">传递内容（事件 / 载荷，不构成标识符）</div>'
+          + '<table class="ltab"><thead><tr><th>内容</th><th>产出 → 消费</th>'
+          + '<th>说明</th></tr></thead><tbody>';
+        for(const l of flowL){
+          h += '<tr>'
+            + '<td class="key">' + esc(l.carries || '—') + '</td>'
+            + '<td class="end">' + esc(l.from) + '<i>→</i>' + esc(l.to) + '</td>'
+            + '<td>' + esc(l.note || '—') + '</td></tr>';
+        }
+        h += '</tbody></table>';
+      }
+      if(quiet.length){
+        h += '<div class="lk-quiet">另有 ' + quiet.length + ' 条状态型返回（成功 / 失败）不构成衔接键：'
+          + quiet.map(l => esc(l.from + ' → ' + l.to)).join('、') + '</div>';
+      }
+    }
+
     // 参考文件只放"文档"，且排除已出现在代码块里的源码路径（否则纯重复）
     const codeFiles = new Set(codes.map(c => c.file));
     const extraDocs = (p.docs || []).filter(d => !codeFiles.has(d));
@@ -645,51 +1001,64 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 
     $('#main').innerHTML = h;
     closeCode();
-    $('#main').querySelectorAll('.codelist li[data-node]').forEach(el => {
-      el.onclick = ev => { ev.stopPropagation(); openCode(pid, el.dataset.node); };
+    $('#main').querySelectorAll('.codelist li[data-node], .extlist li[data-ext]').forEach(el => {
+      const nid = el.dataset.node || el.dataset.ext;
+      el.onclick = ev => { ev.stopPropagation(); openCode(pid, nid); };
     });
     mountSvg(pid);
     window.scrollTo(0, 0);
   }
 
   const TPL_CACHE = {};
-  async function fetchTemplate(pid, href){
-    if(TPL_CACHE[pid]) return TPL_CACHE[pid];
+  async function fetchTemplate(key, href){
+    if(TPL_CACHE[key]) return TPL_CACHE[key];
     const r = await fetch(href, { cache: 'no-store' });
     if(!r.ok) throw new Error('HTTP ' + r.status);
     const txt = await r.text();
     const tpl = document.createElement('template');
-    tpl.setAttribute('data-view', pid);
+    tpl.setAttribute('data-view', key);
     tpl.innerHTML = txt;
     document.getElementById('view-sources').appendChild(tpl);
-    TPL_CACHE[pid] = tpl;
+    TPL_CACHE[key] = tpl;
     return tpl;
   }
 
+  // pid -> { figId: Set(nodeId) }：挂载时收集，供抽屉跨图提示与代码块「出现在 N 张图」使用
+  const FIG_NODES = {};
+
   async function mountSvg(pid){
-    const box = $('#viewbox');
-    if(!box) return;
+    const figs = figsOf(pid);
     const seq = ++MOUNT_SEQ;
-    const page = PAGES[pid] || {};
-    const svgHref = page.svg || ((SITE.views_dir || 'views') + '/' + pid + '.svg');
+    FIG_NODES[pid] = {};
+    for(let i = 0; i < figs.length; i++){
+      if(seq !== MOUNT_SEQ) return;
+      await mountFigure(pid, figs[i], i, seq);
+    }
+  }
+
+  async function mountFigure(pid, f, idx, seq){
+    const box = document.getElementById('viewbox-' + f.id);
+    if(!box) return;
+    const key = figKey(pid, f.id, idx);
     let tpl = null;
     try{
       if(SOURCE === 'demo'){
-        tpl = document.querySelector('template[data-demo="1"][data-view="' + pid + '"]');
+        tpl = document.querySelector('template[data-demo="1"][data-view="' + key + '"]');
       }else{
-        tpl = await fetchTemplate(pid, svgHref);
+        tpl = await fetchTemplate(key, f.svg);
       }
     }catch(e){
-      box.innerHTML = '<div class="ph">图源加载失败：' + esc(svgHref) +
-        '<br><span style="opacity:.7">' + esc(e.message) + '　（file:// 下需起本地服务）</span></div>';
-      return;
-    }
-    if(!tpl){
-      box.innerHTML = '<div class="ph">该页没有图源：' +
-        (SOURCE === 'demo' ? '内置示例里没有这一页' : '请在页面配置里填 svg 路径') + '</div>';
+      // 每张图独立失败态：一张图加载失败不影响同页其他图
+      box.innerHTML = '<div class="ph ph-err">图源加载失败：' + esc(f.svg) +
+        '<br><span style="opacity:.75">' + esc(e.message) + '　（file:// 下需起本地服务）</span></div>';
       return;
     }
     if(seq !== MOUNT_SEQ || cur !== pid) return;   // 期间已切页，丢弃过期结果
+    if(!tpl){
+      box.innerHTML = '<div class="ph">该图没有图源：' +
+        (SOURCE === 'demo' ? '内置示例里没有这张图（' + esc(key) + '）' : '请在 figures[].svg 里填路径') + '</div>';
+      return;
+    }
     box.innerHTML = '';
     const host = document.createElement('div');
     box.appendChild(host);
@@ -706,15 +1075,76 @@ main>:first-child{animation:page-in .38s var(--ease) both}
       svgEl.style.display = 'block';
     }
     const codeIds = new Set(codeOf(pid).map(c => c.id));
+    const extIds = new Set(externalOf(pid).map(c => c.id));
     const st = document.createElement('style');
     st.textContent = '[data-node-id]{cursor:pointer}'
-      + '[data-bare]:hover{filter:drop-shadow(0 2px 8px rgba(23,33,28,.22))}';
+      + '[data-bare]:hover{filter:drop-shadow(0 2px 8px rgba(23,33,28,.22))}'
+      + '[data-external]:hover{filter:drop-shadow(0 0 7px rgba(110,135,120,.55))}'
+      + '.lk-tag text{font-family:system-ui,-apple-system,sans-serif;font-size:10.5px}'
+      + '.lk-id rect{fill:#eaf3ec;stroke:#17664a;stroke-width:1.1}'
+      + '.lk-id text{fill:#14563e;font-weight:600}'
+      + '.lk-ev rect{fill:#fdfefc;stroke:#ccd8ce;stroke-width:.9}'
+      + '.lk-ev text{fill:#7d8983}';
     shadow.insertBefore(st, shadow.firstChild);
-    // 所有节点都可点击：有代码的看代码，无代码的给出说明与相关文件
+    // 所有节点都可点击：有代码的看代码，外部服务看契约卡，概念节点看说明
+    const ids = [];
     shadow.querySelectorAll('[data-node-id]').forEach(g => {
       const id = g.getAttribute('data-node-id');
+      ids.push(id);
+      if(extIds.has(id)) g.setAttribute('data-external', '1');
       g.setAttribute(codeIds.has(id) ? 'data-coded' : 'data-bare', '1');
       g.addEventListener('click', ev => { ev.stopPropagation(); pickNode(pid, g); });
+    });
+    // 边标签：图源里给边加 data-link="from->to"，这里按 links[] 自动标注。
+    // 图上的线本身没有语义（只有 d 坐标），靠这个属性把"几何"和"契约"接起来——改配置即改标签，不用改图。
+    const lks = linksOf(pid);
+    if(lks.length && svgEl){
+      const NS = 'http://www.w3.org/2000/svg';
+      svgEl.querySelectorAll('[data-link]').forEach(el => {
+        const pair = (el.getAttribute('data-link') || '').split('->').map(s => s.trim());
+        const lk = lks.find(x => x.from === pair[0] && x.to === pair[1]);
+        if(!lk || !lk.carries || lk.kind === 'status' || lk.kind === 'none') return;
+        let pt;
+        try{ pt = el.getPointAtLength(el.getTotalLength() / 2); }catch(e){ return; }
+        const isId = lk.kind === 'identifier';
+        let w = 14;
+        for(const ch of lk.carries) w += /[\u3400-\u9fff]/.test(ch) ? 11 : 6.6;
+        const g = document.createElementNS(NS, 'g');
+        g.setAttribute('class', isId ? 'lk-tag lk-id' : 'lk-tag lk-ev');
+        const r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', pt.x - w / 2); r.setAttribute('y', pt.y - 22);
+        r.setAttribute('width', w); r.setAttribute('height', 17); r.setAttribute('rx', 8.5);
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('x', pt.x); t.setAttribute('y', pt.y - 10);
+        t.setAttribute('text-anchor', 'middle');
+        t.textContent = lk.carries;
+        g.appendChild(r); g.appendChild(t);
+        svgEl.appendChild(g);
+      });
+    }
+
+    FIG_NODES[pid][f.id] = new Set(ids);
+    // 外部节点不计入可点率分母：它天然没有源码，否则跨服务图的覆盖率永远不达标
+    const internal = ids.filter(id => !extIds.has(id));
+    const coded = internal.filter(id => codeIds.has(id)).length;
+    const extN = ids.length - internal.length;
+    const stat = document.getElementById('figstat-' + f.id);
+    if(stat) stat.textContent = internal.length
+      ? (coded + ' / ' + internal.length + ' 个内部节点可点' + (extN ? ' · ' + extN + ' 个外部' : ''))
+      : '';
+    markFigPresence(pid);
+  }
+
+  // 代码块列表里标注「这个节点还出现在哪几张图」，一图时不标
+  function markFigPresence(pid){
+    const figs = figsOf(pid);
+    if(figs.length < 2) return;
+    const nodes = FIG_NODES[pid] || {};
+    document.querySelectorAll('#main .codelist li[data-node], #main .extlist li[data-ext]').forEach(li => {
+      const id = li.dataset.node || li.dataset.ext;
+      const hit = figs.filter(f => nodes[f.id] && nodes[f.id].has(id));
+      const tag = li.querySelector('.infigs');
+      if(tag) tag.textContent = hit.length > 1 ? '出现在 ' + hit.length + ' 张图' : '';
     });
   }
 
@@ -743,16 +1173,42 @@ main>:first-child{animation:page-in .38s var(--ease) both}
 
   function openCode(pid, nodeId){
     const p = PAGES[pid] || {};
-    const rec = (p.code || []).find(c => c.id === nodeId) || {};
+    const rec = resolveCode(pid).find(c => c.id === nodeId) || {};
     const snip = (SNIP[pid] || {})[nodeId] || {};
-    const isConcept = !rec.file;
+    const isExternal = !!rec.external;
+    const isConcept = !rec.file && !isExternal;
     $('#cpName').textContent = nodeId;
-    $('#cpBadge').hidden = !isConcept;
-    $('#cpBadge').textContent = 'concept';
-    $('#cpPath').textContent = isConcept ? '该节点为概念节点，无对应源码' : '';
+    $('#cpBadge').hidden = !(isConcept || isExternal);
+    $('#cpBadge').textContent = isExternal ? 'external' : 'concept';
+    $('#cpPath').textContent = isExternal ? '外部服务：本项目只依赖其契约，不展示内部实现'
+      : (isConcept ? '该节点为概念节点，无对应源码' : '');
+    // 跨图关联：同一节点在本页多张图里出现时，指出它还在哪张图里（代码/契约是共用的）
+    const inFigs = figsOf(pid).filter(f => ((FIG_NODES[pid] || {})[f.id] || new Set()).has(nodeId));
+    const also = $('#cpAlso');
+    if(also){
+      if(inFigs.length > 1){
+        also.hidden = false;
+        also.innerHTML = '这个组件出现在 ' + inFigs.length + ' 张图：'
+          + inFigs.map(f => '<b>' + esc(f.name || f.id) + '</b>').join(' · ')
+          + (isExternal ? '　—— 共用同一份契约'
+             : (isConcept ? '　—— 两处都是概念节点，没有直接源码' : '　—— 共用同一段源码'));
+      }else{
+        also.hidden = true;
+      }
+    }
 
     const why = $('#cpWhy'), code = $('#cpCode'), foot = $('#cpFoot');
-    if(isConcept){
+    if(isExternal){
+      // 外部节点不给代码块，给契约卡：谁家的、怎么交互、回程落在本项目哪个节点
+      why.hidden = false;
+      why.innerHTML = '<div class="ct"><span>归属</span><b>' + esc(rec.owner || '—（未填 owner）') + '</b></div>'
+        + '<div class="ct"><span>契约</span><b>' + esc(rec.contract || '—（未填 contract）') + '</b></div>'
+        + '<div class="ct"><span>回程</span><b>→ ' + esc(rec.returnsTo || '—（未填 returnsTo）') + '</b>'
+        + (rec.returnForm ? '　' + esc(rec.returnForm) : '') + '</div>';
+      code.innerHTML = '<div class="cp-empty">外部服务没有可展示的源码<br>'
+        + '<span style="opacity:.7">本项目只到契约粒度：中间经过几个服务不展开，那是它自己的知识地图</span></div>';
+      foot.textContent = 'external · 不对应本仓文件';
+    }else if(isConcept){
       why.hidden = true;
       const rel = (p.docs || []);
       code.innerHTML = '<div class="cp-empty">该节点没有直接对应的源码'
@@ -930,15 +1386,13 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   // 取某页的图源文本：
   //   内置示例态 / 导出单文件 → 用 data-demo 标记的 <template>（内容即示例或烘焙后的真实图）
   //   运行时真实配置       → 优先用已拉取的 template，否则按 page.svg 现场拉，避免误取内置示例
-  async function svgSource(pid){
+  async function svgSource(key, href){
     if(SOURCE === 'demo'){
-      const tpl = document.querySelector('template[data-demo="1"][data-view="' + pid + '"]');
+      const tpl = document.querySelector('template[data-demo="1"][data-view="' + key + '"]');
       return tpl ? normSvg(tpl.innerHTML, tpl.hasAttribute('data-fonts')) : null;
     }
-    const cached = document.querySelector('#view-sources template[data-view="' + pid + '"]');
+    const cached = document.querySelector('#view-sources template[data-view="' + key + '"]');
     if(cached) return normSvg(cached.innerHTML);   // fetch 来的图自带 @font-face，无需补
-    const page = PAGES[pid] || {};
-    const href = page.svg || ((SITE.views_dir || 'views') + '/' + pid + '.svg');
     try{
       const r = await fetch(href, { cache: 'no-store' });
       if(!r.ok) return null;
@@ -950,23 +1404,36 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   function mdCell(t){
     return String(t == null ? '' : t).replace(/\|/g, '\\|').replace(/\n/g, ' ');
   }
-  function pageMarkdown(pid, page, hasImage){
+  // imgNames: {figId: 文件名}，由导出流程决定哪几张图拿到了图源；口径与 export_markdown.py 一致
+  function pageMarkdown(pid, page, imgNames){
+    const figs = figsOf(pid);
+    const many = figs.length > 1;
     const out = [];
     const title = page.title || pid;
     out.push('# ' + title, '');
     const meta = [];
     if(page.type) meta.push(page.type);
+    else if(!many && figs[0].type) meta.push(figs[0].type);
+    if(many) meta.push(figs.length + ' 张图');
     if(SITE.generated_at) meta.push('生成于 ' + SITE.generated_at);
     if(SITE.branch && SITE.baseline) meta.push('基线 ' + SITE.branch + '@' + SITE.baseline);
     if(meta.length) out.push('> ' + meta.join(' · '), '');
     if(page.summary) out.push(page.summary, '');
-    if(hasImage) out.push('![' + title + '](./images/' + pid + '.svg)', '');
-    if((page.points || []).length){
-      out.push('## 怎么读这张图', '');
-      for(const pt of page.points) out.push('- **' + pt[0] + '**：' + (pt[1] || ''));
-      out.push('');
-    }
-    const codes = (page.code || []).filter(c => c.file);
+
+    figs.forEach((f, i) => {
+      if(many) out.push('## 图 ' + (i + 1) + ' · ' + (f.name || f.id), '');
+      if(f.q) out.push('> 这张图回答：' + f.q, '');
+      const img = (imgNames || {})[f.id];
+      if(img) out.push('![' + (f.name || title) + '](./images/' + img + ')', '');
+      if(f.points.length){
+        out.push(many ? '### 怎么读这张图' : '## 怎么读这张图', '');
+        for(const pt of f.points) out.push('- **' + pt[0] + '**：' + (pt[1] || ''));
+        out.push('');
+      }
+    });
+
+    const code = resolveCode(pid);
+    const codes = code.filter(c => c.file);
     if(codes.length){
       out.push('## 对应代码', '', '| 节点 | 位置 | 符号 | 说明 |', '| --- | --- | --- | --- |');
       for(const c of codes){
@@ -977,6 +1444,53 @@ main>:first-child{animation:page-in .38s var(--ease) both}
       }
       out.push('');
     }
+    const exts = code.filter(c => c.external);
+    if(exts.length){
+      out.push('## 外部依赖', '', '> 只到契约粒度：外部服务的内部实现不展开，它有自己的知识地图。', '',
+        '| 外部服务 | 归属 | 契约 | 回程 |', '| --- | --- | --- | --- |');
+      for(const c of exts){
+        let ret;
+        if(c.oneWay) ret = '单向（不要求回程）';
+        else ret = '→ ' + (c.returnsTo || '-') + (c.returnForm ? '（' + c.returnForm + '）' : '');
+        out.push('| ' + mdCell(c.id) + ' | ' + mdCell(c.owner || '-') + ' | '
+          + mdCell(c.contract || '-') + ' | ' + mdCell(ret) + ' |');
+      }
+      out.push('');
+    }
+    const links = linksOf(pid);
+    if(links.length){
+      const idL = links.filter(l => l.kind === 'identifier');
+      const flowL = links.filter(l => l.kind !== 'identifier' && l.kind !== 'status' && l.kind !== 'none');
+      const quiet = links.filter(l => l.kind === 'status' || l.kind === 'none');
+      out.push('## 衔接关系', '');
+      const idM = mergeIdLinks(links);
+      if(idM.length){
+        out.push('**标识符（后续操作靠它定位）**', '',
+          '| 衔接键 | 流转路径 | 形态 | 持久化 | 说明 |',
+          '| --- | --- | --- | --- | --- |');
+        for(const m of idM){
+          const key = m.key + (m.cardinality ? '（' + m.cardinality + '）' : '');
+          out.push('| ' + mdCell(key) + ' | ' + mdCell(linkPath(m)) + ' | '
+            + mdCell(m.shape || '-') + ' | ' + mdCell(m.storedAt || '⚠ 未说明') + ' | '
+            + mdCell(m.note || '-') + ' |');
+        }
+        out.push('');
+      }
+      if(flowL.length){
+        out.push('**传递内容（不构成标识符）**', '',
+          '| 内容 | 产出 → 消费 | 说明 |', '| --- | --- | --- |');
+        for(const l of flowL){
+          out.push('| ' + mdCell(l.carries || '-') + ' | ' + mdCell(l.from + ' → ' + l.to)
+            + ' | ' + mdCell(l.note || '-') + ' |');
+        }
+        out.push('');
+      }
+      if(quiet.length){
+        out.push('> 另有 ' + quiet.length + ' 条状态型返回（成功 / 失败）不构成衔接键：'
+          + quiet.map(l => l.from + ' → ' + l.to).join('、'), '');
+      }
+    }
+
     if((page.docs || []).length){
       out.push('## 参考文档', '');
       for(const d of page.docs) out.push('- ' + d);
@@ -1021,13 +1535,20 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     for(const g of groups){
       for(const pid of g.pages){
         const page = PAGES[pid] || {};
-        const svg = await svgSource(pid);          // 先拿图，md 才能决定是否写图片引用
-        if(svg){
-          entries.push({ name: g.dir + '/images/' + pid + '.svg', data: enc.encode(svg) });
-          imgs++;
+        const figs = figsOf(pid);
+        const imgNames = {};
+        for(let i = 0; i < figs.length; i++){
+          const f = figs[i];
+          const svg = await svgSource(figKey(pid, f.id, i), f.svg);   // 先拿图，md 才能决定是否写图片引用
+          if(svg){
+            const fname = i === 0 ? (pid + '.svg') : (pid + '-' + f.id + '.svg');
+            entries.push({ name: g.dir + '/images/' + fname, data: enc.encode(svg) });
+            imgNames[f.id] = fname;
+            imgs++;
+          }
         }
         entries.push({ name: g.dir + '/' + pid + '.md',
-                       data: enc.encode(pageMarkdown(pid, page, !!svg)) });
+                       data: enc.encode(pageMarkdown(pid, page, imgNames)) });
       }
     }
     btn.disabled = true;
