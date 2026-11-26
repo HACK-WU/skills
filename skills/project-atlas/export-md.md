@@ -27,11 +27,17 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --clean      
 <站点名>-<日期>.zip
 ├── README.md                      标题 / 副标 / 导语 / notice / 基线 / 目录树（带相对链接）
 └── 01-架构总览/                    数字前缀 = 侧栏顺序
-    ├── overview.md
+    ├── 运行时架构总览.md           ← 文件名 = page.title（不是 pid）
     └── images/
-        └── overview.svg            图源原样导出，含内联字体，可单独打开
+        └── overview.svg            图源仍用 pid，原样导出，含内联字体，可单独打开
 ```
 
+- **md 文件名用页面标题**，读者在文件树里就能认出是哪一页；图片仍用 `pid`（内部资源，读者不常翻）
+- 文件名规则（`safe_name` / `safeName`，两处同口径）：
+  - 非法字符换成连字符：`/ \ : * ? " < > |` 以及**中英文冒号**（`后台进程：从写入到被读到的闭环` → `后台进程-从写入到被读到的闭环`）
+  - 超过 60 字截断并加 `…`（完整标题仍在正文 H1）
+  - **同一分类目录内**重名追加 `-2`、`-3`（不同目录允许同名）
+  - 标题为空时回退用 `pid`
 - 目录层级与侧栏大纲**一一对应**；两级分类（`_group.json` 里带 `page`）同样是"分类目录 + 一个 md"
 - 图片用 SVG：矢量、文本可搜、GitHub / Typora / Obsidian / VSCode 均支持
 
@@ -54,9 +60,16 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --clean      
 
 ## 对应代码
 
-| 节点 | 位置 | 符号 | 说明 |
-| --- | --- | --- | --- |
-| daemon | `src/mcp-server.ts:1065-1080` | startMcpServer | MCP 入口：三种运行形态与会话在这里分流 |
+> 生成时的代码快照，不代表仓库当前 HEAD。
+
+### `src/mcp-server.ts:1065-1080` · daemon · startMcpServer
+MCP 入口：三种运行形态与会话在这里分流
+
+```ts
+export async function startMcpServer(ctx) {
+  // …
+}
+```
 
 ## 外部依赖                       ← 仅当有 external 条目
 
@@ -121,10 +134,11 @@ python3 <skill>/scripts/export_markdown.py <图集目录> dist-md/ --clean      
 规则：
 
 - 图源命名：第 1 张 `images/{pid}.svg`，其后 `images/{pid}-{figId}.svg`
-- 只列**有 `file` 的** code 条目；`concept` 不进代码表，`external` 进「外部依赖」
-- 「符号」取 `code[].symbol`，没填则用 `collect_snippets.py` 自动提取的（类名/函数名）
+- 每个有 `file` 的节点一节：`### \`路径:起-止\` · id · 符号` + why + **代码块**（按扩展名加语言标记）
+- 代码块取 `snippets[pid][id].snippet`；没采集到给一行提示，不静默留空
+- `concept` 不进「对应代码」；`external` 进「外部依赖」
 - 同一标识符的多段流转**合并成一行**（`etl → callback → store → query`），不是三行重复
-- 不带代码块正文——需要完整代码回页面点节点
+- 不想带代码正文（体积敏感）加 `--no-code`：只留路径与说明；页面「导出 ↓」与命令行默认**都带代码**，保证两者逐字节一致
 
 ## 四、实现要点（逐个踩过）
 

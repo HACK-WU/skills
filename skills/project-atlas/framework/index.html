@@ -1404,6 +1404,32 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   function mdCell(t){
     return String(t == null ? '' : t).replace(/\|/g, '\\|').replace(/\n/g, ' ');
   }
+  // 代码块语言：按扩展名推断，认不出就不标。口径与 export_markdown.py 的 LANG 一致
+  const LANG_MAP = {
+    ts:'ts', tsx:'tsx', js:'js', jsx:'jsx', mjs:'js', cjs:'js',
+    py:'python', go:'go', rs:'rust', java:'java', kt:'kotlin', c:'c', h:'c',
+    cpp:'cpp', cc:'cpp', hpp:'cpp', cs:'csharp', rb:'ruby', php:'php', swift:'swift',
+    sh:'bash', bash:'bash', zsh:'bash', ps1:'powershell', sql:'sql', json:'json',
+    yaml:'yaml', yml:'yaml', toml:'toml', ini:'ini', md:'markdown', html:'html',
+    css:'css', vue:'vue', svelte:'svelte', proto:'protobuf', tf:'hcl'
+  };
+  const langOf = p => {
+    const f = String(p || '').split('/').pop();
+    const i = f.lastIndexOf('.');
+    return i < 0 ? '' : (LANG_MAP[f.slice(i + 1).toLowerCase()] || '');
+  };
+  // 文件名用页面标题：清非法字符（含中英文冒号）→ 去重 → 截断。口径与 safe_name 一致
+  const safeName = (title, pid, used) => {
+    let n = String(title || '').trim().replace(/[/\\:*?"<>|\r\n\t：]/g, '-')
+      .replace(/-{2,}/g, '-').replace(/^[-.\s]+|[-.\s]+$/g, '');
+    if(!n) n = pid;
+    if(n.length > 60) n = n.slice(0, 60).replace(/[-.\s]+$/, '') + '…';
+    const base = n;
+    let i = 2;
+    while(used.has(n.toLowerCase())){ n = base + '-' + i; i++; }
+    used.add(n.toLowerCase());
+    return n;
+  };
   // imgNames: {figId: 文件名}，由导出流程决定哪几张图拿到了图源；口径与 export_markdown.py 一致
   function pageMarkdown(pid, page, imgNames){
     const figs = figsOf(pid);
@@ -1435,14 +1461,20 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     const code = resolveCode(pid);
     const codes = code.filter(c => c.file);
     if(codes.length){
-      out.push('## 对应代码', '', '| 节点 | 位置 | 符号 | 说明 |', '| --- | --- | --- | --- |');
+      out.push('## 对应代码', '', '> 生成时的代码快照，不代表仓库当前 HEAD。', '');
       for(const c of codes){
         const sn = (SNIP[pid] || {})[c.id] || {};
         const sym = c.symbol || sn.symbol || '';
-        const loc = '`' + c.file + ':' + (c.lines ? c.lines[0] : '-') + '-' + (c.lines ? c.lines[1] : '-') + '`';
-        out.push('| ' + mdCell(c.id) + ' | ' + loc + ' | ' + mdCell(sym || '-') + ' | ' + mdCell(c.why || '') + ' |');
+        const loc = c.file + ':' + (c.lines ? c.lines[0] : '-') + '-' + (c.lines ? c.lines[1] : '-');
+        let head = '### `' + loc + '`';
+        if(c.id) head += ' · ' + c.id;
+        if(sym) head += ' · ' + sym;
+        out.push(head, '');
+        if(c.why) out.push(String(c.why), '');
+        const snip = String(sn.snippet || '').replace(/^\n+|\n+$/g, '');
+        if(snip) out.push('```' + langOf(c.file), snip, '```', '');
+        else out.push('*（未采集到代码快照：先跑 `collect_snippets.py`）*', '');
       }
-      out.push('');
     }
     const exts = code.filter(c => c.external);
     if(exts.length){
@@ -1498,7 +1530,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     }
     return out.join('\n');
   }
-  function readmeMarkdown(groups){
+  function readmeMarkdown(groups, nameMap){
     const out = ['# ' + (SITE.title || '项目知识地图'), ''];
     if(SITE.subtitle) out.push(SITE.subtitle, '');
     if(SITE.intro) out.push(SITE.intro, '');
@@ -1512,7 +1544,8 @@ main>:first-child{animation:page-in .38s var(--ease) both}
       const pid = g.pages[0];
       const page = PAGES[pid] || {};
       const trail = (g.path || []).join(' / ');
-      out.push('- ' + (trail ? trail + ' → ' : '') + '[' + (page.title || pid) + '](' + g.dir + '/' + pid + '.md)');
+      out.push('- ' + (trail ? trail + ' → ' : '') + '[' + (page.title || pid) + ']('
+        + g.dir + '/' + ((nameMap || {})[pid] || pid) + '.md)');
     }
     out.push('');
     return out.join('\n');
@@ -1530,7 +1563,13 @@ main>:first-child{animation:page-in .38s var(--ease) both}
     const groups = navGroups();
     if(!groups.length){ alert('没有可导出的页面'); return; }
     const enc = new TextEncoder();
-    const entries = [{ name: 'README.md', data: enc.encode(readmeMarkdown(groups)) }];
+    // 文件名用页面标题，按分类目录去重（与 export_markdown.py 的 safe_name 同口径）
+    const nameMap = {};
+    for(const g of groups){
+      const used = new Set();
+      for(const pid of g.pages) nameMap[pid] = safeName((PAGES[pid] || {}).title, pid, used);
+    }
+    const entries = [{ name: 'README.md', data: enc.encode(readmeMarkdown(groups, nameMap)) }];
     let imgs = 0;
     for(const g of groups){
       for(const pid of g.pages){
@@ -1547,7 +1586,7 @@ main>:first-child{animation:page-in .38s var(--ease) both}
             imgs++;
           }
         }
-        entries.push({ name: g.dir + '/' + pid + '.md',
+        entries.push({ name: g.dir + '/' + (nameMap[pid] || pid) + '.md',
                        data: enc.encode(pageMarkdown(pid, page, imgNames)) });
       }
     }

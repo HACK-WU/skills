@@ -79,7 +79,49 @@ def cell(t):
     return re.sub(r"\s*\n\s*", " ", str(t if t is not None else "")).replace("|", "\\|")
 
 
-def page_md(pid, page, snippets, site, img_names=None):
+# 文件名：路径分隔符 / Windows 保留字符 / 中英文冒号 / 控制字符一律换成连字符
+BAD_NAME = re.compile(r'[/\\:*?"<>|\r\n\t：]')
+MAX_NAME = 60          # 字符数上限（中文按 1 字算，远低于 255 字节的文件系统限制）
+
+
+def safe_name(title, pid, used):
+    """页面标题 → 可用的文件名（不含 .md）：清非法字符 → 去重 → 截断。
+
+    used 按分类目录维护（不同目录允许同名），比较时忽略大小写（macOS/Windows 默认不敏感）。
+    """
+    n = BAD_NAME.sub("-", (title or "").strip())
+    n = re.sub(r"-{2,}", "-", n).strip("- .")
+    if not n:
+        n = pid
+    if len(n) > MAX_NAME:
+        n = n[:MAX_NAME].rstrip("- .") + "…"
+    base, i = n, 2
+    while n.lower() in used:
+        n = "%s-%d" % (base, i)
+        i += 1
+    used.add(n.lower())
+    return n
+
+
+# 代码块语言：按扩展名推断，认不出就不标（fence 留空）
+LANG = {
+    "ts": "ts", "tsx": "tsx", "js": "js", "jsx": "jsx", "mjs": "js", "cjs": "js",
+    "py": "python", "go": "go", "rs": "rust", "java": "java", "kt": "kotlin",
+    "c": "c", "h": "c", "cpp": "cpp", "cc": "cpp", "hpp": "cpp", "cs": "csharp",
+    "rb": "ruby", "php": "php", "swift": "swift", "scala": "scala",
+    "sh": "bash", "bash": "bash", "zsh": "bash", "ps1": "powershell",
+    "sql": "sql", "json": "json", "yaml": "yaml", "yml": "yaml", "toml": "toml",
+    "ini": "ini", "md": "markdown", "html": "html", "css": "css",
+    "vue": "vue", "svelte": "svelte", "proto": "protobuf", "tf": "hcl",
+}
+
+
+def lang_of(path):
+    p = (path or "").rsplit("/", 1)[-1]
+    return LANG.get(p.rsplit(".", 1)[-1].lower(), "") if "." in p else ""
+
+
+def page_md(pid, page, snippets, site, img_names=None, no_code=False):
     """img_names: {figId: 文件名}，由 main 决定哪几张图成功导出；None = 不导出图。"""
     figs = figures_of(page, pid, site.get("views_dir") or "views")
     many = len(figs) > 1
@@ -119,14 +161,27 @@ def page_md(pid, page, snippets, site, img_names=None):
 
     codes = [c for c in code if c.get("file")]
     if codes:
-        out += ["## 对应代码", "", "| 节点 | 位置 | 符号 | 说明 |", "| --- | --- | --- | --- |"]
+        out += ["## 对应代码", ""]
+        if not no_code:
+            out += ["> 生成时的代码快照，不代表仓库当前 HEAD。", ""]
         for c in codes:
             sn = (snippets.get(pid) or {}).get(c.get("id")) or {}
             sym = c.get("symbol") or sn.get("symbol") or ""
             lines = c.get("lines") or []
-            loc = "`%s:%s-%s`" % (c["file"], lines[0] if lines else "-", lines[1] if lines else "-")
-            out.append("| %s | %s | %s | %s |" % (cell(c.get("id")), loc, cell(sym or "-"), cell(c.get("why") or "")))
-        out.append("")
+            loc = "%s:%s-%s" % (c["file"], lines[0] if lines else "-", lines[1] if lines else "-")
+            head = "### `%s`" % loc
+            if c.get("id"):
+                head += " · " + str(c["id"])
+            if sym:
+                head += " · " + sym
+            out += [head, ""]
+            if c.get("why"):
+                out += [str(c["why"]), ""]
+            snip = "" if no_code else (sn.get("snippet") or "").strip("\n")
+            if snip:
+                out += ["```" + lang_of(c["file"]), snip, "```", ""]
+            elif not no_code:
+                out += ["*（未采集到代码快照：先跑 `collect_snippets.py`）*", ""]
 
     exts = [c for c in code if c.get("external")]
     if exts:
@@ -183,7 +238,7 @@ def page_md(pid, page, snippets, site, img_names=None):
     return "\n".join(out)
 
 
-def readme_md(gs, site):
+def readme_md(gs, site, name_map):
     out = ["# " + (site.get("title") or "项目知识地图"), ""]
     if site.get("subtitle"):
         out += [site["subtitle"], ""]
@@ -203,7 +258,8 @@ def readme_md(gs, site):
         page = PAGES_CACHE.get(pid) or {}
         trail = " / ".join(g.get("path") or [g["name"]])
         out.append("- %s[%s](%s/%s.md)" % (trail + " → " if trail else "",
-                                           page.get("title") or pid, g["dir"], pid))
+                                          page.get("title") or pid, g["dir"],
+                                          name_map.get(pid) or pid))
     out.append("")
     return "\n".join(out)
 
@@ -214,6 +270,7 @@ def main():
     ap.add_argument("out", help="输出目录，或以 .zip 结尾的压缩包路径")
     ap.add_argument("--no-images", action="store_true", help="不导出图源（md 里也不写图片引用）")
     ap.add_argument("--clean", action="store_true", help="输出目录模式：先清空目标目录，避免上一版遗留")
+    ap.add_argument("--no-code", action="store_true", help="不导出代码块正文（只留路径与说明）")
     args = ap.parse_args()
 
     base, site, pages = load_atlas(args.src)
@@ -231,7 +288,16 @@ def main():
         return 2
 
     views_dir = site.get("views_dir") or "views"
-    files = [("README.md", readme_md(gs, site).encode("utf-8"))]
+
+    # 文件名用页面标题（读者认得出），按分类目录去重；图片仍用 pid（内部资源，重名风险高）
+    name_map = {}
+    for g in gs:
+        used = set()
+        for pid in g["pages"]:
+            page = pages.get(pid) or {}
+            name_map[pid] = safe_name(page.get("title"), pid, used)
+
+    files = [("README.md", readme_md(gs, site, name_map).encode("utf-8"))]
     missing = []
     for g in gs:
         for pid in g["pages"]:
@@ -251,8 +317,9 @@ def main():
                             img_names[f["id"]] = fname
                     else:
                         missing.append("%s/图 %d → %s" % (pid, i + 1, rel))
-            files.append(("%s/%s.md" % (g["dir"], pid),
-                          page_md(pid, page, snippets, site, img_names).encode("utf-8")))
+            files.append(("%s/%s.md" % (g["dir"], name_map.get(pid) or pid),
+                          page_md(pid, page, snippets, site, img_names,
+                                  args.no_code).encode("utf-8")))
 
     # 缺图源就中止：md 里图片断链的交付物比不出更糟（确实要无图版请显式加 --no-images）
     if missing and not args.no_images:
