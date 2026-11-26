@@ -25,6 +25,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from atlas_io import (load_atlas, page_ids, figures_of, resolve_code, links_of)
+from check_svg import inspect_svg
 
 MAX_BYTES = 10 * 1024 * 1024
 TARGET_BYTES = 3 * 1024 * 1024
@@ -83,6 +84,8 @@ def main():
         else:
             warns.append("没有片段（snippets.json / 配置内联）：所有节点将不可点")
 
+    linted_svg = {}   # svg 绝对路径 → 是否通过（同一图源被多页引用时只体检一次）
+
     for pid in ids:
         page = pages.get(pid)
         if page is None:
@@ -124,6 +127,21 @@ def main():
                 continue
             with open(svg_path, encoding="utf-8", errors="replace") as fh:
                 svg = fh.read()
+
+            # 图源自包含体检：缺样式 = 黑块，缺 viewBox = 不能缩放（Shadow DOM 挂载，壳层样式进不去）。
+            # 同一图源被多页引用时只体检一次，否则同一个缺陷会在报告里重复 N 遍
+            if svg_path not in linted_svg:
+                svg_issues, _stats = inspect_svg(svg, svg_rel)
+                clean_fig = True
+                for it in svg_issues:
+                    msg = "%s/图 %d：%s（%s）" % (pid, i + 1, it["msg"], svg_rel)
+                    if it["level"] == "error":
+                        clean_fig = False
+                        errors.append(msg + ("　→ " + it["fix"] if it.get("fix") else ""))
+                    else:
+                        warns.append(msg)
+                linted_svg[svg_path] = clean_fig
+
             node_ids = set(NODE_ID.findall(svg))
             if not node_ids:
                 errors.append("%s/图 %d：图内没有任何 data-node-id，节点无法挂代码" % (pid, i + 1))
@@ -252,6 +270,10 @@ def main():
                                 len(covered), len(internal_nodes)))
         if exts:
             oks.append("%s：%d 个外部依赖（只到契约粒度）" % (pid, len(exts)))
+
+    if linted_svg:
+        oks.append("图源体检：%d/%d 张图样式自包含（style 在 SVG 内、有 viewBox、无外链）"
+                   % (sum(1 for ok in linted_svg.values() if ok), len(linted_svg)))
 
     # 可选：校验导出单文件
     if args.html:

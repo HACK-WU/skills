@@ -5,6 +5,8 @@
     python3 build_atlas.py atlas.config.json dist/atlas.html
 
 它做的事（确定性工作，不交给 AI）：
+0. 两道前置门禁：输出路径不得覆盖框架壳；每张图源先过自包含体检（缺 style / 缺 viewBox
+   / 外链 → 阻断），否则会产出"能构建、打开是黑块"的假成功产物
 1. 把站点/页面/片段配置注入框架的内置配置位（导出后即使不联网、不起服务也渲染真实内容）
 2. 把各页图源 SVG 内联进框架的内置图源位
 3. 字体去重：各 SVG 内重复的 @font-face 提到壳层（@font-face 文档级注册，Shadow DOM 内可用）
@@ -22,6 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from atlas_io import load_atlas, page_ids, write_bundle, figures_of, fig_key
+from check_svg import inspect_svg
 
 FONT_FACE = re.compile(r"@font-face\s*\{[^}]*\}", re.S)
 XML_DECL = re.compile(r"^\s*<\?xml[^>]*\?>\s*", re.S)
@@ -41,6 +44,30 @@ def tpl_pattern(pid):
     return re.compile(r'<template data-demo="1" data-view="%s">[\s\S]*?</template>' % re.escape(pid))
 
 
+def output_hazards(out, fw_path):
+    """产物路径护栏：框架是唯一真源，被产物覆盖后示例态/交互/字体注入点全丢，且不可再生。
+
+    实测事故：装配时把产物写到 .atlas/index.html（框架就放在那），69 KB 壳被覆盖。
+    """
+    o = os.path.realpath(out)
+    bad = []
+    if o == os.path.realpath(fw_path):
+        bad.append("输出路径就是本次使用的框架文件（%s）——构建会就地覆盖它" % fw_path)
+    skill_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    if o.startswith(skill_dir + os.sep):
+        bad.append("输出路径落在 skill 目录内（%s）——产物不该混进 skill 与版本库" % skill_dir)
+    if os.path.isfile(o):
+        try:
+            with open(o, encoding="utf-8", errors="replace") as f:
+                head = f.read(512 * 1024)
+        except OSError:
+            head = ""
+        if "__ATLAS_FONTS__" in head and 'id="demo-config"' in head:
+            bad.append("目标位置已是一份框架壳（含 __ATLAS_FONTS__ 占位符与内置配置位）"
+                       "——继续会覆盖唯一真源")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("config", help="图集目录（含 site.json + nav/）或单文件 atlas.config.json")
@@ -51,6 +78,15 @@ def main():
     base, cfg, pages = load_atlas(args.config)
     here = os.path.dirname(os.path.abspath(__file__))
     fw_path = args.framework or os.path.join(here, "..", "framework", "index.html")
+
+    hazards = output_hazards(args.out, fw_path)
+    if hazards:
+        print("\n导出中止：输出路径有风险（未写出任何文件）", file=sys.stderr)
+        for h in hazards:
+            print("  ✗ " + h, file=sys.stderr)
+        print("  改用 dist/atlas.html 之类的独立目录；框架请保持原样（--framework 只指向要读的壳）",
+              file=sys.stderr)
+        return 1
 
     with open(fw_path, encoding="utf-8") as f:
         html = f.read()
@@ -88,6 +124,7 @@ def main():
     fonts, font_stat = {}, [0, 0]
     raw_bytes = 0
     kept = []
+    style_stat, style_sha = [0], set()
     ids = page_ids(cfg)
 
     def extract_fonts(svg):
@@ -117,6 +154,20 @@ def main():
                 continue
             with open(svg_path, encoding="utf-8", errors="replace") as fh:
                 svg = fh.read()
+
+            # 图源体检（构建前）：缺样式/缺 viewBox 的图能构建成功但打开是黑块或压扁，
+            # 这种"看起来成功"的产物比直接失败更危险，一律阻断。
+            svg_issues, svg_stats = inspect_svg(svg, svg_rel)
+            for it in svg_issues:
+                line = "%s/图 %d 图源体检：%s（%s）" % (pid, i + 1, it["msg"], svg_rel)
+                if it["level"] == "error":
+                    fatal.append(line + ("　→ " + it["fix"] if it.get("fix") else ""))
+                else:
+                    report.append(line)
+            if svg_stats.get("styles"):
+                style_stat[0] += 1
+                style_sha.add(svg_stats["style_sha"])
+
             raw_bytes += len(svg.encode("utf-8"))
             svg = XML_DECL.sub("", svg)
             before = font_stat[0]
@@ -165,6 +216,7 @@ def main():
     print("导出：%d 页 / %d 张图 · 原始 SVG %.1f MB · 字体块 %d 个唯一（消除 %d 份重复）" % (
         len(ids), len(kept), raw_bytes / 1024 / 1024, len(fonts), font_stat[1]))
     print("产物：%s（%.2f MB，目标 ≤3 MB / 上限 10 MB）" % (args.out, size / 1024 / 1024))
+    print("图源体检：%d/%d 张图自带样式（样式块 %d 种）" % (style_stat[0], len(kept), len(style_sha)))
     print("提示：这是分发用单文件；日常改配置不需要重新导出，起本地服务读 atlas.config.json 即可。")
 
     if report:

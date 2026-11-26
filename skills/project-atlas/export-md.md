@@ -160,6 +160,7 @@ export async function startMcpServer(ctx) {
 | 企业 Wiki 不支持内联 SVG | md 里图片显示空白 | 用 `atlas.html` 交互版；或后续加 PNG 栅格化 |
 | 包体积 | 4 页约 89 KB（压缩后），20 页约 400 KB | 图片占大头（archify 单图约 170 KB，含字体） |
 | 不含代码正文 | 只有「路径:行号 + 符号」表 | 需要完整代码回页面点节点 |
+| 图源缺陷原样带走 | md 里的 `images/*.svg` 是图源原样（只补 xmlns），黑块/缺样式会一起进文档库 | 导出前跑 `check_svg.py`；`export_markdown.py` 遇到图源 error 会直接中止 |
 | 需解压后查看 | zip 内预览时相对路径 `./images/*.svg` 解析不到，且部分查看器不渲染 md | 解压后再看，或直接看 `atlas.html` |
 
 ## 六、验证方法

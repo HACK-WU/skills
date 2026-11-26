@@ -386,6 +386,13 @@ atlas/
 | `未进入交付物（index.html 里找不到该视图的 <template>）` | nav 引用了它，但装配时没读到图源 | 重跑 build，检查 `pages/{id}.json` 的 `svg` 路径 |
 | `interactive 指向不存在的文件`（warning） | 交互版外链已失效 | 补文件或删掉 `interactive` 字段 |
 | `缺图源 views/x.svg` | 命名不一致（archify 产物带图种后缀） | 按 `views/{id}.svg` 重命名 |
+| `N 个 class 没有对应样式规则`（`class-undefined`） | **黑块根因**：图源缺 `<style>` 或规则不全（手搓/裁剪 SVG 时被丢掉）。框架 Shadow DOM 挂载，壳层样式进不去 | 用 archify 重新 deliver 导出；同批已有正确样式块时 `check_svg.py <dir> --fix-style`（只补整块缺失） |
+| `N 个 class 没有对应规则，但元素自带 fill/stroke`（`class-unused-rule`，warn） | 不会黑（内联 paint 兜住），但样式确实丢了，视觉与其它图不一致 | 确认样式块是否被裁；多数情况应与 `class-undefined` 一并重导 |
+| `缺 viewBox`（`no-viewbox`） | 框架会剥掉 `width`/`height` 让图自适应，没有 viewBox 就丢了比例 | 补 `viewBox="0 0 宽 高"` |
+| `缺 xmlns`（`no-xmlns`，warn） | 内联进 HTML 能显示，单独打开/导出 Markdown 不渲染 | 补 `xmlns`（export_markdown.py 也会自动补） |
+| `引用外链资源` / `<style> 里有 @import` | 离线不可用；Shadow DOM 内加载更不可靠 | 内联或 base64；字体走 `@font-face` |
+| `图幅下部/右侧约 N% 无内容`（`blank-bottom` / `blank-right`，warn） | viewBox 比内容大一圈，打开是半张空白 | **不是构建问题**：补 IR 内容或收小 viewBox；有意留白忽略 |
+| `图内只有 N 个 data-node-id`（`sparse-graph`，warn） | IR 只填了骨架（如 1 lane / 3 卡片） | 补 IR 后重新出图，或把该页并进相邻视图 |
 | `行号越界：声明 2127-2142，文件共 2100 行` | 代码改动后行号失准 | 更新 `pages/*.json`，重跑采集 |
 | `区间过大（N 行 > 上限 80）` | 把整个函数塞进来 | 收窄到关键段，或另起一条 |
 | `存在外链资源` | 引入 CDN 字体/脚本 | 内联或删除 |
@@ -396,7 +403,39 @@ atlas/
 | `nav 节点同时有 page 和 children` | 二者互斥；前端会忽略 page（页面静默丢失） | 把该页作为 children 第一项 |
 | `nav 最深 N 层`（warning） | 超过 4 层，侧栏缩进会挤到换行 | 收敛层级，或改折叠树 |
 
-**exit code**：`check_atlas.py` → `0` 通过 / `1` 有 error / `2` 体积超硬上限；`build_atlas.py` → `0` 成功 / `1` 有需修正项（文件已写出）/ `2` 体积超限（清理临时文件、不替换正式产物）。
+**exit code**：`check_atlas.py` → `0` 通过 / `1` 有 error / `2` 体积超硬上限；`check_svg.py` → `0` 无 error / `1` 有 error / `2` 输入错误；`build_atlas.py` → `0` 成功 / `1` 有阻断项或需修正项（阻断时不写产物）/ `2` 体积超限（清理临时文件、不替换正式产物）。
+
+### 5.1 图源为什么必须自包含（黑块根因）
+
+**机制**：框架把图源塞进 `<template>` 再挂到 Shadow DOM（`framework/index.html` 的 `attachShadow`）。Shadow DOM 是样式边界——**SVG 自带的 `<style>` 不会外泄，壳层的 CSS 也进不来**。所以图源里 `class="c-backend"` 的填充色只能由**图源自己**的 `<style>` 提供。
+
+**失效链**：`<rect class="c-backend">` 没有 `fill` → 规则缺失 → 浏览器取 SVG 默认值 `fill:black` → 节点变黑块。全过程 **不报错**：文件是合法 SVG、体积正常、`data-node-id` 都在、节点照样能点，`check_atlas.py` 的三方对齐全绿。**只有人眼看得见**，而人眼通常在交付之后才看。
+
+**判据（静态可判，不靠猜）**：
+
+| 判据 | 做法 | 级别 |
+|---|---|---|
+| class 覆盖 | 收图内所有 `class="…"` 的 token，减掉 `<style>` 里的 `.token` 规则与 `[class~="x"]` 属性选择器，差集非空即失败。**该 token 的元素若全部自带 `fill`/`stroke`（属性或 inline style）则降级 warn**——自带 paint 就不会黑，只是样式不生效 | error / warn |
+| 形状默认填充 | `rect`/`path`/`circle`… 既无 `fill` 又无 `class`/`style`、祖先也没有 `fill` | warn（可能是有意留黑，需确认） |
+| viewBox | 缺则框架剥掉宽高后比例丢失 | error |
+| 离线 | `href="http…"`、`@import url(…)` | error |
+
+**修法优先级**：① archify 重新 `deliver` 导出（唯一真源）→ ② 同批已有正确样式块时 `check_svg.py <dir> --fix-style`（**只补整块缺失**，已有 `<style>` 但规则不全的一律报错不自动改——改规则要懂图）→ ③ 手写补规则。判断"哪块是主流样式块"：按同批出现次数与 class 覆盖度排序，报告里会写明来源文件与 sha。
+**边界**：若同批混着多种图种（sequence / architecture 各一套样式块），注入的是"能覆盖全部缺失 class"的那份——不黑，但可能与邻图风格不一致，此时以重新导出为准。
+
+**在哪里生效**（同一份 `inspect_svg`，口径一处）：
+
+| 入口 | 行为 |
+|---|---|
+| 阶段 2 收尾 `check_svg.py` | 出图即查，0 error 才进装配（最早、最便宜的拦截点） |
+| 阶段 5 `check_atlas.py` | error 计入总 error；另报「N/M 张图样式自包含」 |
+| `build_atlas.py` | error → 阻断、**不写产物**；warn → 打印后继续 |
+| `pack_atlas.py` | 走 build，自动继承 |
+| `export_markdown.py` | error → 阻断（否则黑块图原样进文档库） |
+
+**体检覆盖不到的（别当成"全查过了"）**：`fill="currentColor"` 而 `color` 未定义、`<style>` 里被 `@media`/`@supports` 包裹而条件不满足、规则存在但取值写错（如 `fill:#000`）、`<use>` 引用了被裁掉的 `<symbol>`——这些静态判据都看不出，仍需阶段 6 的「图源观感」人眼项兜底。
+
+**空白图为什么单列一类**：`blank-bottom` / `sparse-graph` 报的是**内容密度**，根因在 IR（如只画了 1 lane、3 张卡片），改脚本改不出来。报告措辞刻意写"这不是构建问题"，避免把时间花在修构建链路。判据是几何近似（rect/text 的 bbox 对比 viewBox），**只作提示不作判定**——有意留白是允许的。
 
 ## 六、验收走查清单
 
@@ -436,11 +475,15 @@ node <archify skill 目录>/bin/archify.mjs deliver architecture views/overview.
 # 2. 导 SVG（显式调用 skill，未装则用 archify 自带导出）
 #    产物放到 .atlas/views/{view-id}.svg，并按约定重命名
 
-# 3. 采集片段 → 装配 → 校验
+# 3. 图源体检（出图即查，0 error 才继续）
+python3 <project-atlas skill 目录>/scripts/check_svg.py .            # 必要时加 --fix-style
+# 4. 采集片段 → 装配 → 校验
 python3 <project-atlas skill 目录>/scripts/collect_snippets.py atlas.config.json snippets.json --repo-root .
 python3 <project-atlas skill 目录>/scripts/build_atlas.py atlas.config.json dist/atlas.html   # 仅分发时导出
 python3 <project-atlas skill 目录>/scripts/check_atlas.py .
 ```
+
+> `build_atlas.py` 会先自检再动手：**产物路径指向框架或 skill 目录直接拒绝**（覆盖壳=毁唯一真源），**图源有 error 直接中止**（不产出黑块单文件）。所以"构建成功"现在同时意味着"图源能独立渲染"，不必再靠人眼补漏。
 
 **降级矩阵**：
 
@@ -454,6 +497,7 @@ python3 <project-atlas skill 目录>/scripts/check_atlas.py .
 ## 八、补充反模式
 
 - ❌ **把 `views[].svg` 写成 archify 原文件名**：`check_atlas.py` 会报缺图源；约定就是 `views/{id}.svg`
+- ❌ **手工"精简"SVG**：删属性、删 `<style>`、把 14 张图裁成 5 张重画——省下的几 KB 换来一堆黑块，且构建全绿 → 图源只从 archify 出，改样式改图源不手改产物
 - ❌ **概念节点硬编行号凑覆盖率**：读者点开看到无关代码，比空着更糟
 - ❌ **为省体积删 `points`**：体积大头是 SVG 不是文案，删解读等于把图退化成"看不懂的方框"
 - ❌ **在 900px 视口下调抽屉宽度到 50% 继续用**：图被压掉的损失大于面板舒适度收益

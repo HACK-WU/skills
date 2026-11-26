@@ -27,6 +27,7 @@ import zipfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from atlas_io import (load_atlas, page_ids, figures_of, resolve_code,
                       links_of, merge_id_links, link_path)
+from check_svg import inspect_svg
 
 SVG_START = re.compile(r"<svg\b[^>]*>", re.S)
 XML_DECL = re.compile(r"^\s*<\?xml[^>]*\?>\s*", re.S)
@@ -298,7 +299,7 @@ def main():
             name_map[pid] = safe_name(page.get("title"), pid, used)
 
     files = [("README.md", readme_md(gs, site, name_map).encode("utf-8"))]
-    missing = []
+    missing, bad_svg = [], []
     for g in gs:
         for pid in g["pages"]:
             page = pages.get(pid) or {}
@@ -311,7 +312,17 @@ def main():
                     fname = ("%s.svg" % pid) if i == 0 else ("%s-%s.svg" % (pid, f["id"]))
                     if os.path.isfile(path):
                         with open(path, encoding="utf-8", errors="replace") as fh:
-                            svg = norm_svg(fh.read())
+                            raw = fh.read()
+                        # 图源体检：md 图包原样带走 SVG，黑块/缺样式会一起进入文档库。
+                        # 本段只在导出图时执行（--no-images 已在更外层跳过），故不需要额外豁免
+                        svg_issues, _st = inspect_svg(raw, rel)
+                        for it in svg_issues:
+                            line = "%s/图 %d 图源体检：%s（%s）" % (pid, i + 1, it["msg"], rel)
+                            if it["level"] == "error":
+                                bad_svg.append(line + ("　→ " + it["fix"] if it.get("fix") else ""))
+                            else:
+                                print("  ! " + line, file=sys.stderr)
+                        svg = norm_svg(raw)
                         if svg:
                             files.append(("%s/images/%s" % (g["dir"], fname), svg.encode("utf-8")))
                             img_names[f["id"]] = fname
@@ -320,6 +331,14 @@ def main():
             files.append(("%s/%s.md" % (g["dir"], name_map.get(pid) or pid),
                           page_md(pid, page, snippets, site, img_names,
                                   args.no_code).encode("utf-8")))
+
+    # 图源体检失败就中止：文档库里出现黑块图，读者会以为"这系统就是黑的"
+    if bad_svg:
+        print("\n导出中止：%d 处图源体检未通过（未写出产物）" % len(bad_svg), file=sys.stderr)
+        for m in bad_svg:
+            print("  ✗ " + m, file=sys.stderr)
+        print("先修图源（python3 check_svg.py <图集目录>），再重跑导出", file=sys.stderr)
+        return 1
 
     # 缺图源就中止：md 里图片断链的交付物比不出更糟（确实要无图版请显式加 --no-images）
     if missing and not args.no_images:
