@@ -64,30 +64,38 @@ main>:first-child{animation:page-in .38s var(--ease) both}
   color:var(--ink);margin-bottom:2px;transition:background .18s,color .18s,box-shadow .18s}
 .nav-home:hover{background:rgba(255,255,255,.72);box-shadow:var(--sh-1)}
 .nav-home.on{background:#eaf1ec;color:var(--accent-2)}
+/* 分组是"父"：字号与子项接近，靠色深 / 字重 / 上方分隔线立住层级（子项反过来降半档） */
 .grp-h{display:flex;align-items:center;justify-content:space-between;
-  margin:18px 0 5px;padding:0 11px 0 calc(11px + var(--d,0) * 12px);font-size:11.5px;
-  color:#7f8b82;font-weight:600;letter-spacing:.01em;cursor:pointer;user-select:none;
-  border-radius:6px;transition:color .15s}
-.grp-h:hover{color:var(--ink-2)}
+  margin:14px 0 4px;padding:9px 11px 0 calc(11px + var(--d,0) * 12px);font-size:12px;
+  color:#46534a;font-weight:600;letter-spacing:.015em;cursor:pointer;user-select:none;
+  border-radius:6px;border-top:1px solid var(--line);transition:color .15s}
+/* 首个分组不画分隔线（它紧接"总览"）。注意不能用 `a + .grp-h`：
+   每个页面锚点都是 <a>，那样会匹配到所有分组，分隔线全部消失 */
+#side > .grp-h:first-of-type{border-top:0;margin-top:10px}
+.grp-h:hover{color:var(--ink)}
 .grp-h .grp-t{display:inline-flex;align-items:center;gap:5px;min-width:0}
-.grp-h .caret{font:9px/1 var(--mono);color:#b9c3bb;flex:none;transition:color .15s}
+.grp-h .grp-t span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grp-h .caret{font:10.5px/1 var(--mono);color:#5d6a61;flex:none;transition:color .15s}
 .grp-h:hover .caret{color:var(--accent)}
-.grp-h.sub{margin:12px 0 3px;font-size:11px;color:#8b968e}
-.grp-h .n{font:9.5px var(--mono);letter-spacing:0;color:#a8b2aa}
+/* 三级分组不画分隔线：组内再出现整行横线会把子项也切断 */
+.grp-h.sub{margin:10px 0 3px;padding-top:2px;font-size:11.5px;color:#5d6a61;border-top:0}
+.grp-h .n{font:10px var(--mono);letter-spacing:0;color:#64716a;flex:none}
 .grp-h.has-cur{color:var(--accent-2)}
 .grp-h.has-cur .caret{color:var(--accent)}
 .grp-h.has-cur .n{color:var(--accent)}
 .nav-i{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:7px 11px 7px calc(11px + var(--d,0) * 12px);border-radius:8px;
-  font-size:13px;color:var(--ink-2);cursor:pointer;
+  padding:6px 11px 6px calc(11px + var(--d,0) * 12px);border-radius:8px;
+  font-size:12.5px;color:#59665e;cursor:pointer;
   transition:background .18s,color .18s,box-shadow .18s,transform .18s}
-.nav-i:not([data-d="0"]){font-size:12.5px;color:#6f7b73}
+.nav-i:not([data-d="0"]){font-size:12px;color:#5d6a61}
+/* 长标题单行截断：折行会把分组节奏冲散（14 页里 5–6 条会命中），全文走 title 悬浮 */
+.nav-i>.t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-i:hover{background:rgba(255,255,255,.74);color:var(--ink);box-shadow:var(--sh-1);transform:translateX(1px)}
 .nav-i.on{background:linear-gradient(135deg,#e7f0e9,#f0f5ef);color:var(--accent-2);font-weight:650;
   box-shadow:inset 0 0 0 1px rgba(29,107,79,.075)}
 .nav-i.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
   border-radius:3px;background:var(--accent);box-shadow:0 0 8px rgba(29,107,79,.18)}
-.nav-i .tag{font:9.5px var(--mono);color:#96a098;font-variant-numeric:tabular-nums}
+.nav-i .tag{flex:none;font:10px var(--mono);color:#64716a;font-variant-numeric:tabular-nums}
 .nav-i.on .tag{color:var(--accent)}
 
 /* ── 首页 ── */
@@ -815,9 +823,10 @@ main>:first-child{animation:page-in .38s var(--ease) both}
         if(!pid) continue;
         const p = PAGES[pid] || {};
         const n = codeOf(pid).length;
+        const label = p.title || pid;
         h += '<a><div class="nav-i' + (cur===pid?' on':'') + '" data-id="' + pid
           + '" data-d="' + depth + '" style="--d:' + depth + '">'
-          + '<span>' + esc(p.title || pid) + '</span>'
+          + '<span class="t" title="' + esc(label) + '">' + esc(label) + '</span>'
           + (n ? '<span class="tag">' + n + '</span>' : '') + '</div></a>';
       }
     }
